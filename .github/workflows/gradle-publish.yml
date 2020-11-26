@@ -14,7 +14,7 @@ on:
 jobs:
   build:
     name: Building Ubuntu
-    runs-on: ubuntu-latest, windows-latest
+    runs-on: ubuntu-latest
     
     steps:
     - uses: actions/checkout@v2
@@ -32,11 +32,3 @@ jobs:
         restore-keys: ${{ runner.os }}-gradle
     - name: Build with Gradle
       run: gradle build
-
-    # The USERNAME and TOKEN need to correspond to the credentials environment variables used in
-    # the publishing section of your build.gradle
-    - name: Publish to GitHub Packages
-      run: gradle publish
-      env:
-        USERNAME: ${{ github.actor }}
-        TOKEN: ${{ secrets.GITHUB_TOKEN }}
