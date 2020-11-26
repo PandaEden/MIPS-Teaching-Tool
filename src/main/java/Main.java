@@ -9,6 +9,7 @@ public class Main {
 	
 	private static ArrayList<String> lines = new ArrayList<>();
 	private static ArrayList<String> OpCodes = new ArrayList<>();
+	
 	public static void main( String[] args ){
 		// Setup, Parse file to lines
 		try{ // Try to read input file
