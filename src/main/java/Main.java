@@ -4,12 +4,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Scanner; // Import the Scanner class to read text files
 import model.Instruction;
+
 public class Main {
 	private static final String InputFile = "FileInput.s";
 	
 	private static ArrayList<Instruction> instructions;
 	
-	public static void main( String[] args ){
+	public static  void setup(){
 		instructions=new ArrayList<>();
 		// Setup: Parse file to lines
 		try{ // Try to read input file
@@ -62,11 +63,16 @@ public class Main {
 				else
 					opperands=new String[]{currentLine};
 				
-				instructions.add(new Instruction(ins,opperands,comments,tag));
+				instructions.add( Instruction.buildInstruction(ins,opperands,comments,tag));
 			}
 		} catch(FileNotFoundException e){
 			e.printStackTrace( );
 		}
-		instructions.forEach(instruction -> System.out.println( instruction ));
+	}
+	
+	public static void main( String[] args ){
+		setup();
+		System.out.println( "Setup Finihsed\n" );
+		instructions.forEach(instruction -> instruction.execute());
 	}
 }

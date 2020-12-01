@@ -2,12 +2,10 @@ package model;
 
 import java.util.Arrays;
 
-
-
-public  class Instruction {
+public class Instruction {
 	private enum Type {REGISTER, IMMEDIATE, JUMP, NO_INS}
 	private Type type;
-	private String ins;
+	 String ins;
 	private String[] operands;
 	private String comment;
 	private String tag;
@@ -19,54 +17,74 @@ public  class Instruction {
 	 * @param comment - Nullable, takes the form '# comment...' at the end of a line
 	 * @param tag - Nullable takes the form 'word:' at the beginning of a line
 	 */
-	public Instruction( String ins, String[] operands, String comment, String tag ){
+	 Instruction( String ins, String[] operands, String comment, String tag ){
 		this.ins=ins;
 		this.operands=operands;
-		this.comment=comment;
+		this.comment=(comment);
 		this.tag=tag;
-		insTypeLookup();
+		this.type=ins2Type(ins);
 	}
 	
-	public String printIns( ){
+	public static Instruction buildInstruction( String ins, String[] operands, String comment,
+	                                            String tag ){
+		Type type = ins2Type(ins);
+		if (type==Type.REGISTER){
+			return new R_Type(ins, operands, comment, tag);
+		}
+		else return new Instruction(ins, operands, comment, tag);
+	}
+	
+	public boolean execute(){
+		Register_Bank.printT();
+		Register_Bank.printS();
+		System.out.println( "\t"+type2String(type)+" - "+ins+"\n");
+		return true;
+	}
+	
+	public String getIns( ){
 		return ins;
 	}
 	
-	public String[] printOperands( ){
+	public String[] getOperands( ){
 		
 		Arrays.stream( operands ).forEach(System.out::println);
 		return operands;
 	}
 	
-	public String printComment( ){
+	public String getComment( ){
 		return comment;
 	}
 	
-	private String insTypeLookup(){
-		String ins_type;
+	private static Type ins2Type(String ins){
 		switch (ins){
 			case "add":
 			case "sub":
 			case "mul":
 			case "div":
-				ins_type = "R-Type";
-				type = Type.REGISTER;
-				break;
+				return Type.REGISTER;
 			case "addi":
 			case "lw":
 			case "sw":
-				ins_type = "I-Type";
-				type = Type.IMMEDIATE;
-				break;
+				return Type.IMMEDIATE;
 			case "j":
 			case "jal":
-				ins_type = "J-Type";
-				type = Type.JUMP;
-				break;
+				return Type.JUMP;
 			default:
-				ins_type = "no_ins";
-				type = Type.NO_INS;
+				return  Type.NO_INS;
 		}
-		return ins_type;
+	}
+	
+	private static String type2String(Type type){
+		switch (type){
+			case REGISTER:
+				return  "R-Type";
+			case IMMEDIATE:
+				return  "I-Type";
+			case JUMP:
+				return  "J-Type";
+			default:
+				return "no_ins";
+		}
 	}
 	
 	@Override
