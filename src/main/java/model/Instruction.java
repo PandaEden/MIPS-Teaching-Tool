@@ -77,11 +77,11 @@ public class Instruction {
 	private static String type2String(Type type){
 		switch (type){
 			case REGISTER:
-				return  "R-Type";
+				return "R-Type";
 			case IMMEDIATE:
-				return  "I-Type";
+				return "I-Type";
 			case JUMP:
-				return  "J-Type";
+				return "J-Type";
 			default:
 				return "no_ins";
 		}

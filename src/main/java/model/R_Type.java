@@ -1,9 +1,9 @@
 package model;
 
 public class R_Type extends Instruction{
-private int RD;
-private int RS;
-private int RT;
+	private int RD;
+	private int RS;
+	private int RT;
 	
 	 R_Type( String ins, String[] operands, String comment, String tag ){
 		super(ins, operands, comment, tag);
@@ -15,29 +15,35 @@ private int RT;
 		@Override
 	public boolean execute( ){
 		super.execute( );
-		System.out.println( "\t\t RD :"+Register_Bank.convertFromR_reference(RD) );
-		System.out.print( "\t\t\t RS :"+Register_Bank.convertFromR_reference(RS) );
-		System.out.println( "\t\t\t RT :"+Register_Bank.convertFromR_reference(RT) );
-		return ex();
+		
+		System.out.println( "\t\t RD: "+Register_Bank.convertFromR_reference(RD) );
+			return ex();
 	}
 		
 	private boolean ex( ){
-	    int rs = Register_Bank.read(RS);
-		int rt = Register_Bank.read(RT);
-		int rd;
+		System.out.print( "\tReading register RS: "+Register_Bank.convertFromR_reference(RS) +"[");
+		int rsVal = Register_Bank.read(RS);
+		System.out.print( "], Reading register RT: "+Register_Bank.convertFromR_reference(RT) );
+		int rtVal = Register_Bank.read(RT);
+		System.out.println( "]");
+		System.out.print( "\t Calculating Result = ");
+		int rdVal;
 		switch (ins) {
 			case "add":
-				rd=rs+rt;
+				System.out.print( "RS+RT = "+rsVal+"+"+rtVal+" = ")
+					rdVal=rsVal+rtVal;
 				break;
 			case "sub":
-				rd=rs-rt;
+				System.out.print( "RS-RT = "+rsVal+"-"+rtVal+" = ")
+				rdVal=rsVal-rtVal;
 				break;
 			default:
-				rd=Register_Bank.read(RD);
+				rdVal=Register_Bank.read(RD);//TODO: this shouldn't run, throw exception
 				break;
 		}
-		
-		System.out.println( "\t\t\tRD new value:"+rd+"\n");
+		System.out.println(rdVal)
+		System.out.println( "\tWriting Result Value: "+rdVal+"to register RD: "+RD+"\n");
+		Register_Bank.store(RD,rdVal);
 		return true;
 	}
 }
