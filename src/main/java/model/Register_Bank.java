@@ -18,7 +18,8 @@ public class Register_Bank {
 	
 	
 	/**
-	 * @param register
+	 * @param register assumes $sX or $tX where X is an integer 0-9
+	 *                 String index 2:s/t 3:int .. remainder ignored
 	 * $zero is special R0
 	 * $s0-7, $t0-7,8,9
 	 * @return -1 if unsupported register, or value between 0-31 - index of register in

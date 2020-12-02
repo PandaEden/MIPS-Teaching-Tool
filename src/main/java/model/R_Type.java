@@ -1,9 +1,9 @@
 package model;
 
 public class R_Type extends Instruction{
-	private int RD;
-	private int RS;
-	private int RT;
+	private final int RD;
+	private final int RS;
+	private final int RT;
 	
 	 R_Type( String ins, String[] operands, String comment, String tag ){
 		super(ins, operands, comment, tag);
@@ -15,9 +15,7 @@ public class R_Type extends Instruction{
 		@Override
 	public boolean execute( ){
 		super.execute( );
-		
-		System.out.println( "\t\t RD: "+Register_Bank.convertFromR_reference(RD) );
-			return ex();
+		return ex();
 	}
 		
 	private boolean ex( ){
@@ -30,19 +28,19 @@ public class R_Type extends Instruction{
 		int rdVal;
 		switch (ins) {
 			case "add":
-				System.out.print( "RS+RT = "+rsVal+"+"+rtVal+" = ")
+				System.out.print( "RS+RT = "+rsVal+"+"+rtVal+" = ");
 					rdVal=rsVal+rtVal;
 				break;
 			case "sub":
-				System.out.print( "RS-RT = "+rsVal+"-"+rtVal+" = ")
+				System.out.print( "RS-RT = "+rsVal+"-"+rtVal+" = ");
 				rdVal=rsVal-rtVal;
 				break;
 			default:
 				rdVal=Register_Bank.read(RD);//TODO: this shouldn't run, throw exception
 				break;
 		}
-		System.out.println(rdVal)
-		System.out.println( "\tWriting Result Value: "+rdVal+"to register RD: "+RD+"\n");
+		System.out.println(rdVal);
+		System.out.println( "\tWriting Result Value: "+rdVal+" to register RD: "+RD+"\n");
 		Register_Bank.store(RD,rdVal);
 		return true;
 	}
