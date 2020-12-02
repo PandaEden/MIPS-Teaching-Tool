@@ -28,9 +28,11 @@ public class Instruction {
 	public static Instruction buildInstruction( String ins, String[] operands, String comment,
 	                                            String tag ){
 		Type type = ins2Type(ins);
-		if (type==Type.REGISTER){
+		if (type==Type.REGISTER)
 			return new R_Type(ins, operands, comment, tag);
-		}
+		
+		if (type==Type.IMMEDIATE) //TODO: Branch instructions check
+			return new I_Type(ins, operands, comment, tag, false);
 		else return new Instruction(ins, operands, comment, tag);
 	}
 	
@@ -40,6 +42,8 @@ public class Instruction {
 		System.out.println( "\t"+type2String(type)+" - "+ins+"\n");
 		return true;
 	}
+	
+	int calculateAddress(){return -1;}
 	
 	public String getIns( ){
 		return ins;
