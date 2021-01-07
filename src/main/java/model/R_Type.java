@@ -19,12 +19,12 @@ public class R_Type extends Instruction{
 	}
 		
 	private boolean ex( ){
-		System.out.print( "\tReading register RS: "+Register_Bank.convertFromR_reference(RS) +"[");
+		System.out.print( "Reading register RS["+Register_Bank.convertFromR_reference(RS)+": ");
 		int rsVal = Register_Bank.read(RS);
-		System.out.print( "], Reading register RT: "+Register_Bank.convertFromR_reference(RT) );
+		System.out.print( rsVal+"], Reading register RT["+Register_Bank.convertFromR_reference(RT)+": ");
 		int rtVal = Register_Bank.read(RT);
-		System.out.println( "]");
-		System.out.print( "\t Calculating Result = ");
+		System.out.println( rtVal+"]");
+		System.out.print( "Calculating Result:\n\tRD = ");
 		int rdVal;
 		switch (ins) {
 			case "add":
@@ -40,7 +40,8 @@ public class R_Type extends Instruction{
 				break;
 		}
 		System.out.println(rdVal);
-		System.out.println( "\tWriting Result Value: "+rdVal+" to register RD: "+RD+"\n");
+		System.out.println( "Writing Result\n\tValue: "+rdVal+" to register RD["
+		                    +Register_Bank.convertFromR_reference(RD)+"]");
 		Register_Bank.store(RD,rdVal);
 		return true;
 	}

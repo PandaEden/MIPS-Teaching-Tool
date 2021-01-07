@@ -37,9 +37,12 @@ public class Instruction {
 	}
 	
 	public boolean execute(){
-		Register_Bank.printT();
-		Register_Bank.printS();
-		System.out.println( "\t"+type2String(type)+" - "+ins+"\n");
+		System.out.println( "\n\t"+type2String(type)+" - "+ins+"");
+		//if (type == Type.REGISTER | type == Type.IMMEDIATE) {
+			Register_Bank.printN();
+			Register_Bank.printT();
+			Register_Bank.printS();
+		//}
 		return true;
 	}
 	

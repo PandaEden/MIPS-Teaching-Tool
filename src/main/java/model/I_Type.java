@@ -72,14 +72,15 @@ public class I_Type extends Instruction {
 	}
 	
 	private boolean ex( ){
-		System.out.print( "\tReading register RS: "+Register_Bank.convertFromR_reference(RS) +"[");
+		System.out.print( "Reading register RS["+Register_Bank.convertFromR_reference(RS)+" ");
 		int rsVal = Register_Bank.read(RS);
-		System.out.println( "], IMMEDIATE : "+IMM+"]");
-		System.out.print( "\t Calculating Result = ");
+		System.out.println( rsVal+"], [IMMEDIATE: "+IMM+"]");
+		System.out.print( "Calculating Result:\n\tRT = ");
 		System.out.print( "RS+IMMEDIATE = "+rsVal+"+"+IMM+" = ");
 		int rtVal = rsVal+IMM;
 		System.out.println(rtVal);
-		System.out.println( "\tWriting Result Value: "+rtVal+" to register RT: "+RT+"\n");
+		System.out.println( "Writing Result:\n\tValue: "+rtVal+" to register RT["
+		                    +Register_Bank.convertFromR_reference(RT)+"]");
 		Register_Bank.store(RT,rtVal);
 		return true;
 	}

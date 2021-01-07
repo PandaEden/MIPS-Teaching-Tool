@@ -74,20 +74,27 @@ public class Register_Bank {
 		return registers[register];
 	}
 	
+	public static void printN(){
+		System.out.print("\t\tidx");
+		for(int i=0; i<10; i++){
+			System.out.print( i+": ");
+		}
+		System.out.println(" ");
+	}
 	public static void printS(){
-		System.out.print("S { ");
+		System.out.print("\t\tS { ");
 		for(int i=S_START; i<S_START+8; i++){
-			System.out.print( i+": "+registers[i]+(i==7?" ":", ") );
+			System.out.print( /**i+": "+**/registers[i]+(i==7?" ":", ") );
 		}
 		System.out.println("}");
 	}
 	public static void printT(){
-		System.out.print("T { ");
+		System.out.print("\t\tT { ");
 		for(int i=T_START; i<S_START; i++){
-			System.out.print( i+": "+registers[i]+", " );
+			System.out.print( /**i+": "+**/registers[i]+", " );
 		}
-		System.out.print( T2_START+": "+registers[T2_START]+", " );
-		System.out.print( (T2_START+1)+": "+registers[T2_START+1]+" " );
+		System.out.print( /**T2_START+": "+**/registers[T2_START]+", " );
+		System.out.print( /**(T2_START+1)+": "+**/registers[T2_START+1]+" " );
 		System.out.println("}");
 	}
 }
