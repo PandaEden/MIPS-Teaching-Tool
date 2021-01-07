@@ -7,6 +7,6 @@ main:
   sub $s1, $s1, $t9 # subtract value of t9 from s1
   addi $s3, $t9, 25 # add 25 to t9 and store in s3
 
-  sw $s3, 0(t2) # store the value at s3 to address t2
+  sw $s3, 0($t2) # store the value at s3 to address t2
 halt:
   exit #system call to exit
