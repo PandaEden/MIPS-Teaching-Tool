@@ -3,11 +3,10 @@ package model;
 public class I_Type extends Instruction {
 	
 	private enum SubType {EX, LOAD, STORE, BRANCH}
-	SubType subType;
+	private final SubType subType;
 	private int RS;
 	private int RT;
 	private int IMM;
-	private String LABEL;
 	private int ADDRESS;
 	
 	I_Type( String ins, String[] operands, String comment, String tag, boolean isBranch ){
@@ -19,22 +18,22 @@ public class I_Type extends Instruction {
 		
 		int firstOp=Register_Bank.convert2r_reference(operands[0]);
 		String secondOp=operands[1];
-		//2 Opperands are garuntted for an I-Instruction, the 3rd might be null
-		//Second opperand might not be register
+		//2 Operands are guaranteed for an I-Instruction, the 3rd might be null
+		//Second operand might not be register
 		
-		//set first opperand
-		if (subType==SubType.BRANCH) //opperands [rs, label] or [rs, rt, label]
+		//set first operand
+		if (subType==SubType.BRANCH) //operands [rs, label] or [rs, rt, label]
 			RS=firstOp;
-		else //opperands [rt, rs, imm] or [rt, imm(rs)] or [rt, imm]
+		else //operands [rt, rs, imm] or [rt, imm(rs)] or [rt, imm]
 			RT=firstOp;
 		
-		//second opperand depends on number of opperands
-		// >2 opperands mean three comma-space ", " seperated values.
-		// while Imm($rs) are two opperands, they will be read as one.
-		//if only 2 opperands
+		//second operand depends on number of operands
+		// >2 operands mean three comma-space ", " separated values.
+		// while Imm($rs) are two operands, they will be read as one.
+		//if only 2 operands
 		if (operands.length==2)//Branch[rs, label] or Load/Store[rt, imm/imm(rs)]
 			allocateImm(secondOp);
-		else {//Branch[rs, rt, Label] or arithmatic[rt, rs, imm]
+		else {//Branch[rs, rt, Label] or arithmetic[rt, rs, imm]
 			int registerNum=Register_Bank.convert2r_reference(secondOp);
 			if (subType==SubType.BRANCH)
 				RT = registerNum;
@@ -48,17 +47,16 @@ public class I_Type extends Instruction {
 	private  void allocateImm(String ImmRs){
 		//check if String contains '(', then it contains $RS
 		if (ImmRs.contains("(")){//split Imm($RS) into Imm and RS
-			String split[] = ImmRs.split("\\(");
+			String[] split= ImmRs.split("\\(");
 			IMM = Integer.parseInt(split[0]);
 			//split[1] contains elements '$' 's/t' 'int' ')' . need to remove the ')'
 			String temp = split[1].split("\\)")[0];
 			RS=Register_Bank.convert2r_reference(temp);
 		}else{ //Imm or Label
-			if (subType==SubType.BRANCH)
-				LABEL = ImmRs;
+			if (subType==SubType.BRANCH) ;
 			else
 				IMM = Integer.parseInt(ImmRs); //TODO Branch Labels are text,
-			// the releative address should be calculated here for Branch instructions
+			// the relative address should be calculated here for Branch instructions
 		}
 	}
 	
