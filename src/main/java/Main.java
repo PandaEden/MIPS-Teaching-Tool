@@ -4,12 +4,15 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Scanner; // Import the Scanner class to read text files
 import model.Instruction;
+import model.Memory;
+
 public class Main {
 	private static final String InputFile = "FileInput.s";
-	
+	private enum ParseMode{DATA,TEXT}
+	private static ParseMode parseMode = ParseMode.TEXT;
 	private static ArrayList<Instruction> instructions;
 	
-	public static void main( String[] args ){
+	public static void setup(){
 		instructions=new ArrayList<>();
 		// Setup: Parse file to lines
 		try{ // Try to read input file
@@ -17,16 +20,17 @@ public class Main {
 			Scanner reader = new Scanner(input);
 			String currentLine = "";
 			
-			String ins, tag, comments;
-			String[] opperands;
+			String ins, label, comments;
+			String[] operands;
 			//Per Line actions - Instruction Parsing
+			
 			while(reader.hasNextLine()){
 				//Get Next Line
 				currentLine = reader.nextLine();
 				ins = "no_ins";
-				tag = new String();
+				label = new String();
 				comments = new String(); // pre append # to comment
-				opperands = null;
+				operands = null;
 				String[] split=null;
 				
 				//Split Line around comment, first "#"
@@ -37,36 +41,54 @@ public class Main {
 					comments="#"+split[1]; // append after #, so # is included in comment.
 				}
 				
+				//SET_PARSE_MODE
+				if (currentLine.toLowerCase().contains(".data")) {
+					parseMode=ParseMode.DATA;
+					continue;
+				}else if (currentLine.toLowerCase().contains(".text")){
+					parseMode=ParseMode.DATA;
+					continue;
+				}
 				//Split line around Tag, first ":"
 				if (currentLine.contains(":")) {
 					split=currentLine.split(":", 2);
 					
-					tag=split[0]+":"; // append ":" after tag
+					label=split[0]+":"; // append ":" after label
+					Memory.setLabel(label);
 					currentLine=split[1];
 				}
 				//Trim whitespace
-				currentLine=currentLine.trim();
+				currentLine=currentLine.trim( );
 				
-				//Split line around first space, ins" "$first_opperand
-				if (currentLine.contains(" ")){
-					split=currentLine.split(" ",2);
+				if (parseMode==ParseMode.TEXT) {
 					
-					ins=split[0];
-					currentLine=split[1];//Remainder should just be opperands
+					//Split line around first space, ins" "$first_operand
+					if (currentLine.contains(" ")) {
+						split=currentLine.split(" ", 2);
+						
+						ins=split[0];
+						currentLine=split[1];//Remainder should just be operands
+					}
+					
+					//remainder is just operands comma and space ", " separated
+					//Split line around 'each' comma-space ", " $rs, $rt
+					if (currentLine.contains(", ")) operands=currentLine.split(", ");
+					else operands=new String[] { currentLine };
+					if (!ins.equals("no_ins"))
+						instructions.add(Instruction.buildInstruction(ins, operands, comments, label));
+				}else if (parseMode==ParseMode.DATA){
+					Memory.addData(currentLine.split(" "));
 				}
-				
-				//remainder is just opperands comma and space ", " seperated
-				//Split line around 'each' comma-space ", " $rs, $rt
-				if (currentLine.contains(", "))
-					opperands=currentLine.split(", ");
-				else
-					opperands=new String[]{currentLine};
-				
-				instructions.add(new Instruction(ins,opperands,comments,tag));
 			}
 		} catch(FileNotFoundException e){
 			e.printStackTrace( );
 		}
 		instructions.forEach(instruction -> System.out.println( instruction ));
+	}
+	
+	public static void main( String[] args ){
+		setup();
+		System.out.println( "Setup Finished\n" );
+		instructions.forEach(instruction -> instruction.execute());
 	}
 }
