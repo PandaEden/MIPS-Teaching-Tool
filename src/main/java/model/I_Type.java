@@ -9,8 +9,8 @@ public class I_Type extends Instruction {
 	private int IMM;
 	private int ADDRESS;
 	
-	I_Type( String ins, String[] operands, String comment, String tag, boolean isBranch ){
-		super(ins, operands, comment, tag);
+	I_Type( String ins, String[] operands, String comment, boolean isBranch ){
+		super(ins, operands, comment);
 		if (isBranch) this.subType=SubType.BRANCH;
 		else if (ins.contains("s")) this.subType=SubType.STORE;
 		else if (ins.contains("l")) this.subType=SubType.LOAD;
@@ -61,12 +61,11 @@ public class I_Type extends Instruction {
 	}
 	
 	@Override
-	public boolean execute( ){
+	public void execute( ){
 		super.execute( );
-		if (subType==SubType.EX)
-			return ex( );
-		else
-			return true;
+		if (subType==SubType.EX) {
+			ex( );
+		}
 	}
 	
 	private boolean ex( ){

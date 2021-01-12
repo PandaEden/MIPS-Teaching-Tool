@@ -8,42 +8,37 @@ public class Instruction {
 	 String ins;
 	private String[] operands;
 	private String comment;
-	private String tag;
 	
 	/**
 	 *
 	 * @param ins - NotNull use code 'no_ins' if not an instruction
 	 * @param operands - Nullable if opcode is 'no_ins'
 	 * @param comment - Nullable, takes the form '# comment...' at the end of a line
-	 * @param tag - Nullable takes the form 'word:' at the beginning of a line
 	 */
-	 Instruction( String ins, String[] operands, String comment, String tag ){
+	 Instruction( String ins, String[] operands, String comment){
 		this.ins=ins;
 		this.operands=operands;
 		this.comment=(comment);
-		this.tag=tag;
 		this.type=ins2Type(ins);
 	}
 	
-	public static Instruction buildInstruction( String ins, String[] operands, String comment,
-	                                            String tag ){
+	public static Instruction buildInstruction( String ins, String[] operands, String comment){
 		Type type = ins2Type(ins);
 		if (type==Type.REGISTER)
-			return new R_Type(ins, operands, comment, tag);
+			return new R_Type(ins, operands, comment);
 		
 		if (type==Type.IMMEDIATE) //TODO: Branch instructions check
-			return new I_Type(ins, operands, comment, tag, false);
-		else return new Instruction(ins, operands, comment, tag);
+			return new I_Type(ins, operands, comment, false);
+		else return new Instruction(ins, operands, comment);
 	}
 	
-	public boolean execute(){
+	public void execute(){
 		System.out.println( "\n\t"+type2String(type)+" - "+ins+"");
 		//if (type == Type.REGISTER | type == Type.IMMEDIATE) {
 			Register_Bank.printN();
 			Register_Bank.printT();
 			Register_Bank.printS();
 		//}
-		return true;
 	}
 	
 	int calculateAddress(){return -1;}
@@ -90,15 +85,13 @@ public class Instruction {
 			case JUMP:
 				return "J-Type";
 			default:
-				return "no_ins";
+				return "Err: NO_INS";
 		}
 	}
 	
 	@Override
 	public String toString( ){
-		return "Instruction{"+type+"\t"
-		       +(tag.isEmpty()?"":tag+" ")
-		       +(type.equals(Type.NO_INS)?"":ins)
-		         +"} "+comment;
+		return "Instruction{"+type+"\t"+ins+"} ";
+		       //+comment;
 	}
 }
