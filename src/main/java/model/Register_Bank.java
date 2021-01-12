@@ -1,14 +1,14 @@
 package model;
 
 public class Register_Bank {
-	private static final Register_Bank instance = new Register_Bank();;
+	private static final Register_Bank INSTANCE= new Register_Bank();;
 	public static int[] registers = new int [32];
 	
 	private static void reset(){
 		registers=new int[32];
 	}
 	private static Register_Bank getInstance(){
-		return instance;
+		return INSTANCE;
 	}
 	
 	private static final int S_START=16;
