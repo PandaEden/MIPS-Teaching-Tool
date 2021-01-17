@@ -1,5 +1,6 @@
 package model;
 
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -10,15 +11,16 @@ public class Memory {
 	private static final String DATA_ADDR_BASE = "10010000"; //0x 1001 0000
 	private static final String INS_ADDR_BASE = "0400000"; //0x 0400 0000
 	private static long addr_ptr; //decimal representation of address
-	private static ArrayList<Long> data = new ArrayList(); //index=(offset from BASE)/4
+	private static ArrayList<Long> dataArr= new ArrayList(); //index=(offset from BASE)/4
 	private static HashMap<String,String> labelMap = new HashMap<>();
 	private static LinkedList<String> labels = new LinkedList<>();
 	
-	private Memory( ){
+	private Memory( ){ addr_ptr = toDec(DATA_ADDR_BASE); }
 		addr_ptr = toDec(DATA_ADDR_BASE);
 	}
 	
 	public static boolean addData(String[] str_args){
+	public static boolean addData( @org.jetbrains.annotations.NotNull String[] str_args){
 		attachLabelsToAddress(addr_ptr);
 		switch (str_args[0]){
 			case ".word":
@@ -28,12 +30,13 @@ public class Memory {
 					return storeCsvArray(str_args[1]);
 				else if (str_args[1].matches("-?\\d*"))
 					return storeWord(Integer.parseInt(str_args[1]));
-				throw new RuntimeException( "no Match found for: "+str_args[1] );
+				throw new InvalidParameterException("data type: "+str_args[1]
+				                                    +" not supported");
 			case ".ascii":  // needs to be Null ("\0") Terminated
 			case ".asciiz":
 				// TODO: String data
 			default:
-				throw new IllegalStateException("Unexpected value: "+str_args[0]);
+				throw new InvalidParameterException("Unexpected value: "+str_args[0]);
 		}
 	}
 	
@@ -66,7 +69,7 @@ public class Memory {
 	
 	private static boolean storeWord(long parseLong ){
 		addr_ptr+=4;
-		return data.add(parseLong);
+		return dataArr.add(parseLong);
 	}
 	
 	public static String toHexAddr( long doubleWord){
