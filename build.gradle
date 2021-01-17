@@ -1,10 +1,5 @@
 plugins {
     id 'java'
-    id 'application'
-}
-
-application {
-    mainClassName = 'main.Main'
 }
 
 group 'github.com/EDEN786/MIPS-Teaching-Tool'
@@ -15,10 +10,6 @@ repositories {
 }
 
 dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
-}
-
-jar{
-    baseName = 'MTT'
-    version = '0.1'
+    implementation 'org.jetbrains:annotations:20.1.0'
+    testImplementation group: 'junit', name: 'junit', version: '4.12'
 }
