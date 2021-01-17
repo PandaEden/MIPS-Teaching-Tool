@@ -4,10 +4,10 @@ import java.util.Arrays;
 
 public class Instruction {
 	private enum Type {REGISTER, IMMEDIATE, JUMP, NO_INS}
-	private Type type;
+	private final Type type;
 	 String ins;
-	private String[] operands;
-	private String comment;
+	private final String[] operands;
+	private final String comment;
 	
 	/**
 	 *
@@ -35,7 +35,7 @@ public class Instruction {
 	public void execute(){
 		System.out.println( "\n\t"+type2String(type)+" - "+ins+"");
 		//if (type == Type.REGISTER | type == Type.IMMEDIATE) {
-			Register_Bank.printN();
+			Register_Bank.printIDs();
 			Register_Bank.printT();
 			Register_Bank.printS();
 		//}

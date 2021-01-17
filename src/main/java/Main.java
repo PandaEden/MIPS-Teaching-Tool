@@ -26,7 +26,7 @@ public class Main {
 			
 			while(reader.hasNextLine()){
 				//Get Next Line
-				currentLine = reader.nextLine().trim();//Trim whitespace
+				currentLine = reader.nextLine();
 				ins = "no_ins";
 				String[] split=null;
 				
@@ -43,18 +43,17 @@ public class Main {
 					parseMode=ParseMode.DATA;
 					continue;
 				}else if (currentLine.toLowerCase().contains(".text")){
-					parseMode=ParseMode.DATA;
+					parseMode=ParseMode.TEXT;
 					continue;
 				}
 				//Split line around Tag, first ":"
 				if (currentLine.contains(":")) {
 					split=currentLine.split(":", 2);
 					
-					label=split[0]+":"; // append ":" after label
-					Memory.setLabel(label);
+					Memory.pushLabel(split[0]);
 					currentLine=split[1];
 				}
-				
+				currentLine=currentLine.trim();//Trim whitespace
 				if (parseMode==ParseMode.TEXT) {
 					
 					//Split line around first space, ins" "$first_operand
@@ -72,8 +71,8 @@ public class Main {
 					if (!ins.equals("no_ins")) {
 						instructions.add(Instruction.buildInstruction(ins, operands, comments));
 					}
-				}else if (parseMode==ParseMode.DATA){
-					Memory.addData(currentLine.split(" "));
+				}else if (parseMode==ParseMode.DATA&&currentLine.contains(".")){
+					Memory.addData(currentLine.split(" ",2));
 				}
 			}
 		} catch(FileNotFoundException e){
@@ -84,6 +83,6 @@ public class Main {
 	public static void main( String[] args ){
 		setup();
 		System.out.println( "Setup Finished\n" );
-		instructions.forEach(instruction -> instruction.execute());
+		instructions.forEach(Instruction::execute);
 	}
 }

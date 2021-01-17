@@ -1,5 +1,7 @@
 package model;
 
+import java.security.InvalidParameterException;
+
 public class R_Type extends Instruction{
 	private final int RD;
 	private final int RS;
@@ -36,8 +38,8 @@ public class R_Type extends Instruction{
 				rdVal=rsVal-rtVal;
 				break;
 			default:
-				rdVal=Register_Bank.read(RD);//TODO: this shouldn't run, throw exception
-				break;
+				throw new InvalidParameterException( "Instruction:{"+ins+"} not recognised or " +
+				                                     "Implemented" );
 		}
 		System.out.println(rdVal);
 		System.out.println( "Writing Result\n\tValue: "+rdVal+" to register RD["
