@@ -16,8 +16,6 @@ public class Memory {
 	private static LinkedList<String> labels = new LinkedList<>();
 	
 	private Memory( ){ addr_ptr = toDec(DATA_ADDR_BASE); }
-		addr_ptr = toDec(DATA_ADDR_BASE);
-	}
 	
 	public static boolean addData(String[] str_args){
 	public static boolean addData( @org.jetbrains.annotations.NotNull String[] str_args){
