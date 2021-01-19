@@ -5,18 +5,18 @@ public class R_Type extends Instruction{
 	private final int RS;
 	private final int RT;
 	
-	 R_Type( String ins, String[] operands, String comment, String tag ){
-		super(ins, operands, comment, tag);
+	 R_Type( String ins, String[] operands, String comment){
+		super(ins, operands, comment);
 		RD=Register_Bank.convert2r_reference(operands[0]);
 		RS=Register_Bank.convert2r_reference(operands[1]);
 		RT=Register_Bank.convert2r_reference(operands[2]);
 	}
 		
 		@Override
-	public boolean execute( ){
+	public void execute( ){
 		super.execute( );
-		return ex();
-	}
+			ex( );
+		}
 		
 	private boolean ex( ){
 		System.out.print( "Reading register RS["+Register_Bank.convertFromR_reference(RS)+": ");

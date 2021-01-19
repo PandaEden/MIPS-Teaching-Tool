@@ -20,7 +20,7 @@ public class Main {
 			Scanner reader = new Scanner(input);
 			String currentLine = "";
 			
-			String ins, label, comments;
+			String ins, label, comments=null;
 			String[] operands;
 			//Per Line actions - Instruction Parsing
 			
@@ -28,9 +28,6 @@ public class Main {
 				//Get Next Line
 				currentLine = reader.nextLine();
 				ins = "no_ins";
-				label = new String();
-				comments = new String(); // pre append # to comment
-				operands = null;
 				String[] split=null;
 				
 				//Split Line around comment, first "#"
@@ -74,8 +71,9 @@ public class Main {
 					//Split line around 'each' comma-space ", " $rs, $rt
 					if (currentLine.contains(", ")) operands=currentLine.split(", ");
 					else operands=new String[] { currentLine };
-					if (!ins.equals("no_ins"))
-						instructions.add(Instruction.buildInstruction(ins, operands, comments, label));
+					if (!ins.equals("no_ins")) {
+						instructions.add(Instruction.buildInstruction(ins, operands, comments));
+					}
 				}else if (parseMode==ParseMode.DATA){
 					Memory.addData(currentLine.split(" "));
 				}
