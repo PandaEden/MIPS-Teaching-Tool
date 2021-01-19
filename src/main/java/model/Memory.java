@@ -84,6 +84,16 @@ public class Memory {
 	
 	public static long getIndex( String hexAddress){
 		if (hexAddress.length()==10)
+			hexAddress = hexAddress.substring(2);
+		
+		long index=(toDec(hexAddress) - toDec(DATA_ADDR_BASE));
+		System.out.println( "getting data from data address 0x:"
+		                    +hexAddress.substring(5));
+		if (index%4!=0) {
+			throw new IllegalArgumentException( "hexAddress:"+ hexAddress
+			                                    +" needs to be a multiple of 4" );
+		}
+		return dataArr.get(Math.toIntExact(index / 4));
 	}
 	
 	public static void pushLabel( String label ){
