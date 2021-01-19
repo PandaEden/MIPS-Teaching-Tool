@@ -43,17 +43,17 @@ public class Main {
 					parseMode=ParseMode.DATA;
 					continue;
 				}else if (currentLine.toLowerCase().contains(".text")){
-					parseMode=ParseMode.DATA;
+					parseMode=ParseMode.TEXT;
 					continue;
 				}
 				//Split line around Tag, first ":"
 				if (currentLine.contains(":")) {
 					split=currentLine.split(":", 2);
 					
-					label=split[0]+":"; // append ":" after label
-					Memory.setLabel(label);
+					Memory.pushLabel(split[0]);
 					currentLine=split[1];
 				}
+				currentLine=currentLine.trim();//Trim whitespace
 				//Trim whitespace
 				currentLine=currentLine.trim( );
 				
@@ -74,8 +74,8 @@ public class Main {
 					if (!ins.equals("no_ins")) {
 						instructions.add(Instruction.buildInstruction(ins, operands, comments));
 					}
-				}else if (parseMode==ParseMode.DATA){
-					Memory.addData(currentLine.split(" "));
+				}else if (parseMode==ParseMode.DATA&&currentLine.contains(".")){
+					Memory.addData(currentLine.split(" ",2));
 				}
 			}
 		} catch(FileNotFoundException e){
@@ -86,6 +86,6 @@ public class Main {
 	public static void main( String[] args ){
 		setup();
 		System.out.println( "Setup Finished\n" );
-		instructions.forEach(instruction -> instruction.execute());
+		instructions.forEach(Instruction::execute);
 	}
 }

@@ -74,8 +74,8 @@ public class Register_Bank {
 		return registers[register];
 	}
 	
-	public static void printN(){
-		System.out.print("\t\tidx");
+	public static void printIDs(){
+		System.out.print("\t\tid's");
 		for(int i=0; i<10; i++){
 			System.out.print( i+": ");
 		}

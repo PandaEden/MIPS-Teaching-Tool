@@ -53,10 +53,7 @@ public class I_Type extends Instruction {
 			String temp = split[1].split("\\)")[0];
 			RS=Register_Bank.convert2r_reference(temp);
 		}else{ //Imm or Label
-			if (subType==SubType.BRANCH) ;
-			else
-				IMM = Integer.parseInt(ImmRs); //TODO Branch Labels are text,
-			// the relative address should be calculated here for Branch instructions
+			IMM = Integer.parseInt(ImmRs);
 		}
 	}
 	
