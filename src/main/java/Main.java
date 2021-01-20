@@ -14,21 +14,20 @@ public class Main {
 	
 	public static void setup(){
 		instructions=new ArrayList<>();
+		int ins_index=0;
 		// Setup: Parse file to lines
 		try{ // Try to read input file
 			File input = new File( InputFile );
 			Scanner reader = new Scanner(input);
-			String currentLine = "";
 			
-			String ins, label, comments=null;
-			String[] operands;
-			//Per Line actions - Instruction Parsing
+			//Declare variables for loop
+			String currentLine, ins, comments=null;
+			String[] operands, split;
 			
 			while(reader.hasNextLine()){
 				//Get Next Line
 				currentLine = reader.nextLine();
 				ins = "no_ins";
-				String[] split=null;
 				
 				//Split Line around comment, first "#"
 				if (currentLine.contains("#")) {
@@ -73,6 +72,7 @@ public class Main {
 					else operands=new String[] { currentLine };
 					if (!ins.equals("no_ins")) {
 						instructions.add(Instruction.buildInstruction(ins, operands, comments));
+						Memory.attachLabelsToInstruction(ins_index++);
 					}
 				}else if (parseMode==ParseMode.DATA&&currentLine.contains(".")){
 					Memory.addData(currentLine.split(" ",2));

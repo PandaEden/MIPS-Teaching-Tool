@@ -21,8 +21,8 @@ import java.util.LinkedList;
  * </pre>
  */
 public class Memory {
-	private static final long INS_ADDR_BASE = 0x00400000; //0x 0400 0000
-	private static final long DATA_ADDR_BASE = 0x10010000; //0x 1001 0000
+	private static final long INS_ADDR_BASE = 0x00400000L; //0x 0400 0000
+	private static final long DATA_ADDR_BASE = 0x10010000L; //0x 1001 0000
 	private static long addr_ptr = DATA_ADDR_BASE; //decimal representation of address
 	private static final ArrayList<Long> dataArr= new ArrayList<>(); //index=(offset from BASE)/4
 	private static final HashMap<String,Long> labelMap = new HashMap<>();
@@ -155,23 +155,37 @@ public class Memory {
 		       Long.decode(hexString) : Long.parseLong(hexString,16);
 	}
 	
-	/** Given a valid decimal address, returns the index in {@link #dataArr} that data is located.
-	 * Use {@link #toDec(String)} to convert a hex address to decimal form.
+	/** Given a valid decimal address,
+	 * if it is an <b>.text</b> (instruction) address, returns the <b>instruction_no</b>,
+	 * if it is a <b>.data</b> address: returns its index in {@link #dataArr}.
+	 * <pre>Use {@link Memory#toDec(String)} to convert a hex address to decimal form.</pre>
 	 * @see Memory#dataArr
 	 * @see #toDec(String)
 	 * @param decAddress - address of data in Memory, in decimal form.
 	 *                   valid 0x00400000 to 0x7FFFFFFF inclusive.
-	 * @return the index in {@link #dataArr} the data is located at.
+	 * @return the instruction_no or the index in {@link #dataArr} the data is located at.
 	 */
-	public static long getIndex( Long decAddress){
-		long index=decAddress - DATA_ADDR_BASE;
-		System.out.println( "getting data from data address 0x:"
-		                    +toHexAddr(decAddress).substring(7));
-		if (index%4!=0)
-			throw new IllegalArgumentException( "decAddress:"+ decAddress
-			                                    +" needs to be a multiple of 4" );
+	public static int getIndex( Long decAddress){
+		if (decAddress%4!=0)
+			throw new IllegalArgumentException( "address:"+ decAddress
+		                                        +" needs to be a multiple of 4/ word aligned" );
+		long index;
+		//subtract base
+		if (decAddress<DATA_ADDR_BASE)
+			index=decAddress-INS_ADDR_BASE; //.text
+		else
+			index=decAddress - DATA_ADDR_BASE; //.data
 		
-		return dataArr.get(Math.toIntExact(index / 4));
+		return (Math.toIntExact(index / 4));
+	}
+	
+	/** Retrieves the values located at <b>index</b> in {@link #dataArr}.
+	 * <pre>Use {@link Memory#getIndex(Long)} to calculate the index.</pre>
+	 * @param index - position in {@link #dataArr} data is located at.
+	 * @return data value from {@link #dataArr}
+	 */
+	public static long getData(int index){
+		return dataArr.get(index);
 	}
 	
 	/** Pushes given string to list {@link #labels}
@@ -184,9 +198,11 @@ public class Memory {
 		labels.push(label);
 	}
 	
-	/** given an address (decimal index of address) it will collect all pushed
-	 * labels in {@link Memory#labels} and refer them to
-	 * @see Memory#toDec(String) to convert hex addresses to decimal
+	/** Given an address (decimal index of address) it will collect all pushed
+	 * <b>labels</b> in {@link Memory#labels} and maps them to the provided
+	 * <b>addr</b> in {@link Memory#labelMap}
+	 * <pre>use {@link #toDec(String)} to convert hex addresses to decimal form.</pre>
+	 * @see Memory#toDec(String)
 	 * @param addr - address to attach labels to
 	 * @throws IndexOutOfBoundsException if addr does not refer to an instruction or data address
 	 */
@@ -199,4 +215,17 @@ public class Memory {
 		}
 		labels=new LinkedList<>(); // clear the list of labels once allocated
 	}
+	
+	/** Given the index of an instruction (in the instructions list),
+	 * collect pushed labels in {@link Memory#labels} and maps them to the calculated
+	 * instruction address, in {@link Memory#labelMap}.
+	 * @see Memory#attachLabelsToAddress(long)
+	 * @param index_counter - index of instruction in <b>instructions</b>
+	 */
+	public  static void attachLabelsToInstruction( int index_counter){
+		long address =INS_ADDR_BASE + (index_counter *4L);
+		attachLabelsToAddress(address);
+	}
+
+
 }
