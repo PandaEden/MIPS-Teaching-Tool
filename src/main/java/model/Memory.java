@@ -6,35 +6,40 @@ import java.util.HashMap;
 import java.util.LinkedList;
 
 public class Memory {
-	private static final Memory INSTANCE = new Memory();
-	private static final String DATA_ADDR_BASE = "10010000"; //0x 1001 0000
-	private static final String INS_ADDR_BASE = "0400000"; //0x 0400 0000
-	private static long addr_ptr; //decimal representation of address
-	private static ArrayList<Long> data = new ArrayList(); //index=(offset from BASE)/4
-	private static HashMap<String,String> labelMap = new HashMap<>();
+	private static final long INS_ADDR_BASE = 0x00400000; //0x 0400 0000
+	private static final long DATA_ADDR_BASE = 0x10010000; //0x 1001 0000
+	private static long addr_ptr = DATA_ADDR_BASE; //decimal representation of address
+	private static final ArrayList<Long> dataArr= new ArrayList<>(); //index=(offset from BASE)/4
+	private static final HashMap<String,Long> labelMap = new HashMap<>();
 	private static LinkedList<String> labels = new LinkedList<>();
 	
-	private Memory( ){
-		addr_ptr = toDec(DATA_ADDR_BASE);
-	}
-	
-	public static boolean addData(String[] str_args){
+	/** Given valid input it will add the information to the {@link #dataArr},
+	 * It will automatically collect any pushed {@link #labels} and attach to the
+	 * address of the first (if a range or array) value added, in {@link #labelMap}
+	 *
+	 * @param str_args switch:<ul>
+	 *<li>.word [±int_Val]:[+int_N]</li>
+	 *<li>.word [±int], [±int]... <i>(whitespace ignored)</i></li>
+	 *<li>.word [±int]</li>
+	 *  </ul>
+	 * @return boolean - success of adding all data.
+	 * @throws IllegalArgumentException if unsupported input
+	 */
+	public static boolean addData( @org.jetbrains.annotations.NotNull String[] str_args){
 		attachLabelsToAddress(addr_ptr);
-		switch (str_args[0]){
-			case ".word":
-				if (str_args[1].matches("-?\\d*:\\d*"))
-					return storeRange(str_args[1]);
-				else if (str_args[1].contains(","))
-					return storeCsvArray(str_args[1]);
-				else if (str_args[1].matches("-?\\d*"))
-					return storeWord(Integer.parseInt(str_args[1]));
-				throw new RuntimeException( "no Match found for: "+str_args[1] );
+		if (".word".equals(str_args[0])) {
+			if (str_args[1].matches("-?\\d*:\\d*")) return storeRange(str_args[1]);
+			else if (str_args[1].contains(",")) return storeCsvArray(str_args[1]);
+			else if (str_args[1].matches("-?\\d*")) return storeWord(Integer.parseInt(str_args[1]));
+			throw new IllegalArgumentException("data type: "+str_args[1]+" not supported");
+			/*
 			case ".ascii":  // needs to be Null ("\0") Terminated
 			case ".asciiz":
-				// TODO: String data
-			default:
-				throw new IllegalStateException("Unexpected value: "+str_args[0]);
+			case ".float":
+			case ".double":
+			*/
 		}
+		throw new IllegalArgumentException("Unexpected value: "+str_args[0]);
 	}
 	
 	
@@ -63,43 +68,41 @@ public class Memory {
 		return !(falseCounter>0);
 	}
 	
-	private static boolean storeWord(long parseLong ){
+	private static boolean storeWord(long word ){
 		addr_ptr+=4;
-		return data.add(parseLong);
+		return dataArr.add(word);
 	}
 	
-	public static String toHexAddr( long doubleWord){
-		String hex = Long.toHexString(doubleWord);
-		//String address = DATA_ADDR_BASE;
-		//address = address.substring(0,(address.length()-hex.length())).concat(hex);
-		return hex;
-	}
-	public static long toDec(String hex){
-		return Long.parseLong(hex,16);
+	public static String toHexAddr( long address){
+		return "0x"+Long.toHexString(address);
 	}
 	
-	public static long getIndex( String hexAddress){
-		if (hexAddress.length()==10)
-			hexAddress = hexAddress.substring(2);
-		
-		long index=(toDec(hexAddress) - toDec(DATA_ADDR_BASE));
+	public static long toDec(String hexString){
+		return hexString.contains("0x")?
+		       Long.decode(hexString) : Long.parseLong(hexString,16);
+	}
+	
+	public static long getIndex( Long decAddress){
+		long index=decAddress - DATA_ADDR_BASE;
 		System.out.println( "getting data from data address 0x:"
-		                    +hexAddress.substring(5));
-		if (index%4!=0) {
-			throw new IllegalArgumentException( "hexAddress:"+ hexAddress
+		                    +toHexAddr(decAddress).substring(7));
+		if (index%4!=0)
+			throw new IllegalArgumentException( "decAddress:"+ decAddress
 			                                    +" needs to be a multiple of 4" );
-		}
-		return data.get(Math.toIntExact(index / 4));
+		
+		return dataArr.get(Math.toIntExact(index / 4));
 	}
 	
 	public static void pushLabel( String label ){
 		labels.push(label);
 	}
-	private static void attachLabelsToAddress( long addr_ptr){
-		for(String label:labels){
-			labelMap.put(label, toHexAddr(addr_ptr));
-		}
+		private static void attachLabelsToAddress( long addr){
+		if (addr<INS_ADDR_BASE || addr>0x80000000L)
+			throw new IndexOutOfBoundsException ( "Address: "+addr );
 		
+		for(String label:labels){
+			labelMap.put(label, addr);
+		}
 		labels=new LinkedList<>(); // clear the list of labels once allocated
 	}
 }
