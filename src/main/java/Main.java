@@ -1,7 +1,5 @@
 import java.io.File;  // Import the File class
 import java.io.FileNotFoundException;  // Import this class to handle errors
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Scanner; // Import the Scanner class to read text files
 import model.Instruction;
 import model.Memory;
@@ -10,10 +8,9 @@ public class Main {
 	private static final String InputFile = "FileInput.s";
 	private enum ParseMode{DATA,TEXT}
 	private static ParseMode parseMode = ParseMode.TEXT;
-	private static ArrayList<Instruction> instructions;
+	//private static ArrayList<Instruction> instructions;
 	
 	public static void setup(){
-		instructions=new ArrayList<>();
 		int ins_index=0;
 		// Setup: Parse file to lines
 		try{ // Try to read input file
@@ -71,7 +68,8 @@ public class Main {
 					if (currentLine.contains(", ")) operands=currentLine.split(", ");
 					else operands=new String[] { currentLine };
 					if (!ins.equals("no_ins")) {
-						instructions.add(Instruction.buildInstruction(ins, operands, comments));
+						Memory.instructions.add(Instruction.buildInstruction(ins, operands,
+						                                                     comments));
 						Memory.attachLabelsToInstruction(ins_index++);
 					}
 				}else if (parseMode==ParseMode.DATA&&currentLine.contains(".")){

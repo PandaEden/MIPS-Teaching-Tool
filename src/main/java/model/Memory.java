@@ -27,7 +27,8 @@ public class Memory {
 	private static final ArrayList<Long> dataArr= new ArrayList<>(); //index=(offset from BASE)/4
 	private static final HashMap<String,Long> labelMap = new HashMap<>();
 	private static LinkedList<String> labels = new LinkedList<>();
-	
+	public static ArrayList<Instruction> instructions= new ArrayList<>();
+
 	/** Given valid input it will add the information to the {@link #dataArr},
 	 * It will automatically collect any pushed {@link #labels} and attach to the
 	 * address of the first (if a range or array) value added, in {@link #labelMap}
