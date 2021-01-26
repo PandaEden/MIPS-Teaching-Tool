@@ -207,6 +207,10 @@ public class Memory {
 		labels.push(label);
 	}
 	
+	public static long getAddress(String label){
+		return labelMap.get(label);
+	}
+	
 	/** Given an address (decimal index of address) it will collect all pushed
 	 * <b>labels</b> in {@link Memory#labels} and maps them to the provided
 	 * <b>addr</b> in {@link Memory#labelMap}

@@ -14,6 +14,9 @@ main:
 
   sw $s3, 268500992($t3) # store the value at s3 to address t2
 
-  sw $s3, 0($t2) # store the value at s3 to address t2
+  j halt
+  #buffer add to jump over
+  add $s1, $s0, $zero # duplicate the value from s0 to s1
+
 halt:
   exit #system call to exit

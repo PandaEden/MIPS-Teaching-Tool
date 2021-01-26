@@ -1,7 +1,6 @@
 package model;
 
 import java.security.InvalidParameterException;
-import java.util.Arrays;
 
 public class Instruction {
 	private enum Type {REGISTER, IMMEDIATE, JUMP, EXIT}
@@ -21,19 +20,18 @@ public class Instruction {
 		Type type = ins2Type(ins);
 		if (type==Type.REGISTER)
 			return new R_Type(ins, operands);
-		
-		if (type==Type.IMMEDIATE) //TODO: Branch instructions check
+		else if (type==Type.IMMEDIATE) //TODO: Branch instructions check
 			return new I_Type(ins, operands, false);
+		else if (type==Type.JUMP)
+			return new J_Type(ins,operands[0]);
 		else return new Instruction(ins);
 	}
 	
 	public void execute(){
 		System.out.println( "\n\t"+type2String(type)+" - "+ins+"");
-		if (type == Type.REGISTER | type == Type.IMMEDIATE) {
 			Register_Bank.printIDs();
 			Register_Bank.printT();
 			Register_Bank.printS();
-		}
 	}
 	
 	public boolean isEXIT(){
