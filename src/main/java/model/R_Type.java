@@ -7,8 +7,8 @@ public class R_Type extends Instruction{
 	private final int RS;
 	private final int RT;
 	
-	 R_Type( String ins, String[] operands, String comment){
-		super(ins, operands, comment);
+	 R_Type( String ins, String[] operands){
+		super(ins);
 		RD=Register_Bank.convert2r_reference(operands[0]);
 		RS=Register_Bank.convert2r_reference(operands[1]);
 		RT=Register_Bank.convert2r_reference(operands[2]);

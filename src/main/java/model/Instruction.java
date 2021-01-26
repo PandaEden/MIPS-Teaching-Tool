@@ -6,30 +6,24 @@ public class Instruction {
 	private enum Type {REGISTER, IMMEDIATE, JUMP, NO_INS}
 	private final Type type;
 	 String ins;
-	private final String[] operands;
-	private final String comment;
 	
 	/**
 	 *
 	 * @param ins - NotNull use code 'no_ins' if not an instruction
-	 * @param operands - Nullable if opcode is 'no_ins'
-	 * @param comment - Nullable, takes the form '# comment...' at the end of a line
 	 */
-	 Instruction( String ins, String[] operands, String comment){
+	 Instruction( String ins){
 		this.ins=ins;
-		this.operands=operands;
-		this.comment=(comment);
 		this.type=ins2Type(ins);
 	}
 	
-	public static Instruction buildInstruction( String ins, String[] operands, String comment){
+	public static Instruction buildInstruction( String ins, String[] operands ){
 		Type type = ins2Type(ins);
 		if (type==Type.REGISTER)
-			return new R_Type(ins, operands, comment);
+			return new R_Type(ins, operands);
 		
 		if (type==Type.IMMEDIATE) //TODO: Branch instructions check
-			return new I_Type(ins, operands, comment, false);
-		else return new Instruction(ins, operands, comment);
+			return new I_Type(ins, operands, false);
+		else return new Instruction(ins);
 	}
 	
 	public void execute(){
@@ -41,20 +35,8 @@ public class Instruction {
 		//}
 	}
 	
-	int calculateAddress(){return -1;}
-	
-	public String getIns( ){
-		return ins;
-	}
-	
-	public String[] getOperands( ){
-		
-		Arrays.stream( operands ).forEach(System.out::println);
-		return operands;
-	}
-	
-	public String getComment( ){
-		return comment;
+	public boolean isEXIT(){
+	 	return type==Type.EXIT;
 	}
 	
 	private static Type ins2Type(String ins){
@@ -92,6 +74,5 @@ public class Instruction {
 	@Override
 	public String toString( ){
 		return "Instruction{"+type+"\t"+ins+"} ";
-		       //+comment;
 	}
 }
