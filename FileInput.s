@@ -3,7 +3,7 @@ x: .word 5
 	.text
 main:
   # la $t0, x	# Load address of label x to register t0
-  lw $s0, 0($t0) # Load value at address t0 to s0
+  lw $s0, 268500992($t0) # Load value at address t0 to s0
 
   add $s1, $s0, $zero # duplicate the value from s0 to s1
   addi $t9, $s0, -4 # subtract 4 from the value of s0, store in t9
