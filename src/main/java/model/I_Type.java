@@ -69,6 +69,7 @@ public class I_Type extends Instruction {
 	}
 	
 	private boolean ex( ){
+		Color.setAnsiYellow();
 		System.out.print( "Reading register RS["+Register_Bank.convertFromR_reference(RS)+" ");
 		int rsVal = Register_Bank.read(RS);
 		System.out.println( rsVal+"], [IMMEDIATE: "+IMM+"]");
@@ -79,6 +80,7 @@ public class I_Type extends Instruction {
 		System.out.println( "Writing Result:\n\tValue: "+rtVal+" to register RT["
 		                    +Register_Bank.convertFromR_reference(RT)+"]");
 		Register_Bank.store(RT,rtVal);
+		Color.reset();
 		return true;
 	}
 	
@@ -94,21 +96,25 @@ public class I_Type extends Instruction {
 	}
 	
 	private boolean lw( ){
+		Color.setAnsiBlue();
 		calculateImmRs();
 		System.out.println("\t\tFetching data from ADDRESS: "+Memory.toHexAddr(ADDRESS));
 		int data =( int ) Memory.getData(Memory.getIndex(ADDRESS));
 		System.out.println( "Writing \n\tData: "+data+" to register RD["
 		                    +Register_Bank.convertFromR_reference(RT)+"]");
 		Register_Bank.store(RT,data);
+		Color.reset();
 		return true;
 	}
 	private boolean sw( ){
+		Color.setAnsiPurple();
 		int data = Register_Bank.read(RT);
 		System.out.println( "Reading \n\tData: "+data+" from register RS["
 		                    +Register_Bank.convertFromR_reference(RT)+"]");
 		calculateImmRs();
 		System.out.println("\t\tWriting data to ADDRESS: "+Memory.toHexAddr(ADDRESS));
 		Memory.putData(Memory.getIndex(ADDRESS),data);
+		Color.reset();
 		return true;
 	}
 }
