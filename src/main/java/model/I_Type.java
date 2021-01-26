@@ -64,7 +64,8 @@ public class I_Type extends Instruction {
 			ex( );
 		}else if (subType==SubType.LOAD){
 			 lw();
-	}
+		}else if (subType==SubType.STORE)
+			sw();
 	}
 	
 	private boolean ex( ){
@@ -99,6 +100,15 @@ public class I_Type extends Instruction {
 		System.out.println( "Writing \n\tData: "+data+" to register RD["
 		                    +Register_Bank.convertFromR_reference(RT)+"]");
 		Register_Bank.store(RT,data);
+		return true;
+	}
+	private boolean sw( ){
+		int data = Register_Bank.read(RT);
+		System.out.println( "Reading \n\tData: "+data+" from register RS["
+		                    +Register_Bank.convertFromR_reference(RT)+"]");
+		calculateImmRs();
+		System.out.println("\t\tWriting data to ADDRESS: "+Memory.toHexAddr(ADDRESS));
+		Memory.putData(Memory.getIndex(ADDRESS),data);
 		return true;
 	}
 }

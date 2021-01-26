@@ -190,6 +190,13 @@ public class Memory {
 		return dataArr.get(index);
 	}
 	
+	public static void putData(int index,long data){
+		while(index>dataArr.size()){
+			dataArr.add(0L); // buffer to index
+		}
+		 dataArr.add(index,data);
+	}
+	
 	/** Pushes given string to list {@link #labels}
 	 * the list is later read, attached to an addresses and cleared by the method
 	 * {@link #attachLabelsToAddress(long)}
