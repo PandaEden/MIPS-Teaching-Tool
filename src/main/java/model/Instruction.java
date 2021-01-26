@@ -1,9 +1,10 @@
 package model;
 
+import java.security.InvalidParameterException;
 import java.util.Arrays;
 
 public class Instruction {
-	private enum Type {REGISTER, IMMEDIATE, JUMP, NO_INS}
+	private enum Type {REGISTER, IMMEDIATE, JUMP, EXIT}
 	private final Type type;
 	 String ins;
 	
@@ -28,11 +29,11 @@ public class Instruction {
 	
 	public void execute(){
 		System.out.println( "\n\t"+type2String(type)+" - "+ins+"");
-		//if (type == Type.REGISTER | type == Type.IMMEDIATE) {
+		if (type == Type.REGISTER | type == Type.IMMEDIATE) {
 			Register_Bank.printIDs();
 			Register_Bank.printT();
 			Register_Bank.printS();
-		//}
+		}
 	}
 	
 	public boolean isEXIT(){
@@ -54,7 +55,7 @@ public class Instruction {
 			case "jal":
 				return Type.JUMP;
 			default:
-				return  Type.NO_INS;
+				return  Type.EXIT;
 		}
 	}
 	
@@ -66,8 +67,10 @@ public class Instruction {
 				return "I-Type";
 			case JUMP:
 				return "J-Type";
+			case EXIT:
+				return "EXIT";
 			default:
-				return "Err: NO_INS";
+				throw new InvalidParameterException();
 		}
 	}
 	

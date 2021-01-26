@@ -59,7 +59,8 @@ public class Main {
 						
 						ins=split[0];
 						currentLine=split[1];//Remainder should just be operands
-					}
+					}else
+						ins = currentLine;
 					
 					//remainder is just operands comma and space ", " separated
 					//Split line around 'each' comma-space ", " $rs, $rt
@@ -85,6 +86,12 @@ public class Main {
 	public static void main( String[] args ){
 		setup();
 		System.out.println( "Setup Finished\n" );
-		Memory.instructions.forEach(Instruction::execute);
+		boolean hasNextIns = true;
+		Instruction ins;
+		while( hasNextIns ){
+			ins=Memory.InstructionFetch( );
+			ins.execute();
+			hasNextIns = !ins.isEXIT();
+		}
 	}
 }
