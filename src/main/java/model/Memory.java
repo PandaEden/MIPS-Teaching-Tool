@@ -96,7 +96,7 @@ public class Memory {
 		long[] output = new long[str_arr.length];
 		
 		for(int i=0;i<str_arr.length;i++){
-			output[i]=Long.parseLong(str_arr[i].strip());
+			output[i]=Long.parseLong(str_arr[i].trim());
 		}
 		return storeArray(output);
 	}

@@ -84,6 +84,6 @@ public class Main {
 	public static void main( String[] args ){
 		setup();
 		System.out.println( "Setup Finished\n" );
-		instructions.forEach(Instruction::execute);
+		Memory.instructions.forEach(Instruction::execute);
 	}
 }
