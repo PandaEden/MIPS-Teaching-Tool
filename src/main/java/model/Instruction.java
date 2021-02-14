@@ -1,60 +1,41 @@
 package model;
 
-import java.util.Arrays;
+import java.security.InvalidParameterException;
 
 public class Instruction {
-	private enum Type {REGISTER, IMMEDIATE, JUMP, NO_INS}
+	private enum Type {REGISTER, IMMEDIATE, JUMP, EXIT}
 	private final Type type;
 	 String ins;
-	private final String[] operands;
-	private final String comment;
 	
 	/**
 	 *
 	 * @param ins - NotNull use code 'no_ins' if not an instruction
-	 * @param operands - Nullable if opcode is 'no_ins'
-	 * @param comment - Nullable, takes the form '# comment...' at the end of a line
 	 */
-	 Instruction( String ins, String[] operands, String comment){
+	 Instruction( String ins){
 		this.ins=ins;
-		this.operands=operands;
-		this.comment=(comment);
 		this.type=ins2Type(ins);
 	}
 	
-	public static Instruction buildInstruction( String ins, String[] operands, String comment){
+	public static Instruction buildInstruction( String ins, String[] operands ){
 		Type type = ins2Type(ins);
 		if (type==Type.REGISTER)
-			return new R_Type(ins, operands, comment);
-		
-		if (type==Type.IMMEDIATE) //TODO: Branch instructions check
-			return new I_Type(ins, operands, comment, false);
-		else return new Instruction(ins, operands, comment);
+			return new R_Type(ins, operands);
+		else if (type==Type.IMMEDIATE) //TODO: Branch instructions check
+			return new I_Type(ins, operands, false);
+		else if (type==Type.JUMP)
+			return new J_Type(ins,operands[0]);
+		else return new Instruction(ins);
 	}
 	
 	public void execute(){
 		System.out.println( "\n\t"+type2String(type)+" - "+ins+"");
-		//if (type == Type.REGISTER | type == Type.IMMEDIATE) {
 			Register_Bank.printIDs();
 			Register_Bank.printT();
 			Register_Bank.printS();
-		//}
 	}
 	
-	int calculateAddress(){return -1;}
-	
-	public String getIns( ){
-		return ins;
-	}
-	
-	public String[] getOperands( ){
-		
-		Arrays.stream( operands ).forEach(System.out::println);
-		return operands;
-	}
-	
-	public String getComment( ){
-		return comment;
+	public boolean isEXIT(){
+	 	return type==Type.EXIT;
 	}
 	
 	private static Type ins2Type(String ins){
@@ -72,7 +53,7 @@ public class Instruction {
 			case "jal":
 				return Type.JUMP;
 			default:
-				return  Type.NO_INS;
+				return  Type.EXIT;
 		}
 	}
 	
@@ -84,14 +65,15 @@ public class Instruction {
 				return "I-Type";
 			case JUMP:
 				return "J-Type";
+			case EXIT:
+				return "EXIT";
 			default:
-				return "Err: NO_INS";
+				throw new InvalidParameterException();
 		}
 	}
 	
 	@Override
 	public String toString( ){
 		return "Instruction{"+type+"\t"+ins+"} ";
-		       //+comment;
 	}
 }

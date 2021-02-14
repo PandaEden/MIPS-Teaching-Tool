@@ -28,7 +28,8 @@ public class Memory {
 	private static final HashMap<String,Long> labelMap = new HashMap<>();
 	private static LinkedList<String> labels = new LinkedList<>();
 	public static ArrayList<Instruction> instructions= new ArrayList<>();
-
+	public static long ProgramCounter = INS_ADDR_BASE;
+	
 	/** Given valid input it will add the information to the {@link #dataArr},
 	 * It will automatically collect any pushed {@link #labels} and attach to the
 	 * address of the first (if a range or array) value added, in {@link #labelMap}
@@ -189,6 +190,13 @@ public class Memory {
 		return dataArr.get(index);
 	}
 	
+	public static void putData(int index,long data){
+		while(index>dataArr.size()){
+			dataArr.add(0L); // buffer to index
+		}
+		 dataArr.add(index,data);
+	}
+	
 	/** Pushes given string to list {@link #labels}
 	 * the list is later read, attached to an addresses and cleared by the method
 	 * {@link #attachLabelsToAddress(long)}
@@ -197,6 +205,10 @@ public class Memory {
 	 */
 	public static void pushLabel( String label ){
 		labels.push(label);
+	}
+	
+	public static long getAddress(String label){
+		return labelMap.get(label);
 	}
 	
 	/** Given an address (decimal index of address) it will collect all pushed
@@ -223,10 +235,15 @@ public class Memory {
 	 * @see Memory#attachLabelsToAddress(long)
 	 * @param index_counter - index of instruction in <b>instructions</b>
 	 */
-	public  static void attachLabelsToInstruction( int index_counter){
+	public static void attachLabelsToInstruction( int index_counter){
 		long address =INS_ADDR_BASE + (index_counter *4L);
 		attachLabelsToAddress(address);
 	}
-
-
+	
+	public static Instruction InstructionFetch(){
+		long pc = ProgramCounter;
+		ProgramCounter+=4;
+		return instructions.get(getIndex(pc));
+	}
+	
 }

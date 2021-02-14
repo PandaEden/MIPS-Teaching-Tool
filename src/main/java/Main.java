@@ -49,27 +49,29 @@ public class Main {
 					Memory.pushLabel(split[0]);
 					currentLine=split[1];
 				}
-				currentLine=currentLine.trim();//Trim whitespace
 				//Trim whitespace
 				currentLine=currentLine.trim( );
 				
-				if (parseMode==ParseMode.TEXT) {
-					
+				if (parseMode==ParseMode.TEXT&&!currentLine.isEmpty()) {
 					//Split line around first space, ins" "$first_operand
 					if (currentLine.contains(" ")) {
 						split=currentLine.split(" ", 2);
 						
 						ins=split[0];
 						currentLine=split[1];//Remainder should just be operands
-					}
+					}else
+						ins = currentLine;
 					
 					//remainder is just operands comma and space ", " separated
 					//Split line around 'each' comma-space ", " $rs, $rt
-					if (currentLine.contains(", ")) operands=currentLine.split(", ");
-					else operands=new String[] { currentLine };
+					if (currentLine.contains(", "))
+						operands=currentLine.split(", ");
+					else
+						operands=new String[] { currentLine };
+					//if no operands, then the only operand will be the ins
+					
 					if (!ins.equals("no_ins")) {
-						Memory.instructions.add(Instruction.buildInstruction(ins, operands,
-						                                                     comments));
+						Memory.instructions.add(Instruction.buildInstruction(ins, operands));
 						Memory.attachLabelsToInstruction(ins_index++);
 					}
 				}else if (parseMode==ParseMode.DATA&&currentLine.contains(".")){
@@ -84,6 +86,12 @@ public class Main {
 	public static void main( String[] args ){
 		setup();
 		System.out.println( "Setup Finished\n" );
-		Memory.instructions.forEach(Instruction::execute);
+		boolean hasNextIns = true;
+		Instruction ins;
+		while( hasNextIns ){
+			ins=Memory.InstructionFetch( );
+			ins.execute();
+			hasNextIns = !ins.isEXIT();
+		}
 	}
 }

@@ -7,8 +7,8 @@ public class R_Type extends Instruction{
 	private final int RS;
 	private final int RT;
 	
-	 R_Type( String ins, String[] operands, String comment){
-		super(ins, operands, comment);
+	 R_Type( String ins, String[] operands){
+		super(ins);
 		RD=Register_Bank.convert2r_reference(operands[0]);
 		RS=Register_Bank.convert2r_reference(operands[1]);
 		RT=Register_Bank.convert2r_reference(operands[2]);
@@ -21,6 +21,7 @@ public class R_Type extends Instruction{
 		}
 		
 	private boolean ex( ){
+	 	Color.setAnsiRed();
 		System.out.print( "Reading register RS["+Register_Bank.convertFromR_reference(RS)+": ");
 		int rsVal = Register_Bank.read(RS);
 		System.out.print( rsVal+"], Reading register RT["+Register_Bank.convertFromR_reference(RT)+": ");
@@ -45,6 +46,7 @@ public class R_Type extends Instruction{
 		System.out.println( "Writing Result\n\tValue: "+rdVal+" to register RD["
 		                    +Register_Bank.convertFromR_reference(RD)+"]");
 		Register_Bank.store(RD,rdVal);
+		Color.reset();
 		return true;
 	}
 }

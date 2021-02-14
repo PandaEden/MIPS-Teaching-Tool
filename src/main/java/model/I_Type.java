@@ -6,11 +6,11 @@ public class I_Type extends Instruction {
 	private final SubType subType;
 	private int RS;
 	private int RT;
-	private int IMM;
-	private int ADDRESS;
+	private long IMM;
+	private long ADDRESS;
 	
-	I_Type( String ins, String[] operands, String comment, boolean isBranch ){
-		super(ins, operands, comment);
+	I_Type( String ins, String[] operands, boolean isBranch ){
+		super(ins);
 		if (isBranch) this.subType=SubType.BRANCH;
 		else if (ins.contains("s")) this.subType=SubType.STORE;
 		else if (ins.contains("l")) this.subType=SubType.LOAD;
@@ -48,40 +48,73 @@ public class I_Type extends Instruction {
 		//check if String contains '(', then it contains $RS
 		if (ImmRs.contains("(")){//split Imm($RS) into Imm and RS
 			String[] split= ImmRs.split("\\(");
-			IMM = Integer.parseInt(split[0]);
+			IMM = Long.parseLong(split[0]);
 			//split[1] contains elements '$' 's/t' 'int' ')' . need to remove the ')'
 			String temp = split[1].split("\\)")[0];
 			RS=Register_Bank.convert2r_reference(temp);
 		}else{ //Imm or Label
-			IMM = Integer.parseInt(ImmRs);
+			IMM = Long.parseLong(ImmRs);
 		}
 	}
 	
 	@Override
 	public void execute( ){
-		super.execute( );
 		if (subType==SubType.EX) {
+			super.execute( );
 			ex( );
-		}
+		}else if (subType==SubType.LOAD){
+			 lw();
+		}else if (subType==SubType.STORE)
+			sw();
 	}
 	
 	private boolean ex( ){
+		Color.setAnsiYellow();
 		System.out.print( "Reading register RS["+Register_Bank.convertFromR_reference(RS)+" ");
 		int rsVal = Register_Bank.read(RS);
 		System.out.println( rsVal+"], [IMMEDIATE: "+IMM+"]");
 		System.out.print( "Calculating Result:\n\tRT = ");
 		System.out.print( "RS+IMMEDIATE = "+rsVal+"+"+IMM+" = ");
-		int rtVal = rsVal+IMM;
+		int rtVal =Math.toIntExact(rsVal+IMM);
 		System.out.println(rtVal);
 		System.out.println( "Writing Result:\n\tValue: "+rtVal+" to register RT["
 		                    +Register_Bank.convertFromR_reference(RT)+"]");
 		Register_Bank.store(RT,rtVal);
+		Color.reset();
 		return true;
 	}
 	
-	private int calculateImmRs(){
-//		IMM;
-//		RS;
-		return -1;//TODO:
+	private void calculateImmRs(){
+		System.out.println( "\n\t"+(subType)+" - "+ins+"");
+		System.out.print( "Reading register RS["+Register_Bank.convertFromR_reference(RS)+" ");
+		int rsVal = Register_Bank.read(RS);
+		System.out.println( rsVal+"], [IMMEDIATE: "+IMM+"]");
+		System.out.print( "\nCalculating Address:\n\tADDRESS = ");
+		System.out.print( "RS+IMMEDIATE = "+rsVal+"+"+IMM+" = ");
+		ADDRESS = IMM+rsVal;
+		System.out.println(ADDRESS);
+	}
+	
+	private boolean lw( ){
+		Color.setAnsiBlue();
+		calculateImmRs();
+		System.out.println("\t\tFetching data from ADDRESS: "+Memory.toHexAddr(ADDRESS));
+		int data =( int ) Memory.getData(Memory.getIndex(ADDRESS));
+		System.out.println( "Writing \n\tData: "+data+" to register RD["
+		                    +Register_Bank.convertFromR_reference(RT)+"]");
+		Register_Bank.store(RT,data);
+		Color.reset();
+		return true;
+	}
+	private boolean sw( ){
+		Color.setAnsiPurple();
+		int data = Register_Bank.read(RT);
+		System.out.println( "Reading \n\tData: "+data+" from register RS["
+		                    +Register_Bank.convertFromR_reference(RT)+"]");
+		calculateImmRs();
+		System.out.println("\t\tWriting data to ADDRESS: "+Memory.toHexAddr(ADDRESS));
+		Memory.putData(Memory.getIndex(ADDRESS),data);
+		Color.reset();
+		return true;
 	}
 }
