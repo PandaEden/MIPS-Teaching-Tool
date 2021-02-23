@@ -1,4 +1,4 @@
-package Util.Logs;
+package util.logs;
 
 import java.util.ArrayList;
 
@@ -9,7 +9,7 @@ public class WarningsLog extends Logger{
 	
 	@Override
 	public String toString(){
-		return Color.formatColored(Color.YELLOW_ANSI,super.toString());
+		return Color.formatColored(Color.YELLOW_ANSI, super.toString());
 	}
 }
 

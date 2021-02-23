@@ -30,22 +30,27 @@ Support for more data types (single-precision float, doubleWords, half-words, by
 
 > Format: **[OpCode]**\<Whitespace\>**[Operands]**
 
-- **ADD**	`Operands_R`
-- **SUB**	`Operands_R`
-- **ADDI**	`Operands_I1`
-- **LW** 	`Operands_I3` # (pseudo)
-- **SW**	`Operands_I3` # (pseudo)
+- R_type
+  - **ADD**	`Operands_R`
+  - **SUB**	`Operands_R`
+- I_type
+  - **ADDI**	`Operands_I-1`
+  - **LW** 	`Operands_I-L` ; (pseudo)
+  - **SW**	`Operands_I-L` ; (pseudo)
 
+> Planned - **LA**	`Operands_I-L`	;  (pseudo) loads address to register
 
-- **J** 	`Direct_Address`
-- **JAL** 	`Direct_Address` # Register $ra is overwritten
-- **HALT**	# No Operands
-- **EXIT**	# No Operands - same as HALT
+- J_type
+  - **J** 	`P_Direct_Address`, `Label_Address`
+  - **JAL** 	`P_Direct_Address`,`Label_Address`
+  	- Register $ra is overwritten
+- Other
+  - **HALT**	; No Operands
+  - **EXIT**	; No Operands - same as HALT
 
 **Pseudo instructions are not accurately executed**
 
-	- they do not assemble into multiple instructions, /Take multiple cycles to execute
-	- make use of the $at register,
+	- At the moment the assembler does not replace Pseudo instructions with REAL instructions, Keep this in mind when writing code.
 
 ## Operands Format:
 
@@ -53,23 +58,25 @@ Support for more data types (single-precision float, doubleWords, half-words, by
 
  [@See **Supported Address Segments**](#Supported-Address-Segments)
 
-| Operands Type:     | Operand 1                  | <,\s*> | Operand 2             | <,\s*>    | Operand 3               |
-| ------------------ | -------------------------- | ------ | --------------------- | --------- | ----------------------- |
-| **Operands_R:**    | **[Destination_Register]** |        | **[Source_Register]** |           | **[Third_Register]**    |
-| **Operands_I1**:   | **[Third_Register]**       |        | **[Source_Register]** |           | _[Immediate]_           |
-| **Operands_I2:**   | **[Third_Register]**       |        | _[Offset]_            | _**N/A**_ | (**[Source_Register]**) |
-| **Operands_I3:**   | **[Third_Register]**       |        | _[Immediate]_         |           |                         |
-| **Direct_Address** | _[Address]_                |        |                       |           |                         |
+| Operands Type:        | Operand 1                  | <,\s*>    | Operand 2             | <,\s*>    | Operand 3               |
+| --------------------- | -------------------------- | --------- | --------------------- | --------- | ----------------------- |
+| **Operands_R:**       | **[Destination_Register]** |           | **[Source_Register]** |           | **[Third_Register]**    |
+| **Operands_I-1**:    | **[Third_Register]**       |           | **[Source_Register]** |           | _[Immediate]_           |
+| **Operands_I-2:**     | **[Third_Register]**       |           | _[Offset]_            | _**N/A**_ | (**[Source_Register]**) |
+| **Operands_I-3:**     | **[Third_Register]**       |           | _[Immediate]_         | _**N/A**_ | _**N/A**_               |
+| **Operands_I-L:**     | **[Third_Register]**       |           | [Label]               | _**N/A**_ | _**N/A**_               |
+| **P_Direct_Address:** | _[Address]_                | _**N/A**_ | _**N/A**_             | _**N/A**_ | _**N/A**_               |
+| **Label_Address**    | [Label]                    | _**N/A**_ | _**N/A**_             | _**N/A**_ | _**N/A**_               |
 
 ## Operands:
 
 > [Destination_Register]/[Source_Register]/[Third_Register]
 
- - _**[Third_Register]**_ $rt can be the Destination or Source register for I_type instructions._
+ - _**[Third_Register]**_ $rt can be the Destination or Source register for I_type instructions.
 
- - _**[Immediate]**_ Values must be valid signed 16bit integers.
+ - _**[Immediate]**_ Must be a valid signed 16bit integer.
 
- - _**[Offset]**_ is an _[Immediate]_ value used for Memory addressing.
+ - _**[Offset]**_ is an _[Immediate]_ value. ∴ Must also be a valid signed 16bit integer.
 
 	- Offsets used in branches are multiplied by 4, to force them to align with instruction addresses.
 
@@ -77,11 +84,13 @@ Support for more data types (single-precision float, doubleWords, half-words, by
 
 		- It is upto the user to ensure offsets used with Load/Store are doubleWord (8bytes) addressable.
 
-		- Meaning the Offset+$RD_Val is a multiple of 8.
+		- Meaning the Offset+$RS_Val is a multiple of 8.
 
- - _**[Address]**_ are unsigned 28bit integers.
+ - _**[Address]**_ Must be a valid unsigned 28bit integer.
 
-_Labels are Strings, which reference an address. - they are converted into [Immediate] values at assembly.
+- _Labels_ are Strings, which reference an address. - they are converted into [Immediate] values at assembly. [@see Labels](#Labels)
+   - for `LA` the address is not checked.
+       - At execution, the address loaded into a register, MUST be valid for the instruction.
 
 ## Registers:
 
@@ -109,7 +118,7 @@ _Labels are Strings, which reference an address. - they are converted into [Imme
 
 Registers can be referenced by name (e.g. $s2, $t0, $zero) or R_Number (e.g. $r18, $r8).
 
-	Altough it is prefered they start with a '$', This is not strictly required
+	Altough it is prefered register references start with a '$', This is not strictly required.
 
 ## Labels:
 
@@ -157,17 +166,17 @@ An Exit ('halt') instruction will automatically be ran next.
 I_Type
 
 - Offset(base) - Valid Data Address - Offset Addressing.
-	- (later builds may introduce pseudo instructions for offset(label))
 
-- Label
-    - 	Branch - Converted to Offset.
-    - 	Load/Store - Pseudo Instruction (will be adjusted in future build)
+Label
+
+- 	Branch - Converted to Offset.
+- 	Load/Store - Pseudo Instruction -Direct Address (will be adjusted in future build)
 
 ###### MIPS Direct addressing:
 
 J_Type
 
-- Address - Valid Code Address - Direct Addressing.
+- Address - Valid Code Address - Pseudo Direct Addressing.
 - Label directed to a code address. e.g. "main",
 
 ## Branch Delay Slots:
@@ -181,6 +190,7 @@ The current build executes a very basic model and Jump instructions update the P
 ## Error/Warning messages:
 
 ### Valid File Checks:
+
 	Check - File Exists
 	Check - File is accessible (not being used by another resource)
 	Check - File Length
@@ -209,14 +219,14 @@ The current build executes a very basic model and Jump instructions update the P
 					Opperands	(depends on instruction type^)
 						\
 						Extra
-				- Any extra characters past the last opperand, but not in the comments section.
-				- A Warning will be issued, but these characters will be ignored.
+				- Any extra characters past the last opperand, but not part of the comments
+					- will break the formatting, and it will think the operands are invalid
 	
-	Over 250 Instructions are read:
+	Over 256 Instructions are read:
 		A Warning will be issued And no further instructions will be parsed.
 		
 	If no EXIT/'halt' instruction is read:
-		A warning will be issued. And one will automatically be appended to the end.
+		A Warning will be issued. And one will automatically be appended to the end.
 
 Parser will not stop after an error is thrown. It will attempt to parse the remainder of the lines checking for additional errors.
 
@@ -253,6 +263,12 @@ The application currently does not support the CoProcessors.
 
 Meaning it does not support Traps or Functional Units.
 
-Functional Unit support is planned. But Traps are not currently.
+# InProgress
+
+Branches are being added first.
+
+Then, Functional Unit support is planned.
+
+Then, Scoreboard DLX architecture.
 
 You may suggest new features/give feedback by leaving a comment on an issue.
