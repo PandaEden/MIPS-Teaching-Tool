@@ -10,8 +10,8 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OperandsTest{
-	static final int zero = 0;
-	HashMap<String, Integer> labelsMap = new HashMap<>(Map.of("panda", 446789, "x", 5));
+	static final Integer NULL = null;
+	HashMap<String, Integer> labelsMap = new HashMap<>(Map.of("panda", 0x400004, "x", 8));
 	ErrorLog errorLog = new ErrorLog(new ArrayList<>());
 	
 	@AfterEach
@@ -24,10 +24,10 @@ class OperandsTest{
 	void testOperandsForExit(){
 		Operands operands = Operands.getExit();
 		Assertions.assertAll(
-				() -> assertEquals(zero, operands.getRs()),
-				() -> assertEquals(zero, operands.getRt()),
-				() -> assertEquals(zero, operands.getRd()),
-				() -> assertEquals(zero, operands.getImmediate()),
+				() -> assertEquals(NULL, operands.getRs()),
+				() -> assertEquals(NULL, operands.getRt()),
+				() -> assertEquals(NULL, operands.getRd()),
+				() -> assertEquals(NULL, operands.getImmediate()),
 				() -> assertNull(operands.getLabel()),
 				() -> assertEquals("R", operands.getInstrType().name()),
 				() -> assertThrows(IllegalArgumentException.class, () ->
@@ -43,7 +43,7 @@ class OperandsTest{
 				() -> assertEquals(5, operands.getRs()),
 				() -> assertEquals(6, operands.getRt()),
 				() -> assertEquals(20, operands.getRd()),
-				() -> assertEquals(zero, operands.getImmediate()),
+				() -> assertEquals(NULL, operands.getImmediate()),
 				() -> assertNull(operands.getLabel()),
 				() -> assertEquals("R", operands.getInstrType().name()),
 				() -> assertThrows(IllegalArgumentException.class, () ->
@@ -58,7 +58,7 @@ class OperandsTest{
 		Assertions.assertAll(
 				() -> assertEquals(5, operands.getRs()),
 				() -> assertEquals(6, operands.getRt()),
-				() -> assertEquals(zero, operands.getRd()),
+				() -> assertEquals(NULL, operands.getRd()),
 				() -> assertEquals(478, operands.getImmediate()),
 				() -> assertNull(operands.getLabel()),
 				() -> assertEquals("I_write", operands.getInstrType().name()),
@@ -74,7 +74,7 @@ class OperandsTest{
 		Assertions.assertAll(
 				() -> assertEquals(15, operands.getRs()),
 				() -> assertEquals(26, operands.getRt()),
-				() -> assertEquals(zero, operands.getRd()),
+				() -> assertEquals(NULL, operands.getRd()),
 				() -> assertEquals(-50, operands.getImmediate()),
 				() -> assertNull(operands.getLabel()),
 				() -> assertEquals("I_write", operands.getInstrType().name()),
@@ -88,9 +88,9 @@ class OperandsTest{
 	void testOperandsForStore(){
 		Operands operands = new Operands("sw", null, 56, 72);
 		Assertions.assertAll(
-				() -> assertEquals(zero, operands.getRs()),
+				() -> assertEquals(NULL, operands.getRs()),
 				() -> assertEquals(56, operands.getRt()),
-				() -> assertEquals(zero, operands.getRd()),
+				() -> assertEquals(NULL, operands.getRd()),
 				() -> assertEquals(72, operands.getImmediate()),
 				() -> assertNull(operands.getLabel()),
 				() -> assertEquals("I_read", operands.getInstrType().name()),
@@ -102,11 +102,11 @@ class OperandsTest{
 	@Test
 	@DisplayName ("Test Operands for Jump")
 	void testOperandsForJump(){
-		Operands operands = new Operands(11892);
+		Operands operands = new Operands("j", 11892);
 		Assertions.assertAll(
-				() -> assertEquals(zero, operands.getRs()),
-				() -> assertEquals(zero, operands.getRt()),
-				() -> assertEquals(zero, operands.getRd()),
+				() -> assertEquals(NULL, operands.getRs()),
+				() -> assertEquals(NULL, operands.getRt()),
+				() -> assertEquals(NULL, operands.getRd()),
 				() -> assertEquals(11892, operands.getImmediate()),
 				() -> assertNull(operands.getLabel()),
 				() -> assertEquals("J", operands.getInstrType().name()),
@@ -116,52 +116,86 @@ class OperandsTest{
 	}
 	
 	@Test
-	@Disabled
 	@DisplayName ("Test Operands for JumpAndLink")
 	void testOperandsForJumpAndLink(){
-		fail("Not implemented");
+		Operands operands = new Operands("jal", 11892);
+		Assertions.assertAll(
+				() -> assertEquals(NULL, operands.getRs()),
+				() -> assertEquals(NULL, operands.getRt()),
+				() -> assertEquals(31, operands.getRd()),
+				() -> assertEquals(11892, operands.getImmediate()),
+				() -> assertNull(operands.getLabel()),
+				() -> assertEquals("J", operands.getInstrType().name()),
+				() -> assertThrows(IllegalArgumentException.class, () ->
+						operands.setImmediate(errorLog, labelsMap))
+		);
 	}
 	
 	@Test
 	@DisplayName ("Test Operands using Label")
 	void testOperandsUsingLabel(){
-		Operands operands = new Operands("panda");
+		Operands operands = new Operands("j", "panda");
 		Assertions.assertAll(
-				() -> assertEquals(zero, operands.getRs()),
-				() -> assertEquals(zero, operands.getRt()),
-				() -> assertEquals(zero, operands.getRd()),
-				() -> assertEquals(zero, operands.getImmediate()),
+				() -> assertEquals(NULL, operands.getRs()),
+				() -> assertEquals(NULL, operands.getRt()),
+				() -> assertEquals(NULL, operands.getRd()),
+				() -> assertEquals(NULL, operands.getImmediate()),
 				() -> assertEquals("panda", operands.getLabel()),
 				() -> assertEquals("J", operands.getInstrType().name()),
 				() -> assertTrue(operands.setImmediate(errorLog, labelsMap)),
-				() -> assertEquals(446789, operands.getImmediate())
+				() -> assertEquals(0x400004/4, operands.getImmediate())
 		);
 		Operands operands2 = new Operands("sw", 0, "x");
 		Assertions.assertAll(
-				() -> assertEquals(zero, operands2.getRs()),
-				() -> assertEquals(zero, operands2.getRt()),
-				() -> assertEquals(zero, operands2.getRd()),
-				() -> assertEquals(zero, operands2.getImmediate()),
+				() -> assertEquals(NULL, operands2.getRs()),
+				() -> assertEquals(0, operands2.getRt()),
+				() -> assertEquals(NULL, operands2.getRd()),
+				() -> assertEquals(NULL, operands2.getImmediate()),
 				() -> assertEquals("x", operands2.getLabel()),
 				() -> assertEquals("I_read", operands2.getInstrType().name()),
-				() -> assertTrue(operands2.setImmediate(errorLog, labelsMap)),
-				() -> assertEquals(5, operands2.getImmediate())
+				() -> assertFalse(operands2.setImmediate(errorLog, labelsMap)),
+				() -> assertEquals("Errors:\n\tData Address: \"0x00000008\" Not Valid!\n"+
+						"\tLabel: \"x\" points to Invalid Data Address!\n", errorLog.toString())
+		);
+		errorLog.clear();
+		Operands operands3 = new Operands("jal", "panda");
+		Assertions.assertAll(
+				() -> assertEquals(NULL, operands3.getRs()),
+				() -> assertEquals(NULL, operands3.getRt()),
+				() -> assertEquals(31, operands3.getRd()),
+				() -> assertEquals(NULL, operands3.getImmediate()),
+				() -> assertEquals("panda", operands3.getLabel()),
+				() -> assertEquals("J", operands3.getInstrType().name()),
+				() -> assertTrue(operands3.setImmediate(errorLog, labelsMap)),
+				() -> assertEquals(0x400004/4, operands3.getImmediate())
+		);
+		labelsMap.put("__x", 0x10010010);
+		Operands operands4 = new Operands("lw", 0, "__x");
+		Assertions.assertAll(
+				() -> assertEquals(NULL, operands4.getRs()),
+				() -> assertEquals(0, operands4.getRt()),
+				() -> assertEquals(NULL, operands4.getRd()),
+				() -> assertEquals(NULL, operands4.getImmediate()),
+				() -> assertEquals("__x", operands4.getLabel()),
+				() -> assertEquals("I_write", operands4.getInstrType().name()),
+				() -> assertTrue(operands4.setImmediate(errorLog, labelsMap)),
+				() -> assertEquals(0x10010010/4, operands4.getImmediate())
 		);
 	}
 	
 	@Test
 	@DisplayName ("Test Operands Label, label not found")
 	void testOperandsForLabelNotFound(){
-		Operands operands = new Operands("not a panda");
+		Operands operands = new Operands("j", "not a panda");
 		assertAll(
-				() -> assertEquals(zero, operands.getRs()),
-				() -> assertEquals(zero, operands.getRt()),
-				() -> assertEquals(zero, operands.getRd()),
-				() -> assertEquals(zero, operands.getImmediate()),
+				() -> assertEquals(NULL, operands.getRs()),
+				() -> assertEquals(NULL, operands.getRt()),
+				() -> assertEquals(NULL, operands.getRd()),
+				() -> assertEquals(NULL, operands.getImmediate()),
 				() -> assertEquals("not a panda", operands.getLabel()),
 				() -> assertEquals("J", operands.getInstrType().name()),
 				() -> assertFalse(operands.setImmediate(errorLog, labelsMap)),
-				() -> assertEquals("Errors:\n\tLabel \"not a panda\" Not Found!", errorLog.toString())
+				() -> assertEquals("Errors:\n\tLabel \"not a panda\" Not Found!\n", errorLog.toString())
 		);
 	}
 	
@@ -170,14 +204,14 @@ class OperandsTest{
 	void testSetImmediateInvalidUseNoLabel(){
 		labelsMap.put("", -2); //can't possibly be matched as empty/blank labels return IAE
 		
-		Operands operands = new Operands("   "); // Empty label
+		Operands operands = new Operands("j", "   "); // Empty label
 		assertThrows(IllegalArgumentException.class, () -> operands.setImmediate(errorLog, labelsMap));
 	}
 	
 	@Test
 	@DisplayName ("Test setImmediate, Invalid Address for Type")
 	void testSetImmediateInvalidAddress(){
-		Operands jump = new Operands("data");
+		Operands jump = new Operands("j", "data");
 		// Branch
 		Operands load = new Operands("lw", 56, "ins");
 		Operands store = new Operands("sw", 56, "ins2");
@@ -191,22 +225,22 @@ class OperandsTest{
 		//Jump
 		assertAll(
 				() -> assertFalse(jump.setImmediate(errorLog, labelsMap)),
-				() -> assertEquals("Errors:\n\tInstruction Address\"0x10010000\" Not Valid!\n"+
-						"\tLabel points to Invalid Instruction Address\n", errorLog.toString())
+				() -> assertEquals("Errors:\n\tInstruction Address: \"0x10010000\" Not Valid!\n"+
+				"\tLabel: \"data\" points to Invalid Instruction Address!\n", errorLog.toString())
 		);
 		errorLog.clear();
 		//Load
 		assertAll(
 				() -> assertFalse(load.setImmediate(errorLog, labelsMap)),
-				() -> assertEquals("Errors:\n\tData Address\"0x00400000\" Not Valid!\n"+
-						"\tLabel points to Invalid Data Address\n", errorLog.toString())
+				() -> assertEquals("Errors:\n\tData Address: \"0x00400000\" Not Valid!\n"+
+						"\tLabel: \"ins\" points to Invalid Data Address!\n", errorLog.toString())
 		);
 		errorLog.clear();
 		//Store
 		assertAll(
 				() -> assertFalse(store.setImmediate(errorLog, labelsMap)),
-				() -> assertEquals("Errors:\n\tData Address\"0x00400004\" Not Valid!\n"+
-						"\tLabel points to Invalid Data Address\n", errorLog.toString())
+				() -> assertEquals("Errors:\n\tData Address: \"0x00400004\" Not Valid!\n"+
+						"\tLabel: \"ins2\" points to Invalid Data Address!\n", errorLog.toString())
 		);
 		errorLog.clear();
 	}

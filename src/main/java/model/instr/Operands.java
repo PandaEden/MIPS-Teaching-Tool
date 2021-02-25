@@ -53,7 +53,7 @@ public class Operands{
 	/**
 	 InstrType.R; (add, sub) . or EXIT
 	 */
-	Operands(@Nullable Integer rs, @Nullable Integer rt, @Nullable Integer rd){
+	public Operands(@Nullable Integer rs, @Nullable Integer rt, @Nullable Integer rd){
 		this();
 		this.rs = rs;
 		this.rt = rt;
@@ -66,11 +66,13 @@ public class Operands{
 	 
 	 @throws IllegalArgumentException if Immediate AND label are null, opcode out of range
 	 */
-	Operands(String opcode, @Nullable Integer rt, @NotNull String label){
+	public Operands(String opcode, @Nullable Integer rt, @NotNull String label){
 		this(opcode, null, rt, null);
 		this.label = label;
 		if (label.isBlank())
 			throw new IllegalArgumentException("Operands cannot be set with blank Label!");
+		
+		this.immediateSet = false;
 	}
 	
 	/**
@@ -78,8 +80,8 @@ public class Operands{
 	 
 	 @throws IllegalArgumentException opcode out of range
 	 */
-	Operands(String opcode, @Nullable Integer rs, @Nullable Integer rt, @Nullable Integer immediate){ // Immediate
-		this(rs, rt, 0);
+	public Operands(String opcode, @Nullable Integer rs, @Nullable Integer rt, @Nullable Integer immediate){ // Immediate
+		this(rs, rt, null);
 		this.immediate = immediate;
 		this.instrType = InstrType.I_write;
 		
@@ -97,17 +99,21 @@ public class Operands{
 	}
 	
 	/** Jump */
-	Operands(@NotNull String label){
+	public Operands(@NotNull String opcode, @NotNull String label){
 		this();
 		this.label = label;
 		this.instrType = InstrType.J;
+		if (opcode.equals("jal"))
+			rd = 31;
 	}
 	
 	/** Jump */
-	Operands(@NotNull Integer address){
+	public Operands(@NotNull String opcode, @NotNull Integer address){
 		this();
 		this.immediate = address;
 		this.instrType = InstrType.J;
+		if (opcode.equals("jal"))
+			rd = 31;
 	}
 	
 	/**
@@ -116,29 +122,6 @@ public class Operands{
 	@NotNull
 	public static Operands getExit(){
 		return exitOperands;
-	}
-	
-	/**
-	 For I/J types this should be set during assembly using {@link #setImmediate}
-	 
-	 @return Immediate, if set, or NULL.
-	 */
-	@NotNull
-	public Integer getImmediate(){
-		return this.immediate==null ? 0 : this.immediate;
-	}
-	
-	/**
-	 @return label, may be NULL.
-	 */
-	@Nullable
-	public String getLabel(){
-		return this.label;
-	}
-	
-	@NotNull
-	public InstrType getInstrType(){
-		return this.instrType;
 	}
 	
 	/**
@@ -152,8 +135,7 @@ public class Operands{
 	 */
 	public boolean setImmediate(@NotNull ErrorLog errorLog, @NotNull HashMap<String, Integer> labelMap){
 		Validate validate = new Validate(errorLog);
-		final String invalidInstrAddr = "Label points to Invalid Instruction Address";
-		final String invalidDataAddr = "Label points to Invalid Data Address";
+
 		
 		if (this.instrType==InstrType.R)
 			throw new IllegalArgumentException("Cannot setImmediate for Register type!");
@@ -172,6 +154,8 @@ public class Operands{
 			return false;
 		}
 		int address = labelMap.get(this.label);
+		final String invalidInstrAddr = "Label: \""+this.label+"\" points to Invalid Instruction Address!";
+		final String invalidDataAddr = "Label: \""+this.label+"\" points to Invalid Data Address!";
 		
 		switch (this.instrType) {
 			case J:
@@ -197,18 +181,39 @@ public class Operands{
 	
 	@Nullable
 	public Integer getRs(){
-		return this.rs==null ? 0 : this.rs;
+		return this.rs;
 	}
 	
 	@Nullable
 	public Integer getRt(){
-		return this.rt==null ? 0 : this.rt;
+		return this.rt;
 	}
 	
 	@Nullable
 	public Integer getRd(){
-		return this.rd==null ? 0 : this.rd;
+		return this.rd;
 	}
+	
+	/**
+	 For I/J types this should be set during assembly using {@link #setImmediate}
+	 
+	 @return Immediate, if set, or NULL.
+	 */
+	@Nullable
+	public Integer getImmediate(){
+		return this.immediate;
+	}
+	
+	@Nullable
+	public String getLabel(){
+		return this.label;
+	}
+	
+	@NotNull
+	public InstrType getInstrType(){
+		return this.instrType;
+	}
+	
 	
 	@NotNull
 	public enum InstrType{

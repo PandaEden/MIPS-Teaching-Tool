@@ -19,9 +19,14 @@ dependencies {
     implementation 'org.jetbrains:annotations:20.1.0'
     testImplementation  'org.junit.jupiter:junit-jupiter-api:5.7.1'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.1'
-    testCompile("org.junit.jupiter:junit-jupiter-params:5.7.0")
+    testCompileOnly 'org.junit.jupiter:junit-jupiter-params:5.7.0'
 }
 
 test {
     useJUnitPlatform()
+}
+
+tasks.withType(Test){
+    scanForTestClasses = false
+    include "**/*Test.class"
 }

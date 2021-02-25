@@ -33,8 +33,12 @@ public class Convert{
 	 @return "0x########" (Capitalized)
 	 */
 	@NotNull
-	static String uInt2Hex(@NotNull Integer immediate){
-		return "0x"+Integer.toHexString(immediate);
+	public static String uInt2Hex(@NotNull Integer immediate){
+		StringBuilder rtn = new StringBuilder(Integer.toHexString(immediate).toUpperCase());
+		while (rtn.length()<8) {
+			rtn.insert(0, "0");
+		}
+		return "0x"+rtn;
 	}
 	
 	/**
@@ -140,7 +144,7 @@ public class Convert{
 	 */
 	@NotNull
 	static String[] splitCSV(@NotNull String CSV){
-		return removeExtraWhitespace(CSV).split("\\s*,\\s*");
+		return Convert.removeExtraWhitespace(CSV).split("\\s*,\\s*");
 	}
 	
 	/**
@@ -166,7 +170,7 @@ public class Convert{
 		
 		try {
 			int index = Integer.parseInt(r_Register.substring(1));
-			return namedRegisters[index];
+			return Convert.namedRegisters[index];
 		} catch (ArrayIndexOutOfBoundsException e) {
 			throw new IllegalArgumentException("Array Index Out Of Bounds: "+e.getMessage());
 		}
@@ -200,8 +204,8 @@ public class Convert{
 	 */
 	@NotNull
 	public static String named2R(@NotNull String named){
-		for (int i = 0; i<namedRegisters.length; i++) {
-			if (namedRegisters[i].equals(named)) {
+		for (int i = 0; i<Convert.namedRegisters.length; i++) {
+			if (Convert.namedRegisters[i].equals(named)) {
 				return "r"+i;
 			}
 		}
@@ -215,7 +219,7 @@ public class Convert{
 	 */
 	@NotNull
 	public static String index2R(@NotNull Integer index){
-		if (index>namedRegisters.length) // Tests if the Register is valid index
+		if (index>Convert.namedRegisters.length) // Tests if the Register is valid index
 			throw new IllegalArgumentException("Register Index Out Of Bounds");
 		
 		return "r"+index;
