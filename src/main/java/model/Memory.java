@@ -18,6 +18,11 @@ import java.util.LinkedList;
  *  Global Data (.data) 0x10010000 to 0x1003FFFF (268500992 to 268697599)
  *  Heap data 0x10040000 to 0x1FFFFFFF (268697600 to 536870911)
  *  Stack data 0x70000000 to 0x7FFFFFFF (1879048192 to 2147483647)
+ *  In powers:
+ *      0x00400000:(2^22)       >= Code     <0x00500000:(2^22 +2^20)
+ *      0x10010000:(2^28 +2^16) >= Global   <0x10040000:(2^28 +2^18)
+ *      0x10040000:(2^28 +2^18) >= Heap     <0x20000000:(2^29)
+ *      0x70000000:(2^31-2^28)  >= Stack    <0x80000000:(2^31)
  * </pre>
  */
 public class Memory {
@@ -134,52 +139,6 @@ public class Memory {
 		return dataArr.add(word);
 	}
 	
-	/** Given a decimal address, converts the address to hexadecimal, and contaminates "0x"
-	 * datatype indicator before value.
-	 * To convert output to just the hex value, use {@link String#substring(int)} with the
-	 * parameter '2'.
-	 * @param address - decimal address.
-	 * @return hexadecimal address in form 0x+hexValue.
-	 * @see #toDec(String)
-	 */
-	public static String toHexAddr( long address){
-		return "0x"+Long.toHexString(address);
-	}
-	
-	/** Given a hexadecimal String, it converts the String into a decimal value.
-	 * "0x" sign before value is optional.
-	 * @param hexString - hexadecimal String to convert to decimal
-	 * @return decimal decoding of hexadecimal address
-	 * @see #toHexAddr(long)
-	 */
-	public static long toDec(String hexString){
-		return hexString.contains("0x")?
-		       Long.decode(hexString) : Long.parseLong(hexString,16);
-	}
-	
-	/** Given a valid decimal address,
-	 * if it is an <b>.text</b> (instruction) address, returns the <b>instruction_no</b>,
-	 * if it is a <b>.data</b> address: returns its index in {@link #dataArr}.
-	 * <pre>Use {@link Memory#toDec(String)} to convert a hex address to decimal form.</pre>
-	 * @see Memory#dataArr
-	 * @see #toDec(String)
-	 * @param decAddress - address of data in Memory, in decimal form.
-	 *                   valid 0x00400000 to 0x7FFFFFFF inclusive.
-	 * @return the instruction_no or the index in {@link #dataArr} the data is located at.
-	 */
-	public static int getIndex( Long decAddress){
-		if (decAddress%4!=0)
-			throw new IllegalArgumentException( "address:"+ decAddress
-		                                        +" needs to be a multiple of 4/ word aligned" );
-		long index;
-		//subtract base
-		if (decAddress<DATA_ADDR_BASE)
-			index=decAddress-INS_ADDR_BASE; //.text
-		else
-			index=decAddress - DATA_ADDR_BASE; //.data
-		
-		return (Math.toIntExact(index / 4));
-	}
 	
 	/** Retrieves the values located at <b>index</b> in {@link #dataArr}.
 	 * <pre>Use {@link Memory#getIndex(Long)} to calculate the index.</pre>

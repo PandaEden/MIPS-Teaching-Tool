@@ -14,7 +14,6 @@ public class J_Type extends Instruction{
 	
 	@Override
 	public void execute( ){
-		Color.setAnsiWhite();
 		System.out.println( "\n\tJ_Type"+" - "+ins+"");
 		System.out.print( "\tConverted LABEL: "+label+" to ADDRESS: ");
 		long ADDRESS = Memory.getAddress(label);
@@ -22,6 +21,5 @@ public class J_Type extends Instruction{
 		System.out.println( "\t\tPC="+Memory.ProgramCounter);
 		System.out.println( "\t\t\tDifference="+(ADDRESS-Memory.ProgramCounter));
 		Memory.ProgramCounter=ADDRESS;
-		Color.reset();
 	}
 }

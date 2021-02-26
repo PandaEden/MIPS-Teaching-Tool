@@ -21,7 +21,6 @@ public class R_Type extends Instruction{
 		}
 		
 	private boolean ex( ){
-	 	Color.setAnsiRed();
 		System.out.print( "Reading register RS["+Register_Bank.convertFromR_reference(RS)+": ");
 		int rsVal = Register_Bank.read(RS);
 		System.out.print( rsVal+"], Reading register RT["+Register_Bank.convertFromR_reference(RT)+": ");
@@ -46,7 +45,6 @@ public class R_Type extends Instruction{
 		System.out.println( "Writing Result\n\tValue: "+rdVal+" to register RD["
 		                    +Register_Bank.convertFromR_reference(RD)+"]");
 		Register_Bank.store(RD,rdVal);
-		Color.reset();
 		return true;
 	}
 }
