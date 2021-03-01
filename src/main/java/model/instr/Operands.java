@@ -2,6 +2,7 @@ package model.instr;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import util.AddressValidation;
 import util.Convert;
 import util.Validate;
 import util.logs.ErrorLog;
@@ -159,14 +160,14 @@ public class Operands{
 		
 		switch (this.instrType) {
 			case J:
-				if (validate.isSupportedInstrAddr(address))
+				if (AddressValidation.isSupportedInstrAddr(address, errorLog))
 					this.immediate = Convert.address2Imm(address);
 				else
 					errorLog.append(invalidInstrAddr);
 				break;
 			case I_read:
 			case I_write:
-				if (validate.isSupportedDataAddr(address))
+				if (AddressValidation.isSupportedDataAddr(address, errorLog))
 					this.immediate = Convert.address2Imm(address);
 				else
 					errorLog.append(invalidDataAddr);

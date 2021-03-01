@@ -9,6 +9,8 @@ import util.logs.Logger;
 /**
  Wrapper for int[32] registers. Must be size 32
  Null inputs are ignored.
+ 
+ Out of Range inputs throw {@link IndexOutOfBoundsException}
  */
 public class RegisterBank{
 	public RegFormat regFormat = RegFormat.R;
@@ -42,12 +44,12 @@ public class RegisterBank{
 		
 		if (index == null) {
 			LAST_READ0 = null;
-			executionLog.append(NAME+":\t"+"No Action!");
+			this.executionLog.append(NAME+":\t"+"No Action!");
 		} else if (inRange(index)){
 			LAST_READ0 = index;
-			val=registers[index];
+			val=this.registers[index];
 			
-			executionLog.append(NAME+":\t"+"Reading Value["+val+"]\tFrom Register Index["+fmtReg(index)+"]!");
+			this.executionLog.append(NAME+":\t"+"Reading Value["+val+"]\tFrom Register Index["+fmtReg(index)+"]!");
 		}
 		
 		return val;
@@ -59,13 +61,18 @@ public class RegisterBank{
 	 @return int[] size 2, value for index1 at pos0, value for index2 at pos1
 	 
 	 @throws IndexOutOfBoundsException if register index out of bounds.
+	 @see Convert#named2R(String)
+	 @see Convert#r2Index(String)
+	 @see Convert#index2R(Integer)
+	 @see Convert#r2Named(String)
+	 @see Convert#namedRegisters
 	 */
 	public int[] read(@Nullable Integer index0, @Nullable Integer index1){
 		int data0=0,data1=0;
 		
 		if (index0 == null && index1 == null) {
 			LAST_READ0 = null; LAST_READ1 = null;
-			executionLog.append(NAME+":\t"+"No Action!");
+			this.executionLog.append(NAME+":\t"+"No Action!");
 			
 		} else if (index0 != null && index1 == null){
 			data0 = read(index0);
@@ -73,15 +80,16 @@ public class RegisterBank{
 		} else if (index0==null){ // index0 == null && index1 != null
 			LAST_READ0 = null; LAST_READ1 = index1;
 			if (inRange(index1)) {
-				data1 = registers[index1];
-				executionLog.append(NAME+":\t"+"Reading Value["+data1+"]\tFrom Register Index["+fmtReg(index1)+"]!");
+				data1 = this.registers[index1];
+				this.executionLog.append(NAME+":\t"+"Reading Value["+data1+"]\tFrom Register Index["
+						+fmtReg(index1)+"]!");
 			}
 		} else { // index0 != null && index1 != null
 			LAST_READ0=index0; LAST_READ1=index1;
 			if (inRange(index0)&&inRange(index1)){
-				data0 = registers[index0];
-				data1 = registers[index1];
-				executionLog.append(NAME+":\t"+"Reading Values["+data0+", "+data1
+				data0 = this.registers[index0];
+				data1 = this.registers[index1];
+				this.executionLog.append(NAME+":\t"+"Reading Values["+data0+", "+data1
 						+"]\tFrom Register Indexes["+fmtReg(index0)+", "+fmtReg(index1)+"]!");
 			}
 		}
@@ -95,16 +103,22 @@ public class RegisterBank{
 	 Performs no action, if data is null. or index is null or 0.
 	 
 	 @throws IndexOutOfBoundsException if register index out of bounds.
+	 @see Convert#named2R(String)
+	 @see Convert#r2Index(String)
+	 @see Convert#index2R(Integer)
+	 @see Convert#r2Named(String)
+	 @see Convert#namedRegisters
 	 */
-	public boolean store(@Nullable Integer index, @Nullable Integer data){
+	@SuppressWarnings ("UnusedReturnValue")
+	public boolean write(@Nullable Integer index, @Nullable Integer data){
 		if (index==null || data == null || index ==0) {
 			LAST_WRITTEN=null;
-			executionLog.append(NAME+":\t"+"No Action!");
+			this.executionLog.append(NAME+":\t"+"No Action!");
 			return false;
 		} else if (inRange(index)){
 			LAST_WRITTEN=index;
-			registers[index]=data;
-			executionLog.append(NAME+":\t"+"Writing Value["+data+"]\tTo Register Index["+fmtReg(index)+"]!");
+			this.registers[index]=data;
+			this.executionLog.append(NAME+":\t"+"Writing Value["+data+"]\tTo Register Index["+fmtReg(index)+"]!");
 		}
 		return true;
 	}
@@ -129,8 +143,10 @@ public class RegisterBank{
 		int I1=0, I2=8, I3=16, I4=24;
 		
 		for (int i = 0; i<8; i++) {
-			rtn.append("|").append(fmtRegData(I1++)).append("\t\t").append(fmtRegData(I2++))
-					.append("\t").append(fmtRegData(I3++)).append("\t").append(fmtRegData(I4++))
+			rtn.append("|").append(fmtRegWithData(I1++))
+					.append("\t\t").append(fmtRegWithData(I2++))
+					.append("\t").append(fmtRegWithData(I3++))
+					.append("\t").append(fmtRegWithData(I4++))
 					.append("|\n");
 		}
 		rtn.append("-------------------------------------");
@@ -140,7 +156,7 @@ public class RegisterBank{
 	/**
 	 Formats the register depending on {@link RegFormat}, and combines with the value at that register
 	 */
-	private String fmtRegData(int index){
+	private String fmtRegWithData(int index){
 		return colorReg(index, regName(index) + ": "+registers[index]);
 	}
 	
@@ -156,17 +172,20 @@ public class RegisterBank{
 	 
 	 */
 	private String colorReg(int index, String reg){
+		final String READ_COL = Logger.Color.GREEN_ANSI;
+		final String WRITE_COL = Logger.Color.CYAN_ANSI;
+		
 		if (LAST_READ0!=null)
 			if (index==LAST_READ0)
-				reg= Logger.Color.formatColored(Logger.Color.CYAN_ANSI, reg);
+				reg= Logger.Color.formatColored(READ_COL, reg);
 		
 		if (LAST_READ1!=null)
 			if (index==LAST_READ1)
-				reg=Logger.Color.formatColored(Logger.Color.CYAN_ANSI, reg);
+				reg=Logger.Color.formatColored(READ_COL, reg);
 		
 		if (LAST_WRITTEN!=null)
 			if (index==LAST_WRITTEN)
-				reg=Logger.Color.formatColored(Logger.Color.CYAN_ANSI, "*"+reg);
+				reg=Logger.Color.formatColored(WRITE_COL, "*"+reg);
 		
 		return reg;
 	}

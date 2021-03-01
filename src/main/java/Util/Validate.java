@@ -1,6 +1,8 @@
 package util;
 
 import model.DataType;
+import model.components.DataMemory;
+import model.components.InstrMemory;
 import model.instr.Operands;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,19 +28,6 @@ import java.util.List;
  @see WarningsLog */
 public class Validate{
 	public static final int MAX_FILE_LINES = 512;
-	public static final int MAX_INSTR_COUNT = 256;
-	
-	public static final int BASE_INSTR_ADDRESS = 0x00400000;
-	public static final int OVER_SUPPORTED_INSTR_ADDRESS = 0x00500000;
-	public static final int OVER_INSTR_ADDRESS = 0x10000000;
-	
-	public static final int BASE_DATA_ADDRESS = 0x10010000;
-	public static final int OVER_SUPPORTED_DATA_ADDRESS = 0x10010800;
-	public static final int OVER_DATA_ADDRESS = 0x10040000;
-	public static final int DATA_ALIGN = 8;
-	//OVER_SUPPORTED_INSTR_ADDRESS and OVER_SUPPORTED_DATA_ADDRESS differ.
-	// jumping to an inst address greater than the arbitrary limit, should auto Exit.
-	// trying to read/write to a data address great arbitrary limit should give an error.
 	
 	//TODO make this auto generate based on {@link DataType}
 	private static final String SUPPORTED_DATATYPE_CSV = (".word");
@@ -69,139 +58,10 @@ public class Validate{
 	
 	private final ErrorLog errLog;
 	
-	
-	//TODO is Warnings Log necessary ??
 	public Validate(ErrorLog errLog){
 		this.errLog = errLog;
 	}
-	
-	//TODO -address2index {isSupportedInstrAddr and isSupportedDataAddr}, are the only things used at Execution_Runtime
-	// Migrate Validation methods to static ?, only resource used is ErrorLog
-	
-	/**
-	 {@link #BASE_INSTR_ADDRESS} <b>>= address <=</b> {@link #OVER_INSTR_ADDRESS}-4.
-	 <p>
-	 If not valid, adds to the {@link #errLog}.
-	 
-	 @see ErrorLog
-	 @see #BASE_INSTR_ADDRESS
-	 @see #OVER_INSTR_ADDRESS
-	 */
-	private boolean isValidInstrAddr(int address){
-		if (address>=BASE_INSTR_ADDRESS && address<=OVER_INSTR_ADDRESS-4)
-			return true;
-		
-		errLog.append("Instruction Address: \""+Convert.uInt2Hex(address)+"\" Not Valid!");
-		return false;
-	}
-	
-	/**
-	 Checks if the address, is a Supported Address for Instructions.
-	 <p>- and can be used with {@link model.components.InstrMemory}, after using {@link #addr2index(int)}.
-	 <p>
-	 {@link #BASE_INSTR_ADDRESS} <b>>= address <=</b> {@link #OVER_SUPPORTED_INSTR_ADDRESS}-4.
-	 
-	 <p>	If not supported, adds to the {@link #errLog}.
-	 
-	 <p> Prints a different error message, if the address is also not valid. using {@link #isValidInstrAddr(int)}
-	 
-	 @see ErrorLog
-	 @see #isValidInstrAddr(int)
-	 @see #BASE_INSTR_ADDRESS
-	 @see #OVER_SUPPORTED_INSTR_ADDRESS
-	 */
-	public boolean isSupportedInstrAddr(int address){
-		if (!isValidInstrAddr(address))
-			return false;
-		if (address<=OVER_SUPPORTED_INSTR_ADDRESS-4)
-			return true;
-		
-		errLog.append("Instruction Address: \""+Convert.uInt2Hex(address)+"\" Not Supported!");
-		return false;
-	}
-	
-	/**
-	 {@link #BASE_DATA_ADDRESS} <b>>= address <=</b> {@link #OVER_DATA_ADDRESS}-DATA_ALIGN.
-	 <p>
-	 If not valid, adds to the {@link #errLog}.
-	 
-	 @see ErrorLog
-	 @see #BASE_DATA_ADDRESS
-	 @see #OVER_DATA_ADDRESS
-	 */
-	private boolean isValidDataAddr(int address){
-		if (address>=BASE_DATA_ADDRESS && address<=(OVER_DATA_ADDRESS-DATA_ALIGN))
-			return true;
-		
-		errLog.append("Data Address: \""+Convert.uInt2Hex(address)+"\" Not Valid!");
-		return false;
-	}
-	
-	/**
-	 Checks if the address, is a Supported Address for Data.
-	 <p>- and can be used with {@link model.components.DataMemory}, after using {@link #addr2index(int)}.
-	 <p>
-	 {@link #BASE_DATA_ADDRESS} <b>>= address <=</b>  {@link #OVER_SUPPORTED_DATA_ADDRESS}-DATA_ALIGN.
-	 
-	 <p>	If not supported, adds to the {@link #errLog}.
-	 
-	 <p> Prints a different error message, if the address is also not valid. using {@link #isValidDataAddr(int)}
-	 
-	 @see ErrorLog
-	 @see #isValidDataAddr(int)
-	 @see #BASE_INSTR_ADDRESS
-	 @see #OVER_SUPPORTED_DATA_ADDRESS
-	 */
-	public boolean isSupportedDataAddr(int address){
-		if (!isValidDataAddr(address))
-			return false;
-		if (address<=OVER_SUPPORTED_DATA_ADDRESS-DATA_ALIGN)
-			return true;
-		
-		errLog.append("Data Address: \""+Convert.uInt2Hex(address)+"\" Not Supported!");
-		return false;
-	}
-	
-	/**
-	 Wrapper of {@link Convert#imm2Address(Integer)}
-	 <p>
-	 First checks it is in range to be converted,
-	 if not, returns null
-	 */
-	@Nullable
-	Integer convertValidImm2Addr(@NotNull Integer imm){
-		try {
-			return Convert.imm2Address(imm);
-		} catch (IllegalArgumentException e) {
-			return null;
-			
-		}
-	}
-	
-	/**
-	 Validates the address then converts it to an Index.
-	 <p>
-	 If not valid, adds to the {@link #errLog}, and returns null.
-	 <p>
-	 Automatically, verifies if it is an instruction address, or data address.
-	 
-	 @see ErrorLog
-	 @see #isSupportedInstrAddr(int)
-	 @see #isSupportedDataAddr(int)
-	 @see Convert#address2Index(Integer)
-	 */
-	@Nullable
-	public Integer addr2index(int address){
-		if (address<BASE_DATA_ADDRESS) {
-			if (isSupportedInstrAddr(address))
-				return Convert.address2Index(address);
-		} else if (isSupportedDataAddr(address))
-			return Convert.address2Index(address);
-		return null;
-	}
-	
-	// END of Address related validation -----------------------------------------------------------------
-	
+
 	/**
 	 If not valid, adds to the {@link #errLog}.
 	 <p>	see README for list of supported directive.
@@ -254,7 +114,7 @@ public class Validate{
 	 
 	 @see ErrorLog
 	 */
-	boolean isValidOpCode(int lineNo, @NotNull String opcode){
+	public boolean isValidOpCode(int lineNo, @NotNull String opcode){
 		boolean rtn = Arrays.asList(
 				Convert.splitCSV(SUPPORTED_OPCODES_CSV))
 				.contains(opcode);
@@ -277,9 +137,10 @@ public class Validate{
 	 @param opcode Instruction opcode, used to determine Operands format.
 	 //TODO R_type with shift amount uses [0, RT, RD, ShiftAmt]
 	 
-	 @return <li>Rtype int[3] {RS, RT, RD}</li>
-	 <li>Itype int[3] {RS, RT, Imm}</li>
-	 <li>Jtype int[3] {}-1, -1, Address}</li>
+	 @return
+	 <li>R_type int[3] {RS, RT, RD}</li>
+	 <li>I_type int[3] {RS, RT, Imm}</li>
+	 <li>J_type int[3] {}-1, -1, Address}</li>
 	 */
 	@Nullable
 	public Operands splitValidOperands(int lineNo, @NotNull String opcode, String operands, @NotNull WarningsLog warningsLog){
@@ -415,8 +276,8 @@ public class Validate{
 			// else
 			Integer imm = Val_Operands.convertInteger(lineNo, addr, errLog);
 			if (imm!=null) {
-				Integer address = convertValidImm2Addr(imm);
-				if (address!=null && isValidDataAddr(address))
+				Integer address = AddressValidation.convertValidImm2Addr(imm);
+				if (address!=null && AddressValidation.isValidDataAddr(address, errLog))
 					return new Operands(opcode, zero, rt, imm);
 			}
 		}
@@ -435,8 +296,8 @@ public class Validate{
 				// else
 				imm = Val_Operands.convertInteger(lineNo, addr, errLog);
 				if (imm!=null) {
-					Integer address = convertValidImm2Addr(imm);
-					if (address!=null && isValidInstrAddr(address))
+					Integer address = AddressValidation.convertValidImm2Addr(imm);
+					if (address!=null && AddressValidation.isValidInstrAddr(address, errLog))
 						return new Operands(opcode, imm);
 				}
 				

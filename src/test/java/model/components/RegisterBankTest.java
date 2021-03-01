@@ -1,11 +1,9 @@
 package model.components;
 
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.function.Executable;
 import util.logs.ExecutionLog;
 
 import java.util.ArrayList;
@@ -15,10 +13,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class RegisterBankTest{
-	Random random = new Random();
-	int[] regs;
-	ExecutionLog log= new ExecutionLog(new ArrayList<>());
-	RegisterBank rb;
+	private final Random random = new Random();
+	private int[] regs;
+	private final ExecutionLog log = new ExecutionLog(new ArrayList<>());
+	private RegisterBank rb;
+	
 	@BeforeEach
 	void setUp(){
 		regs = new int[32];
@@ -112,7 +111,7 @@ class RegisterBankTest{
 		log.clear();
 
 		int newVal = random.nextInt();
-		rb.store(0, newVal);
+		rb.write(0, newVal);
 		assertEquals(0, regs[0]); // 0 should be unmodified
 		assertEquals("Execution:\n\tRegisterBank:\tNo Action!\n", log.toString());
 		assertNotEquals(newVal, rb.read(0));
@@ -122,7 +121,7 @@ class RegisterBankTest{
 		for (int i = 1; i<regs.length; i++) { // skip 0
 			log.clear();
 			newVal = random.nextInt();
-			rb.store(i, newVal);
+			rb.write(i, newVal);
 			assertEquals("Execution:\n\tRegisterBank:\tWriting Value["+newVal
 					+"]\tTo Register Index[*R"+i+"]!\n", log.toString());
 			assertEquals(newVal, regs[i]);
@@ -134,7 +133,7 @@ class RegisterBankTest{
 	@Test
 	@DisplayName ("Test Store Zero - Register Bank")
 	void testStoreZeroRegisterBank(){
-		rb.store(0, 57);
+		rb.write(0, 57);
 		assertEquals(0, regs[0]);
 		assertEquals("Execution:\n\tRegisterBank:\tNo Action!\n", log.toString());
 		assertEquals(0, rb.read(0));
