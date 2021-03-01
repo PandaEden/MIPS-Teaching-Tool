@@ -10,9 +10,9 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 class OperandsTest{
-	static final Integer NULL = null;
-	HashMap<String, Integer> labelsMap = new HashMap<>(Map.of("panda", 0x400004, "x", 8));
-	ErrorLog errorLog = new ErrorLog(new ArrayList<>());
+	private static final Integer NULL = null;
+	private HashMap<String, Integer> labelsMap = new HashMap<>(Map.of("panda", 0x400004, "x", 8));
+	private ErrorLog errorLog = new ErrorLog(new ArrayList<>());
 	
 	@AfterEach
 	void tearDown(){

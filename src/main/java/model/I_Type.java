@@ -1,5 +1,7 @@
 package model;
 
+import util.Convert;
+
 public class I_Type extends Instruction {
 	
 	private enum SubType {EX, LOAD, STORE, BRANCH}
@@ -16,7 +18,7 @@ public class I_Type extends Instruction {
 		else if (ins.contains("l")) this.subType=SubType.LOAD;
 		else this.subType=SubType.EX;
 		
-		int firstOp=Register_Bank.convert2r_reference(operands[0]);
+		int firstOp=Convert.r2Index(Convert.named2R(operands[0]));
 		String secondOp=operands[1];
 		//2 Operands are guaranteed for an I-Instruction, the 3rd might be null
 		//Second operand might not be register
@@ -34,7 +36,7 @@ public class I_Type extends Instruction {
 		if (operands.length==2)//Branch[rs, label] or Load/Store[rt, imm/imm(rs)]
 			allocateImm(secondOp);
 		else {//Branch[rs, rt, Label] or arithmetic[rt, rs, imm]
-			int registerNum=Register_Bank.convert2r_reference(secondOp);
+			int registerNum=Convert.r2Index(Convert.named2R(secondOp));
 			if (subType==SubType.BRANCH)
 				RT = registerNum;
 			else
@@ -51,7 +53,7 @@ public class I_Type extends Instruction {
 			IMM = Long.parseLong(split[0]);
 			//split[1] contains elements '$' 's/t' 'int' ')' . need to remove the ')'
 			String temp = split[1].split("\\)")[0];
-			RS=Register_Bank.convert2r_reference(temp);
+			RS=Convert.r2Index(Convert.named2R(temp));
 		}else{ //Imm or Label
 			IMM = Long.parseLong(ImmRs);
 		}
@@ -69,7 +71,7 @@ public class I_Type extends Instruction {
 	}
 	
 	private boolean ex( ){
-		System.out.print( "Reading register RS["+Register_Bank.convertFromR_reference(RS)+" ");
+		System.out.print( "Reading register RS["+RS+" ");
 		int rsVal = Register_Bank.read(RS);
 		System.out.println( rsVal+"], [IMMEDIATE: "+IMM+"]");
 		System.out.print( "Calculating Result:\n\tRT = ");
@@ -77,14 +79,14 @@ public class I_Type extends Instruction {
 		int rtVal =Math.toIntExact(rsVal+IMM);
 		System.out.println(rtVal);
 		System.out.println( "Writing Result:\n\tValue: "+rtVal+" to register RT["
-		                    +Register_Bank.convertFromR_reference(RT)+"]");
+		                    +RT+"]");
 		Register_Bank.store(RT,rtVal);
 		return true;
 	}
 	
 	private void calculateImmRs(){
 		System.out.println( "\n\t"+(subType)+" - "+ins+"");
-		System.out.print( "Reading register RS["+Register_Bank.convertFromR_reference(RS)+" ");
+		System.out.print( "Reading register RS["+RS+" ");
 		int rsVal = Register_Bank.read(RS);
 		System.out.println( rsVal+"], [IMMEDIATE: "+IMM+"]");
 		System.out.print( "\nCalculating Address:\n\tADDRESS = ");
@@ -95,20 +97,18 @@ public class I_Type extends Instruction {
 	
 	private boolean lw( ){
 		calculateImmRs();
-		System.out.println("\t\tFetching data from ADDRESS: "+Memory.toHexAddr(ADDRESS));
-		int data =( int ) Memory.getData(Memory.getIndex(ADDRESS));
-		System.out.println( "Writing \n\tData: "+data+" to register RD["
-		                    +Register_Bank.convertFromR_reference(RT)+"]");
+		System.out.println("\t\tFetching data from ADDRESS: "+Convert.imm2Address((int)ADDRESS));
+		int data =( int ) Memory.getData(Convert.address2Index((int)ADDRESS));
+		System.out.println( "Writing \n\tData: "+data+" to register RD["+RT+"]");
 		Register_Bank.store(RT,data);
 		return true;
 	}
 	private boolean sw( ){
 		int data = Register_Bank.read(RT);
-		System.out.println( "Reading \n\tData: "+data+" from register RS["
-		                    +Register_Bank.convertFromR_reference(RT)+"]");
+		System.out.println( "Reading \n\tData: "+data+" from register RS["+RT+"]");
 		calculateImmRs();
-		System.out.println("\t\tWriting data to ADDRESS: "+Memory.toHexAddr(ADDRESS));
-		Memory.putData(Memory.getIndex(ADDRESS),data);
+		System.out.println("\t\tWriting data to ADDRESS: "+Convert.imm2Address((int)ADDRESS));
+		Memory.putData((Convert.address2Index((int)ADDRESS)),data);
 		return true;
 	}
 }

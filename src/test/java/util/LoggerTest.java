@@ -14,8 +14,8 @@ import java.util.ArrayList;
 import static org.junit.jupiter.api.Assertions.*;
 
 class LoggerTest{
-	Logger logger;
-	ArrayList<String> logs;
+	private Logger logger;
+	private ArrayList<String> logs;
 	
 	@BeforeEach
 	void setUp(){

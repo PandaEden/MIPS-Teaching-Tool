@@ -16,7 +16,7 @@ public class J_Type extends Instruction{
 	public void execute( ){
 		System.out.println( "\n\tJ_Type"+" - "+ins+"");
 		System.out.print( "\tConverted LABEL: "+label+" to ADDRESS: ");
-		long ADDRESS = Memory.getAddress(label);
+		long ADDRESS = Memory.getLabelAddress(label);
 		System.out.println(ADDRESS);
 		System.out.println( "\t\tPC="+Memory.ProgramCounter);
 		System.out.println( "\t\t\tDifference="+(ADDRESS-Memory.ProgramCounter));

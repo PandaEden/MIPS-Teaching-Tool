@@ -1,5 +1,7 @@
 package model;
 
+import util.Convert;
+
 import java.security.InvalidParameterException;
 
 public class R_Type extends Instruction{
@@ -9,9 +11,9 @@ public class R_Type extends Instruction{
 	
 	 R_Type( String ins, String[] operands){
 		super(ins);
-		RD=Register_Bank.convert2r_reference(operands[0]);
-		RS=Register_Bank.convert2r_reference(operands[1]);
-		RT=Register_Bank.convert2r_reference(operands[2]);
+		RD=Convert.r2Index(Convert.named2R(operands[0]));
+		RS=Convert.r2Index(Convert.named2R(operands[1]));
+		RT=Convert.r2Index(Convert.named2R(operands[2]));
 	}
 		
 		@Override
@@ -21,9 +23,9 @@ public class R_Type extends Instruction{
 		}
 		
 	private boolean ex( ){
-		System.out.print( "Reading register RS["+Register_Bank.convertFromR_reference(RS)+": ");
+		System.out.print( "Reading register RS["+RS+": ");
 		int rsVal = Register_Bank.read(RS);
-		System.out.print( rsVal+"], Reading register RT["+Register_Bank.convertFromR_reference(RT)+": ");
+		System.out.print( rsVal+"], Reading register RT["+RT+": ");
 		int rtVal = Register_Bank.read(RT);
 		System.out.println( rtVal+"]");
 		System.out.print( "Calculating Result:\n\tRD = ");
@@ -43,7 +45,7 @@ public class R_Type extends Instruction{
 		}
 		System.out.println(rdVal);
 		System.out.println( "Writing Result\n\tValue: "+rdVal+" to register RD["
-		                    +Register_Bank.convertFromR_reference(RD)+"]");
+		                    +RD+"]");
 		Register_Bank.store(RD,rdVal);
 		return true;
 	}

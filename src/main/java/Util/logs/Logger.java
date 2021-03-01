@@ -71,12 +71,12 @@ public class Logger{
 	public static class Color{
 		public static final String ANSI_RESET = "\u001B[0m";
 		public static final String BLACK_ANSI = "\u001B[30m";
-		public static final String RED_ANSI = "\u001B[31m";        //Reserve for Error Log
-		public static final String GREEN_ANSI = "\u001B[32m";
-		public static final String YELLOW_ANSI = "\u001B[33m";    //Reserve for Warnings Log
-		public static final String BLUE_ANSI = "\u001B[34m";
-		public static final String PURPLE_ANSI = "\u001B[35m";
-		public static final String CYAN_ANSI = "\u001B[36m";
+		public static final String RED_ANSI = "\u001B[31m";			//Reserve for Error Log
+		public static final String GREEN_ANSI = "\u001B[32m";		// RegisterBank - Read
+		public static final String YELLOW_ANSI = "\u001B[33m";		//Reserve for Warnings Log
+		public static final String BLUE_ANSI = "\u001B[34m";		// Data Write
+		public static final String PURPLE_ANSI = "\u001B[35m";		// Data Read
+		public static final String CYAN_ANSI = "\u001B[36m";		// RegisterBank - Write
 		public static final String WHITE_ANSI = "\u001B[37m";
 		public static boolean colorSupport = false;
 		
