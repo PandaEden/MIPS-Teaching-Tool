@@ -29,9 +29,9 @@ public class Instruction {
 	
 	public void execute(){
 		System.out.println( "\n\t"+type2String(type)+" - "+ins+"");
-			Register_Bank.printIDs();
-			Register_Bank.printT();
-			Register_Bank.printS();
+//			Register_Bank.printIDs();
+//			Register_Bank.printT();
+//			Register_Bank.printS();
 	}
 	
 	public boolean isEXIT(){

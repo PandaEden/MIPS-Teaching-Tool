@@ -1,5 +1,6 @@
 package util;
 
+import model.components.DataMemory;
 import model.components.InstrMemory;
 import org.jetbrains.annotations.NotNull;
 
@@ -85,8 +86,8 @@ public class Convert{
 	 <p> Negative Immediate can be a minimum of (-2^15)
 	 
 	 @throws IllegalArgumentException not valid Immediate.
-	 @see Validate#BASE_INSTR_ADDRESS
-	 @see Validate#BASE_DATA_ADDRESS
+	 @see InstrMemory#BASE_INSTR_ADDRESS
+	 @see DataMemory#BASE_DATA_ADDRESS
 	 */
 	@NotNull
 	public static Integer imm2Address(@NotNull Integer immediate){
@@ -106,31 +107,31 @@ public class Convert{
 	 @return index position for {@link InstrMemory} or {@link model.components.DataMemory}
 	 
 	 @throws IllegalArgumentException for non-valid address
-	 @see Validate#BASE_INSTR_ADDRESS
-	 @see Validate#BASE_DATA_ADDRESS
-	 @see Validate#OVER_SUPPORTED_INSTR_ADDRESS
-	 @see Validate#OVER_SUPPORTED_DATA_ADDRESS
+	 @see InstrMemory#BASE_INSTR_ADDRESS
+	 @see DataMemory#BASE_DATA_ADDRESS
+	 @see InstrMemory#OVER_SUPPORTED_INSTR_ADDRESS
+	 @see DataMemory#OVER_SUPPORTED_DATA_ADDRESS
 	 */
 	@NotNull
 	public static Integer address2Index(@NotNull Integer address){
 		final int DATA_ALIGN = 8;
 		final int WORD_ALIGN = 4;
 		
-		if (address>=Validate.BASE_DATA_ADDRESS)
-			if (address>=Validate.OVER_SUPPORTED_DATA_ADDRESS)
+		if (address>=DataMemory.BASE_DATA_ADDRESS)
+			if (address>=DataMemory.OVER_SUPPORTED_DATA_ADDRESS)
 				throw new IllegalArgumentException("Address >= OVER_SUPPORTED_DATA_ADDRESS!");
 			else if (address%DATA_ALIGN!=0)
 				throw new IllegalArgumentException("Data Address is not DoubleWord aligned!");
 			else // Valid Data Address
-				return (address2Imm(address-Validate.BASE_DATA_ADDRESS)); // multiple of 2.
+				return (address2Imm(address-DataMemory.BASE_DATA_ADDRESS)); // multiple of 2.
 		
-		if (address>=Validate.BASE_INSTR_ADDRESS)
-			if (address>=Validate.OVER_SUPPORTED_INSTR_ADDRESS)
+		if (address>=InstrMemory.BASE_INSTR_ADDRESS)
+			if (address>=InstrMemory.OVER_SUPPORTED_INSTR_ADDRESS)
 				throw new IllegalArgumentException("Address >= OVER_SUPPORTED_INSTR_ADDRESS!");
 			else if (address%WORD_ALIGN!=0)
 				throw new IllegalArgumentException("Instr Address is not Word Aligned!");
 			else // Valid Instr Address
-				return (address2Imm(address-Validate.BASE_INSTR_ADDRESS));
+				return (address2Imm(address-InstrMemory.BASE_INSTR_ADDRESS));
 		
 		throw new IllegalArgumentException("Address Below Instr Address!");
 	}
