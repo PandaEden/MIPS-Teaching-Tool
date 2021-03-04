@@ -141,6 +141,13 @@ class DataMemoryTest{
 		data.put(DataMemory.MAX_DATA_ITEMS-1, 250.0);
 		assertEquals(250, dataMemory.readData(DataMemory.OVER_SUPPORTED_DATA_ADDRESS-DataMemory.DATA_ALIGN));
 	}
+	
+	@Test
+	@DisplayName ("Test NoAction _ DataMem")
+	void testNoActionDataMem(){
+		dataMemory.noAction();
+		assertEquals("Execution:\n\tDataMemory:\t"+"No Action!\n", log.toString());
+	}
 //
 //	@Test
 //	@Disabled

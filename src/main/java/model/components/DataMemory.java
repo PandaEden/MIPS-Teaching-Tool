@@ -54,7 +54,7 @@ public class DataMemory{
 	public int readData(@Nullable Integer address){
 		int val = 0;
 		if (address==null) {
-			this.executionLog.append(NAME+":\t"+"No Action!");
+			noAction();
 		} else if (inRange(address)) {
 			int index = toIndex(address);
 			if (data.containsKey(index))
@@ -79,7 +79,7 @@ public class DataMemory{
 	 */
 	public boolean writeData(@Nullable Integer address, @Nullable Integer data){
 		if (address==null || data==null) {
-			this.executionLog.append(NAME+":\t"+"No Action!");
+			noAction();
 			return false;
 		} else if (inRange(address)) {
 			this.data.put(toIndex(address), data.doubleValue());
@@ -102,6 +102,11 @@ public class DataMemory{
 		else
 			throw new IndexOutOfBoundsException("Data Address must be >="+Convert.uInt2Hex(BASE_DATA_ADDRESS)
 					+" and <="+Convert.uInt2Hex(OVER_SUPPORTED_DATA_ADDRESS-DATA_ALIGN)+"!");
+	}
+	
+	//Explicit instruction to do nothing,
+	public void noAction(){
+		this.executionLog.append(NAME+":\t"+"No Action!");
 	}
 	
 	private String fmtMem(int address, boolean write){

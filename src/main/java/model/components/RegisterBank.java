@@ -45,7 +45,7 @@ public class RegisterBank{
 		
 		if (index == null) {
 			LAST_READ0 = null;
-			this.executionLog.append(NAME+":\t"+"No Action!");
+			noAction();
 		} else if (inRange(index)){
 			LAST_READ0 = index;
 			val=this.registers[index];
@@ -73,7 +73,7 @@ public class RegisterBank{
 		
 		if (index0 == null && index1 == null) {
 			LAST_READ0 = null; LAST_READ1 = null;
-			this.executionLog.append(NAME+":\t"+"No Action!");
+			noAction();
 			
 		} else if (index0 != null && index1 == null){
 			data0 = read(index0);
@@ -114,7 +114,7 @@ public class RegisterBank{
 	public boolean write(@Nullable Integer index, @Nullable Integer data){
 		if (index==null || data == null || index ==0) {
 			LAST_WRITTEN=null;
-			this.executionLog.append(NAME+":\t"+"No Action!");
+			noAction();
 			return false;
 		} else if (inRange(index)){
 			LAST_WRITTEN=index;
@@ -133,6 +133,10 @@ public class RegisterBank{
 			throw new IndexOutOfBoundsException("Index must be >="+MIN_INDEX+" and <="+MAX_INDEX+"!");
 	}
 	
+	//Explicit instruction to do nothing, And also clear the previous read/written
+	public void noAction(){
+		this.executionLog.append(NAME+":\t"+"No Action!");
+	}
 	
 	/**
 	 Returns a formatted string, that when printed, displays the current state of the register bank.

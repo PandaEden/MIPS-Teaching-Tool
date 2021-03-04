@@ -159,4 +159,11 @@ class RegisterBankTest{
 		
 		assertEquals(fmt, rb.format());
 	}
+	
+	@Test
+	@DisplayName ("Test NoAction _ RegBank")
+	void testNoActionRegBank(){
+		rb.noAction();
+		assertEquals("Execution:\n\tRegisterBank:\t"+"No Action!\n", log.toString());
+	}
 }
