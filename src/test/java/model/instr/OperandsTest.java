@@ -121,7 +121,7 @@ class OperandsTest{
 		Assertions.assertAll(
 				() -> assertNull(operands.getRs()),
 				() -> assertNull(operands.getRt()),
-				() -> assertEquals(31, operands.getRd()),
+				() -> assertNull(operands.getRd()), // Register 31 is set during Execution.
 				() -> assertEquals(11892, operands.getImmediate()),
 				() -> assertNull(operands.getLabel()),
 				() -> assertEquals("J", operands.getInstrType().name()),
@@ -163,7 +163,7 @@ class OperandsTest{
 		Assertions.assertAll(
 				() -> assertNull(operands3.getRs()),
 				() -> assertNull(operands3.getRt()),
-				() -> assertEquals(31, operands3.getRd()),
+				() -> assertNull( operands3.getRd()), // Register 31 is set during Execution.
 				() -> assertNull(operands3.getImmediate()),
 				() -> assertEquals("panda", operands3.getLabel()),
 				() -> assertEquals("J", operands3.getInstrType().name()),
@@ -182,7 +182,7 @@ class OperandsTest{
 				() -> assertEquals("I_write", operands4.getInstrType().name()),
 				() -> assertTrue(operands4.setImmediate(errorLog, labelsMap)),
 				() -> assertEquals(0, operands4.getRs()),
-				() -> assertEquals(0x10010010/4, operands4.getImmediate())
+				() -> assertEquals(0x10010010, operands4.getImmediate())
 		);
 	}
 	

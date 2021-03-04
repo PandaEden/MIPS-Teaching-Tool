@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import util.AddressValidation;
 import util.Convert;
-import util.Validate;
 import util.logs.ErrorLog;
 
 import java.util.HashMap;
@@ -16,7 +15,6 @@ import java.util.HashMap;
  Methods, may return null - if it is not used by the operand.
  */
 public class Operands{
-	private static final Operands exitOperands = new Operands();
 	private InstrType instrType;
 	private boolean immediateSet;
 	//RS is only used for reading.
@@ -68,12 +66,10 @@ public class Operands{
 	 @throws IllegalArgumentException if label is blank
 	 */
 	public Operands(String opcode, @Nullable Integer rt, @NotNull String label){
-		this(opcode, 0, rt, null);
+		this(opcode, null, rt, null); // rs is set to 0 at assembly
 		this.label = label;
 		if (label.isBlank())
-			throw new IllegalArgumentException("Operands cannot be set with blank Label!");
-		rs=null;
-		this.immediateSet = false;
+			throw new IllegalArgumentException("Operands cannot be set with blank Label! : "+opcode);
 	}
 	
 	/**
@@ -104,8 +100,6 @@ public class Operands{
 		this();
 		this.label = label;
 		this.instrType = InstrType.J;
-		if (opcode.equals("jal"))
-			rd = 31;
 	}
 	
 	/** Jump */
@@ -113,8 +107,6 @@ public class Operands{
 		this();
 		this.immediate = address;
 		this.instrType = InstrType.J;
-		if (opcode.equals("jal"))
-			rd = 31;
 	}
 	
 	/**
@@ -122,7 +114,7 @@ public class Operands{
 	 */
 	@NotNull
 	public static Operands getExit(){
-		return exitOperands;
+		return new Operands();
 	}
 	
 	/**
@@ -135,8 +127,6 @@ public class Operands{
 	 @throws IllegalArgumentException if used with null label in Operands.
 	 */
 	public boolean setImmediate(@NotNull ErrorLog errorLog, @NotNull HashMap<String, Integer> labelMap){
-		Validate validate = new Validate(errorLog);
-		
 		if (this.instrType==InstrType.R)
 			throw new IllegalArgumentException("Cannot setImmediate for Register type!");
 		
@@ -149,8 +139,8 @@ public class Operands{
 		if (this.immediateSet)
 			throw new IllegalArgumentException("Immediate has already been set");
 		
-		if (!labelMap.containsKey(label)) {
-			errorLog.append("Label \""+label+"\" Not Found!");
+		if (!labelMap.containsKey(this.label)) {
+			errorLog.append("Label \""+this.label+"\" Not Found!");
 			return false;
 		}
 		int address = labelMap.get(this.label);
@@ -167,8 +157,8 @@ public class Operands{
 			case I_read:
 			case I_write:
 				if (AddressValidation.isSupportedDataAddr(address, errorLog)) {
-					this.immediate = Convert.address2Imm(address);
-					this.rs=0;
+					this.immediate = address;
+					this.rs = 0;
 				} else
 					errorLog.append(invalidDataAddr);
 				break;
@@ -176,8 +166,8 @@ public class Operands{
 				throw new IllegalArgumentException("Cannot setImmediate for "+this.instrType+" type!");
 		}
 		// to avoid repeat attempts. If this method gives an error the input file needs to be edited
-		immediateSet = true;
-		return (immediate!=null); // returns True if Immediate has been set.
+		this.immediateSet = true;
+		return (this.immediate!=null); // returns True if Immediate has been set.
 	}
 	
 	@Nullable

@@ -152,7 +152,7 @@ class RegisterBankTest{
 		fmt += "|R5: 5\t\tR13: 5\tR21: 5\tR29: 5|\n";
 		fmt += "|R6: 5\t\tR14: 5\tR22: 5\tR30: 5|\n";
 		fmt += "|R7: 5\t\tR15: 5\tR23: 5\tR31: 5|\n";
-		fmt += "-------------------------------------";
+		fmt += "-------------------------------------\n";
 		for (int i = 1; i<regs.length; i++) {
 			regs[i]=5;
 		}
