@@ -11,9 +11,9 @@ import util.logs.ErrorLog;
  */
 public class AddressValidation{
 	/**
-	 {@link InstrMemory#BASE_INSTR_ADDRESS} <b>>= address <=</b> {@link InstrMemory#OVER_INSTR_ADDRESS}-4.
-	 <p>
-	 If not valid, adds to the {@link ErrorLog}.
+	 {@link InstrMemory#BASE_INSTR_ADDRESS} <b>>= address <=</b> {@link InstrMemory#OVER_INSTR_ADDRESS}
+	 -{@link InstrMemory#ADDR_SIZE}.
+	 <p>	If not valid, adds to the {@link ErrorLog}.
 	 
 	 @see ErrorLog
 	 @see InstrMemory#BASE_INSTR_ADDRESS
@@ -29,10 +29,10 @@ public class AddressValidation{
 	
 	/**
 	 Checks if the address, is a Supported Address for Instructions.
-	 <p>- and can be used with {@link InstrMemory}, after using {@link #addr2index(int, ErrorLog)}.
+	 <p>And can be used with {@link InstrMemory}, after using {@link #addr2index(int, ErrorLog)}.
 	 <p>
-	 {@link InstrMemory#BASE_INSTR_ADDRESS} <b>>= address <=</b> {@link InstrMemory#OVER_SUPPORTED_INSTR_ADDRESS}-4.
-	 
+	 {@link InstrMemory#BASE_INSTR_ADDRESS} <b>>= address <=</b> {@link InstrMemory#OVER_SUPPORTED_INSTR_ADDRESS}
+	 -{@link InstrMemory#ADDR_SIZE}.
 	 <p>	If not supported, adds to the {@link ErrorLog}.
 	 
 	 <p> Prints a different error message, if the address is also not valid. using {@link #isValidInstrAddr(int,
@@ -46,7 +46,7 @@ public class AddressValidation{
 	public static boolean isSupportedInstrAddr(int address, ErrorLog errorLog){
 		if (!isValidInstrAddr(address, errorLog))
 			return false;
-		if (address<=InstrMemory.OVER_SUPPORTED_INSTR_ADDRESS-4)
+		if (address<=InstrMemory.OVER_SUPPORTED_INSTR_ADDRESS-InstrMemory.ADDR_SIZE)
 			return true;
 		
 		errorLog.append("Instruction Address: \""+Convert.uInt2Hex(address)+"\" Not Supported!");
@@ -54,14 +54,13 @@ public class AddressValidation{
 	}
 	
 	/**
-	 {@link model.components.DataMemory#BASE_DATA_ADDRESS} <b>>= address <=</b> {@link
-	model.components.DataMemory#OVER_DATA_ADDRESS}-DATA_ALIGN.
-	 <p>
-	 If not valid, adds to the {@link ErrorLog}.
+	 {@link DataMemory#BASE_DATA_ADDRESS} <b>>= address <=</b> {@link DataMemory#OVER_DATA_ADDRESS}
+	 -{@link DataMemory#DATA_ALIGN}.
+	 <p>	If not valid, adds to the {@link ErrorLog}.
 	 
 	 @see ErrorLog
-	 @see model.components.DataMemory#BASE_DATA_ADDRESS
-	 @see model.components.DataMemory#OVER_DATA_ADDRESS
+	 @see DataMemory#BASE_DATA_ADDRESS
+	 @see DataMemory#OVER_DATA_ADDRESS
 	 */
 	static boolean isValidDataAddr(int address, ErrorLog errorLog){
 		if (address%DataMemory.DATA_ALIGN!=0)
@@ -76,10 +75,10 @@ public class AddressValidation{
 	
 	/**
 	 Checks if the address, is a Supported Address for Data.
-	 <p>- and can be used with {@link DataMemory}, after using {@link #addr2index(int, ErrorLog)}.
+	 <p>And can be used with {@link DataMemory}, after using {@link #addr2index(int, ErrorLog)}.
 	 <p>
-	 {@link DataMemory#BASE_DATA_ADDRESS} <b>>= address <=</b>  {@link DataMemory#OVER_SUPPORTED_DATA_ADDRESS}-DATA_ALIGN.
-	 
+	 {@link DataMemory#BASE_DATA_ADDRESS} <b>>= address <=</b>  {@link DataMemory#OVER_SUPPORTED_DATA_ADDRESS}
+	 -{@link DataMemory#DATA_ALIGN}.
 	 <p>	If not supported, adds to the {@link ErrorLog}.
 	 
 	 <p> Prints a different error message, if the address is also not valid. using {@link #isValidDataAddr(int,

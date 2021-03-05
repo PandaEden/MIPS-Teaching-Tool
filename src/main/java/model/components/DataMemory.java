@@ -8,7 +8,7 @@ import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
 import util.logs.Logger;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  Wrapper for float[] data.
@@ -30,10 +30,10 @@ public class DataMemory{
 	public static final int OVER_SUPPORTED_DATA_ADDRESS = BASE_DATA_ADDRESS+MAX_DATA_ITEMS*DATA_ALIGN;
 	public static final int OVER_DATA_ADDRESS = 0x10040000;
 	private final String NAME = "DataMemory";
-	private final ArrayList<Double> data;
+	private final HashMap<Integer, Double> data;
 	private final ExecutionLog executionLog;
 	
-	public DataMemory(@NotNull ArrayList<Double> data, @NotNull ExecutionLog executionLog){
+	public DataMemory(@NotNull HashMap<Integer, Double> data, @NotNull ExecutionLog executionLog){
 		if (data.size()>MAX_DATA_ITEMS)
 			throw new IllegalArgumentException("Data Memory cannot have move than "+MAX_DATA_ITEMS+" indexes");
 		
@@ -57,7 +57,7 @@ public class DataMemory{
 			this.executionLog.append(NAME+":\t"+"No Action!");
 		} else if (inRange(address)) {
 			int index = toIndex(address);
-			if (index<this.data.size())
+			if (data.containsKey(index))
 				val = this.data.get(index).intValue();
 			
 			this.executionLog.append(NAME+":\t"+"Reading Value["+val+"]\tFrom Memory Address["
@@ -82,7 +82,7 @@ public class DataMemory{
 			this.executionLog.append(NAME+":\t"+"No Action!");
 			return false;
 		} else if (inRange(address)) {
-			this.data.add(toIndex(address), data.doubleValue());
+			this.data.put(toIndex(address), data.doubleValue());
 			this.executionLog.append(NAME+":\t"+"Writing Value["+data+"]\tTo Memory Address["+fmtMem(address, true)+"]!");
 			
 		}

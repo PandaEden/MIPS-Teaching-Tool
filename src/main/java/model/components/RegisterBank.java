@@ -21,8 +21,9 @@ public class RegisterBank{
 	private Integer LAST_WRITTEN = null;
 	private final String NAME = "RegisterBank";
 	
+	//TODO Add Named versions of Read/Write, so the Opperand Name [RD/RS/RT] can be printed to the log with the action.
 	
-	RegisterBank(int[] registers, ExecutionLog executionLog){
+	public RegisterBank(int[] registers, ExecutionLog executionLog){
 		if (registers.length!=32)
 			throw new IllegalArgumentException("Register Bank Must be 32 indexes!");
 		if (registers[0]!=0)
@@ -135,7 +136,7 @@ public class RegisterBank{
 	
 	/**
 	 Returns a formatted string, that when printed, displays the current state of the register bank.
-	 <p><b>Use with printLn(</b><i> registerBank.format() </i><b>)</b>
+	 <p><b>Use with print(</b><i> registerBank.format() </i><b>)</b>
 	 */
 	@NotNull
 	public String format(){
@@ -149,7 +150,7 @@ public class RegisterBank{
 					.append("\t").append(fmtRegWithData(I4++))
 					.append("|\n");
 		}
-		rtn.append("-------------------------------------");
+		rtn.append("-------------------------------------\n");
 		return rtn.toString();
 	}
 	

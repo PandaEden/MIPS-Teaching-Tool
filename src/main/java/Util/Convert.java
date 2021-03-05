@@ -144,7 +144,7 @@ public class Convert{
 	 @return array of individual Strings.
 	 */
 	@NotNull
-	static String[] splitCSV(@NotNull String CSV){
+	public static String[] splitCSV(@NotNull String CSV){
 		return Convert.removeExtraWhitespace(CSV).split("\\s*,\\s*");
 	}
 	
@@ -152,7 +152,7 @@ public class Convert{
 	 Returns the String any whitespace is shortened to only 1 space, and leading/trailing spaces removed.
 	 */
 	@NotNull
-	static String removeExtraWhitespace(@NotNull String string){
+	public static String removeExtraWhitespace(@NotNull String string){
 		// Replace multiple spaces with single space
 		string = string.strip().replaceAll(" +", " ");
 		return string;

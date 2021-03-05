@@ -33,7 +33,7 @@ public class Operands{
 	//TODO refactor to factory/builder
 	// and move Operand validation here:
 	
-	//TODO change this to return NULL for values not used. e.g. R doesn't use labels, or Immediate
+	//TODO Change to using Instruction Type instead of opcode directly
 	
 	private Integer rs, rt, rd, immediate;
 	private String label;
@@ -65,14 +65,14 @@ public class Operands{
 	 Expects Immediate to be valid if label is null,
 	 <p> [int opcode] needs to be 1 (addi), 2 (lw) or 3 (sw).
 	 
-	 @throws IllegalArgumentException if Immediate AND label are null, opcode out of range
+	 @throws IllegalArgumentException if label is blank
 	 */
 	public Operands(String opcode, @Nullable Integer rt, @NotNull String label){
-		this(opcode, null, rt, null);
+		this(opcode, 0, rt, null);
 		this.label = label;
 		if (label.isBlank())
 			throw new IllegalArgumentException("Operands cannot be set with blank Label!");
-		
+		rs=null;
 		this.immediateSet = false;
 	}
 	
@@ -96,7 +96,7 @@ public class Operands{
 			default:
 				throw new IllegalArgumentException(" Invalid opcode for Immediate type : "+opcode);
 		}
-		immediateSet = (immediate==null);
+		immediateSet = (immediate!=null);
 	}
 	
 	/** Jump */
@@ -136,7 +136,6 @@ public class Operands{
 	 */
 	public boolean setImmediate(@NotNull ErrorLog errorLog, @NotNull HashMap<String, Integer> labelMap){
 		Validate validate = new Validate(errorLog);
-
 		
 		if (this.instrType==InstrType.R)
 			throw new IllegalArgumentException("Cannot setImmediate for Register type!");
@@ -167,9 +166,10 @@ public class Operands{
 				break;
 			case I_read:
 			case I_write:
-				if (AddressValidation.isSupportedDataAddr(address, errorLog))
+				if (AddressValidation.isSupportedDataAddr(address, errorLog)) {
 					this.immediate = Convert.address2Imm(address);
-				else
+					this.rs=0;
+				} else
 					errorLog.append(invalidDataAddr);
 				break;
 			default:
