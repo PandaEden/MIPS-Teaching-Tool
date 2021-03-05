@@ -1,8 +1,6 @@
 package util;
 
 import model.DataType;
-import model.components.DataMemory;
-import model.components.InstrMemory;
 import model.instr.Operands;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -29,7 +27,7 @@ import java.util.List;
 public class Validate{
 	public static final int MAX_FILE_LINES = 512;
 	
-	//TODO make this auto generate based on {@link DataType}
+	//TODO make this auto generate based on {@link DataType} - perhaps a HashMap?
 	private static final String SUPPORTED_DATATYPE_CSV = (".word");
 	private static final String SUPPORTED_DIRECTIVES_CSV = (".data, .text, .code"+","+SUPPORTED_DATATYPE_CSV);
 	//TODO refactor to Enum? or, Loop Up Table ?
@@ -61,7 +59,7 @@ public class Validate{
 	public Validate(ErrorLog errLog){
 		this.errLog = errLog;
 	}
-
+	
 	/**
 	 If not valid, adds to the {@link #errLog}.
 	 <p>	see README for list of supported directive.
@@ -93,6 +91,7 @@ public class Validate{
 		
 		return rtn;
 	}
+	
 	
 	/**
 	 If not valid, adds to the {@link #errLog}.
@@ -137,8 +136,7 @@ public class Validate{
 	 @param opcode Instruction opcode, used to determine Operands format.
 	 //TODO R_type with shift amount uses [0, RT, RD, ShiftAmt]
 	 
-	 @return
-	 <li>R_type int[3] {RS, RT, RD}</li>
+	 @return <li>R_type int[3] {RS, RT, RD}</li>
 	 <li>I_type int[3] {RS, RT, Imm}</li>
 	 <li>J_type int[3] {}-1, -1, Address}</li>
 	 */

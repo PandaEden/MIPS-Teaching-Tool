@@ -35,11 +35,6 @@ class DataMemoryTest{
 		log.clear();
 	}
 	
-	private int randomSignedInt(){
-		int rnt = random.nextInt(Integer.MAX_VALUE);
-		return random.nextBoolean() ? rnt : (-rnt)-1;
-	}
-	
 	//TODO change Get&Set to float, and test with margin of error
 	//TODO make Covert helper method for converting between float/int
 	
@@ -49,21 +44,23 @@ class DataMemoryTest{
 	@DisplayName ("valid writeData (.word)")
 	void validReadWriteData_Word(int inputData){
 		// populate 20 entries in the data with random values, and returns a deep copy of the data
-		ArrayList<Double> copy = new ArrayList<>();
-		for (int i = 20; i>0; i--) {
-			double value = randomSignedInt();
-			copy.add(value);    // Possible issue of inputData == randomSignedInt ?
+		HashMap<Integer, Double> copy = new HashMap<>();
+		for (int i = 0; i<20; i++) {
+			double value = random.nextInt();
+			copy.put(i, value);    // Possible issue of inputData == randomSignedInt ?
 			data.put(i, value);
 		}
 		
 		int index = random.nextInt(20); // random index 0-19
+		System.out.println(index);
 		//after set Data, all values but the value at this index should equal
 		int address = DataMemory.BASE_DATA_ADDRESS+index*DataMemory.DATA_ALIGN;
+		System.out.println(index+" idk");
 		
 		assertAll(
 				() -> assertTrue(dataMemory.writeData(address, inputData)),
 				() -> assertEquals("Execution:\n\tDataMemory:\t"+"Writing Value["+inputData
-						+"]\tTo Memory Address["+Convert.uInt2Hex(address)+"]!", log.toString()),
+						+"]\tTo Memory Address["+Convert.uInt2Hex(address)+"]!\n", log.toString()),
 				//check set index has changed.
 				() -> assertEquals(inputData, data.get(index), DELTA),
 				() -> assertNotEquals(inputData, copy.get(index), DELTA),
@@ -73,17 +70,16 @@ class DataMemoryTest{
 		
 		assertEquals(inputData, dataMemory.readData(address));
 		assertEquals("Execution:\n\tDataMemory:\t"+"Reading Value["+inputData
-				+"]\tFrom Memory Address["+Convert.uInt2Hex(address)+"]!", log.toString());
+				+"]\tFrom Memory Address["+Convert.uInt2Hex(address)+"]!\n", log.toString());
 		
 		//check other indexes are not changed.
-		for (int i = 0; i<data.size(); i++)
-			if (i!=index) {
-				assertEquals(copy.get(index), data.get(index), DELTA);
+		for (int i = 0; i<data.size(); i++){
+			if (i!=index){
+				assertEquals(copy.get(i), data.get(i), DELTA);
 				assertEquals(dataMemory.readData(DataMemory.BASE_DATA_ADDRESS+i*DataMemory.DATA_ALIGN),
-						data.get(index), DELTA);
-				
+						data.get(i), DELTA);
 			}
-		
+		}
 	}
 	
 	@Test

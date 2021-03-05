@@ -38,7 +38,12 @@ public class Instruction{
 		this.operands = operands;
 	}
 	
-	public static Instruction buildInstruction(String opcode, Operands operands){
+	/**
+	 <b>This builder only pairs the opcode, with the operand, It performs no validation</b>
+	 <p>Errors with format may be caught during assembly.</p>
+	 <p>Trying to Execute an instruction where assembly has failed will throw an exception.</p>
+	 */
+	public static Instruction buildInstruction(@NotNull String opcode, @NotNull Operands operands){
 		Type type = ins2Type(opcode);
 		
 		//TODO refactor into all being in One Class,
@@ -75,6 +80,8 @@ public class Instruction{
 	 or , NULL if the instruction is "EXIT".
 	 <p>
 	 Executing instructions using BASE+Offset addresses may throw an InvalidArgumentException.
+	 
+	 @throws IllegalStateException if not Assembled/ Assembly failed!
 	 */
 	public Integer execute(int PC, @NotNull DataMemory dataMem, @NotNull RegisterBank regBank,
 						   @NotNull ExecutionLog executionLog){
@@ -94,11 +101,6 @@ public class Instruction{
 		regBank.noAction();
 		dataMem.noAction();
 		NPC = null;
-	}
-	
-	@Override
-	public String toString(){
-		return "Instruction{"+type+"\t"+ins+"} ";
 	}
 	
 	// Reads from the Operands object, and sets the appropriate values

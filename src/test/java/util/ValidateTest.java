@@ -414,8 +414,25 @@ class ValidateTest{
 			assertNotNull(operands2);
 			assertFalse(warningsLog.hasEntries());
 			assertFalse(errLog.hasEntries());
-			
+			// Invalid - Too many Operands
 			Operands operands3 = validate.splitValidOperands(0, "j", "0x100009, 50", warningsLog);
+			assertNull(operands3);
+			assertTrue(errLog.hasEntries());
+		}
+		
+		@Test
+		@Disabled // TODO - revisit when extending supported Instruction Range > 0x1000,0000.
+		@DisplayName ("Test Operands, Jump _ Invalid Address")
+		void testOperandsJumpInvalidAddress(){
+			// Invalid - >26bit
+			/*
+			2^26 = 67108864, which shifted by 2, becomes 268435456.
+			as Hexadecimal that is 0x1000,0000 which is already larger than the maximum supported address 0x0050,0000
+			So, a non 26bit value, is already caught as an invalid address.
+			 */
+			WarningsLog warningsLog = new WarningsLog(new ArrayList<>());
+			
+			Operands operands3 = validate.splitValidOperands(0, "j", "67108865", warningsLog);
 			assertNull(operands3);
 			assertTrue(errLog.hasEntries());
 		}
