@@ -84,7 +84,6 @@ public class DataMemory{
 		} else if (inRange(address)) {
 			this.data.put(toIndex(address), data.doubleValue());
 			this.executionLog.append(NAME+":\t"+"Writing Value["+data+"]\tTo Memory Address["+fmtMem(address, true)+"]!");
-			
 		}
 		return true;
 	}

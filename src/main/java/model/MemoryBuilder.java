@@ -4,6 +4,7 @@ import model.components.DataMemory;
 import model.components.InstrMemory;
 import model.instr.Operands;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import util.Convert;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
@@ -33,20 +34,38 @@ import java.util.LinkedList;
  0x10040000:(2^28 +2^18) >= Heap     <0x20000000:(2^29)
  0x70000000:(2^31-2^28)  >= Stack    <0x80000000:(2^31)
  </pre>
+ 
+ <pre> Invalid Values Examples
+ INVALID_DOUBLE = "-2222222222222222222222222222222222222222.22222222222222222222222222222222222222222222222222222222";
+ INVALID_LONG = "9223372036854775808"; //Long.MAX_VALUE +1
+ INVALID_LONG_UNDER = "-9223372036854775809"; //Long.MIN_VALUE -1
+ INVALID_INT = "2147483648"; //Integer.MAX_VALUE +1
+ INVALID_INT_UNDER = "-2147483649"; //Integer.MIN_VALUE -1
+ 
+ Data Type Ranges - https://www.w3schools.com/java/java_data_types.asp
+ 32bit Int - Signed [-2,147,483,648 -> 2,147,483,647]
+ - Unsigned [0 -> 4,294,967,296]
+ 64Bit Long - Unsigned [-9,223,372,036,854,775,808 -> 9,223,372,036,854,775,807]
+ - Signed [0 -> 18,446,744,073,709,551,616]
+ <p>
+ 32bit Float - Sufficient for storing 6 to 7 decimal digits
+ 64
+ </pre>
  */
 public class MemoryBuilder{
 	private static final int INS_ADDR_BASE = InstrMemory.BASE_INSTR_ADDRESS; //0x 0400 0000
 	private static final int DATA_ADDR_BASE = DataMemory.BASE_DATA_ADDRESS; //0x 1001 0000
 	private static final int LIMIT = InstrMemory.MAX_INSTR_COUNT;
+	private static final int DATA_LIMIT = DataMemory.MAX_DATA_ITEMS;
 	private static final int ADDR_SIZE = InstrMemory.ADDR_SIZE;
 	private static final int DATA_SIZE = DataMemory.DATA_ALIGN;
 	
-	private final HashMap<Integer, Double> dataArr = new HashMap<Integer, Double>(); //index=(offset from BASE)/DataMemory.DATA_ALIGN;
-	private final DataMemory dataMem = new DataMemory(dataArr, new ExecutionLog(new ArrayList<String>()));
+	private final HashMap<Integer, Double> dataArr = new HashMap<>(); //index=(offset from BASE)/DataMemory.DATA_ALIGN;
+	private final DataMemory dataMem = new DataMemory(dataArr, new ExecutionLog(new ArrayList<>()));
 	private final HashMap<String, Integer> labelMap = new HashMap<>();
 	private final LinkedList<String> labels = new LinkedList<>();
 	
-	private ArrayList<Instruction> instructions = new ArrayList<>();
+	private final ArrayList<Instruction> instructions = new ArrayList<>();
 	private int ProgramCounter = INS_ADDR_BASE;
 	private int MEM_PTR = DATA_ADDR_BASE; //decimal representation of address
 	
@@ -55,7 +74,8 @@ public class MemoryBuilder{
 	 It will automatically collect any pushed {@link #labels} and attach to the
 	 address of the first (if a range or array) value added, in {@link #labelMap}
 	 
-	 @param str_args switch:<ul>
+	 <p>Supported Data Format: (.word)</p>
+	 <ul>
 	 <li>.word [±int_Val]:[+int_N]</li>
 	 <li>.word [±int], [±int]... <i>(whitespace ignored)</i></li>
 	 <li>.word [±int]</li>
@@ -63,26 +83,30 @@ public class MemoryBuilder{
 	 
 	 @return boolean - success of adding all data.
 	 
-	 @throws IllegalArgumentException if unsupported input
+	 @throws IllegalStateException dataType has not been pre-validated
 	 */
-	public boolean addData(@NotNull String[] str_args){
-		final String SIGNED_INT = "-?\\d*";	// matches optional '-' sign, then any length int
-		final String POSITIVE_INT = "\\d*";	// matches any length int
-		final String OptSpace = "\\s?";		// Optional Single Whitespace
+	public boolean addData(@NotNull String dataType, @NotNull String data, @NotNull ErrorLog errorLog){
+		final String SIGNED_INT = "-?\\d*";    // matches optional '-' sign, then any length int
 		
-		final String CSV_REGEX = "("+SIGNED_INT+OptSpace+","+OptSpace+")"+SIGNED_INT; // (-?\\d*\\s,\\s)-?\\d*
-		final String COLON_SEP = SIGNED_INT+OptSpace+":"+OptSpace+POSITIVE_INT; // -?\\d*\\s:\\s\\d*
-		
-		attachLabelsToAddress(MEM_PTR);
 		// Validate.isValidDataType // Directive
-		if (".word".equals(str_args[0])) {
-			if		(str_args[1].matches(COLON_SEP)) return storeRange(str_args[1]);	// Val:N
-			else if (str_args[1].matches(CSV_REGEX)) return storeCsvArray(str_args[1]);	// Int, Int, Int ...
-			else if (str_args[1].matches(SIGNED_INT)) return storeWord(Integer.parseInt(str_args[1]));	// INT
-			else
-				throw new IllegalArgumentException("Data: ["+str_args[1]+"], Not Valid For DataType: "+str_args[0]);
+		if (data.isBlank()) {
+			errorLog.append("No Data given!");    //TODO Line Numbers ?
+		} else if (dataType.equals(".word")) {
+			if (MEM_PTR<DATA_ADDR_BASE+DATA_LIMIT*DATA_SIZE) {
+				if (data.contains(":"))
+					return storeRange(data, errorLog);    // Val:N
+				else if (data.contains(","))
+					return storeCsvArray(data, errorLog);    // Int, Int, Int ...
+				else if (data.matches(SIGNED_INT))
+					return storeWord(tryParseInt(data, null, errorLog));    // INT
+				else
+					errorLog.append("Data: ["+data+"], Not Valid For DataType: \""+dataType+"\"!");
+			}
+		} else {
+			throw new IllegalStateException("DataType should be validated before Data is, DataType: \""+dataType
+					+"\" Is Not Supported!");
 		}
-		throw new IllegalArgumentException("Not Supported DataType: "+str_args[0]);
+		return false;
 	}
 	
 	/**
@@ -96,16 +120,31 @@ public class MemoryBuilder{
 	 
 	 @return Success of adding all of the values.
 	 
-	 @see #storeCsvArray(String)
-	 @see #storeArray(int[])
-	 @see #storeWord(int)
+	 @see #storeCsvArray(String, ErrorLog)
+	 @see #storeWord(Integer)
 	 */
-	private boolean storeRange(String input){
-		String[] arr = input.split("\\s:\\s");
-		int[] output = new int[Integer.parseInt(arr[1])];//length of range is limited to 2^31
+	private boolean storeRange(@NotNull String input, ErrorLog errorLog){
+		//TODO prevent wasted cycles if isMemoryFull() ?
 		
-		Arrays.fill(output, Integer.parseInt(arr[0]));
-		return storeArray(output);
+		// Parse/Validate Input
+		String[] arr = input.split("\\s?:\\s?");
+		Integer v = tryParseInt(arr[0], null, errorLog);
+		Integer n = tryParseInt(arr[1], null, errorLog);
+		if (n!=null && n<0) { // if n negative -> invalid
+			errorLog.append("<Int_N>: ["+n+"], Must Be A Positive Integer!\tFormat: \"<Int_Val> : <Int_N>\"");
+			return false;
+		} else if (v==null || n==null)
+			return false;
+		
+		// if range is >DATA_LIMIT, set it to LIMIT+1, so storeArray still return false;
+		int[] intArr = new int[(n>DATA_LIMIT) ? DATA_LIMIT+1 : n];
+		
+		Arrays.fill(intArr, v);
+		for (int i : intArr) {
+			if (!storeWord(i))
+				return false;
+		}
+		return true;
 	}
 	
 	/**
@@ -120,54 +159,77 @@ public class MemoryBuilder{
 	 
 	 @return Success of adding all of the values.
 	 
-	 @see #storeRange(String)
-	 @see #storeArray(int[])
-	 @see #storeWord(int)
+	 @see #storeRange(String, ErrorLog)
+	 @see #storeWord(Integer)
 	 */
-	private boolean storeCsvArray(String csvIntArray){
-		String[] str_arr = Convert.splitCSV(csvIntArray);
-		int[] output = new int[str_arr.length];
+	private boolean storeCsvArray(@NotNull String csvIntArray, ErrorLog errorLog){
+		//TODO prevent wasted cycles if isMemoryFull() ?
 		
-		for (int i = 0; i<str_arr.length; i++) {
-			output[i] = Integer.parseInt(str_arr[i].trim());
+		// if contains more than DATA_LIMIT CSV's .  then split at DATA_LIMIT'st comma
+		//TODO refactor to more space efficient algorithm.
+		// Splitting at a comma, storing that value. Then splitting the next comma
+		// Until no more commas .. or DATA_MAX
+		int count = 0;
+		int index = 0;
+		for (; index<csvIntArray.length(); index++) {
+			final char c = csvIntArray.charAt(index);
+			if (c==',') {
+				count++;
+				if (count>DATA_LIMIT) {
+					break; // escape loop
+				}    // index will be at the index of the DATA_LIMIT+1'st comma
+			}
 		}
-		return storeArray(output);
-	}
-	
-	/**
-	 Given an array of signed 32bit integers, for each value it adds the value to {@link #dataArr}
-	 , and increments the {@link #MEM_PTR} by {@link #DATA_SIZE}*size.ofArray.
-	 
-	 @return Success of adding all of the values.
-	 
-	 @see #storeRange(String)
-	 @see #storeCsvArray(String)
-	 @see #storeWord(int)
-	 */
-	private boolean storeArray(int[] input){
-		for (int i : input)
-			if (!storeWord(i))
-				return false;
-		return true;
+		if (count>DATA_LIMIT) {
+			csvIntArray = csvIntArray.substring(0, index+1);    // split after the comma
+		}
+		
+		String[] str_arr = Convert.splitCSV(csvIntArray);
+		
+		boolean rtn = true;
+		for (int i = 0; i<str_arr.length; i++) {
+			if (!storeWord(tryParseInt(str_arr[i], i, errorLog)))
+				rtn = false;
+		}
+		return rtn;
 	}
 	
 	/**
 	 Stores given signed 32 bit integer into {@link #dataArr} and increments {@link #MEM_PTR} by {@link #DATA_SIZE}
 	 
+	 <p> If Input is Null, Returns False;
+	 
 	 @return Success of adding data.
 	 
-	 @see #storeRange(String)
-	 @see #storeCsvArray(String)
-	 @see #storeArray(int[])
+	 @see #storeRange(String, ErrorLog)
+	 @see #storeCsvArray(String, ErrorLog)
 	 */
-	private boolean storeWord(int word){
-		//dataArr.add((double) word);
-		if (MEM_PTR<DATA_ADDR_BASE+LIMIT*DATA_SIZE){
+	private boolean storeWord(Integer word){
+		if (word!=null && !isMemoryFull()) {
 			dataMem.writeData(MEM_PTR, word);
+			attachLabelsToAddress(MEM_PTR); // Labels are only attached, if Data is successfully added.
+			
 			MEM_PTR += DATA_SIZE;
 			return true;
-		}else {
+		} else {
 			return false;
+		}
+	}
+	
+	private boolean isMemoryFull(){
+		return !(MEM_PTR<DATA_ADDR_BASE+DATA_LIMIT*DATA_SIZE);
+	}
+	
+	/** If successful, returns value, Else, returns null and prints to {@link ErrorLog} */
+	private Integer tryParseInt(@NotNull String value, @Nullable Integer index, @NotNull ErrorLog errorLog){
+		try {
+			return Integer.parseInt(value);
+		} catch (NumberFormatException e) {
+			if (index!=null)
+				errorLog.append("Data Value: ["+value+"], Index: \""+index+"\", Not Valid Signed Integer!");
+			else
+				errorLog.append("Data Value: ["+value+"], Not Valid Signed Integer!");
+			return null;
 		}
 	}
 	
@@ -209,16 +271,18 @@ public class MemoryBuilder{
 	 Given the index of an instruction (in the instructions list),
 	 collect pushed labels in {@link MemoryBuilder#labels} and maps them to the calculated
 	 instruction address, in {@link MemoryBuilder#labelMap}.
+	 <p>
+	 Returns False after reaching the instruction count limit.
 	 
 	 @see MemoryBuilder#attachLabelsToAddress(int)
 	 */
 	public boolean addInstruction(String opcode, Operands operands){
 		if (ProgramCounter<(INS_ADDR_BASE+LIMIT*ADDR_SIZE)) {
 			int index = Convert.address2Index(ProgramCounter);
-			int address = INS_ADDR_BASE+Convert.imm2Address(index);
 			
 			instructions.add(index, Instruction.buildInstruction(opcode, operands));
-			attachLabelsToAddress(address);
+			attachLabelsToAddress(ProgramCounter);
+			ProgramCounter += ADDR_SIZE;
 			return true;
 		}
 		return false;

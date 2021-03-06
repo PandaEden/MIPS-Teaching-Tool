@@ -52,10 +52,8 @@ class DataMemoryTest{
 		}
 		
 		int index = random.nextInt(20); // random index 0-19
-		System.out.println(index);
 		//after set Data, all values but the value at this index should equal
 		int address = DataMemory.BASE_DATA_ADDRESS+index*DataMemory.DATA_ALIGN;
-		System.out.println(index+" idk");
 		
 		assertAll(
 				() -> assertTrue(dataMemory.writeData(address, inputData)),
