@@ -1,4 +1,18 @@
-### Arbitrary limits
+## Feedback
+
+You may suggest new features/give feedback by leaving a comment on an issue.
+
+------
+
+> | Users should always be careful before running software downloaded from GitHub. |
+> | :----------------------------------------------------------: |
+> | This software is covered by the [MIT License](https://github.com/EDEN786/MIPS-Teaching-Tool/blob/Development/LICENSE) exempting the author from liability. |
+> | Please read and understand the License before continuing to run this software on your personal machine. If you are uncomfortable running this software on your personal machine but would still like to provide feedback, contact a member of the research team, to arrange something. |
+
+
+### Arbitrary limits @see( [**Known_Inaccuracies**](#Known-Inaccuracies) )
+
+****
 
 > These may change in future releases after doing more testing.
 
@@ -134,6 +148,8 @@ In the place of a label operand for an instruction a Hexadecimal address may be 
 
  - Hexadecimal values must start with "0x".
 
+> Where a label is used as an operand it must not contain the colon ':' !
+
 ### Supported Address Segments:
 
 Labels are converted into addresses at assembly after all the code has been parsed.
@@ -146,11 +162,12 @@ Load and Store instructions can reference Labels directed to data address space.
 
 `Data segments 0x10010000 to 0x100107F8 in steps of 8, 2^8 valid segments`
 
-Only 250 instructions supported, (which is a maximum address of 0x004003E8).
+Only 256 (2^8) instructions supported, (which is a maximum address of 0x004003E8).
 
-Jumping to this gap, which is a valid instruction address, where there are no instructions to execute.
+Jumping to this gap, where the address is supported, but can't possibly contain an instruction. 
+ The Application acts as if no Exit instruction was ran.
 
-An Exit ('halt') instruction will automatically be ran next.
+And An Exit ('halt') instruction will automatically be ran next. With a warning.
 
 ###### MIPS Register addressing:
 
@@ -185,7 +202,11 @@ The current build executes a very basic model and Jump instructions update the P
 
 >  **! This behaviour is expected to change in the next build!**
 
-# End of User Documentation
+
+
+# End of User Manual
+
+
 
 ## Error/Warning messages:
 
@@ -198,10 +219,26 @@ The current build executes a very basic model and Jump instructions update the P
 	If any of these fails, the application will terminate.
 		(future versions may allow selecting a new file).
 
-## Parsing:
+## Parsing & Assembly:
+
 > **Whitespace is trimmed, and case is converted to lowercase.**
 > Parser checks file contains no syntactical errors.
 
+	Comments:	Segment of the line after a pound'#' or semi-colon';' symbol.
+	Labels:		Segment of the line before a colon':' symbol. {can start with a underscore_ or letter}
+	
+	Directives: Segment of the line before space seperator, Starts with a period '.'
+	Values: 	Segment of the line after space seperator. Can contain a 'colon', or decimal point. and be comma seperated list.
+	
+	OpCode:		Segment of the line before space seperator, That Does Not! Start with a period '.'
+	OpCode:		Segment of the line after space seperator.
+		Registers:	usually start with a $, but don't have to.
+		Immediates:	continuous stream of digits.	- atm, only Integer is supported.
+			Hex Immediates: differentiated by "0x" sign at the beginning.
+			
+		Labels:	Same as above labels, but without the colon ":" at the end.
+	
+	
 	From this the Parser builds a model:
 	Directive					(.data, .text, .code)
 		\
@@ -212,7 +249,7 @@ The current build executes a very basic model and Jump instructions update the P
 				\
 				Sub_Directive	(.word //future support for .double planned)
 				|	\
-				|	Values		(single int, int range, int_array)
+				|	Values		(single int, int:range, int_array)
 				|	
 				OpCode			(see list of supported instructions)
 					\
@@ -222,6 +259,9 @@ The current build executes a very basic model and Jump instructions update the P
 				- Any extra characters past the last opperand, but not part of the comments
 					- will break the formatting, and it will think the operands are invalid
 	
+	No Instructions are read:
+		And Error is Reported at Assembly.
+	
 	Over 256 Instructions are read:
 		A Warning will be issued And no further instructions will be parsed.
 		
@@ -230,11 +270,25 @@ The current build executes a very basic model and Jump instructions update the P
 
 Parser will not stop after an error is thrown. It will attempt to parse the remainder of the lines checking for additional errors.
 
-> **However - It will not allow execution.**
+> **However - It will fail assembly and not allow execution.**
 
-Since the labels can point to code/ data not yet parsed, The parser caches the instructions using labels.
 
-Then runs a 2nd time converting the labels into addresses/offsets.
+
+### Assembly
+
+During Assembly the real addresses labels point to is calculated.
+
+Labels point to the next valid data/instruction.
+
+> This can cause a scenario where a tag was intended to point to data on the same line.
+>
+> ​	But due to an error with the data formatting it is not recognised.
+>
+> ​	Then the label will incorrectly be attached to the next instruction.
+
+Therefore users should fix Parsing Errors, before Assembly Errors.
+
+
 
 ## MIPS Addresses Segments:
 
@@ -248,8 +302,8 @@ Then runs a 2nd time converting the labels into addresses/offsets.
 *  In powers:
 *      0x00400000:(2^22)       >= Code     <0x00500000:(2^22 +2^20)
 *      0x10010000:(2^28 +2^16) >= Global   <0x10040000:(2^28 +2^18)
-*      0x10040000:(2^28 +2^18) >= Heap     <0x20000000:(2^29)
-*      0x70000000:(2^31-2^28)  >= Stack    <0x80000000:(2^31)
+*      0x10040000:(2^28 +2^18) >= Heap     <0x20000000:(2^29)	- Not Supported
+*      0x70000000:(2^31-2^28)  >= Stack    <0x80000000:(2^31)	- Not Supported
 ```
 
 	.data segment usually has a size of 49152 word address (2^15+2^14). Addresses 0x10010000 to 0x1003FFFC.
@@ -257,11 +311,11 @@ Then runs a 2nd time converting the labels into addresses/offsets.
 
 _Hex notation 0xXXXXXXXX (8 digits = 32bit Address)_
 
-# Not Supported!
+# Known Inaccuracies
 
 The application currently does not support the CoProcessors.
 
-Meaning it does not support Traps or Functional Units.
+Meaning it does not support Traps (Exceptions) or Functional Units.
 
 # InProgress
 
@@ -270,5 +324,3 @@ Branches are being added first.
 Then, Functional Unit support is planned.
 
 Then, Scoreboard DLX architecture.
-
-You may suggest new features/give feedback by leaving a comment on an issue.

@@ -172,7 +172,11 @@ public class Parser{
 				lines.add(scanner.nextLine());
 			}
 		}
-		return parseLines((String[]) lines.toArray());
+		
+		String[] stockArr = new String[lines.size()];
+		stockArr = lines.toArray(stockArr);
+		
+		return parseLines(stockArr);
 	}
 	
 	/**

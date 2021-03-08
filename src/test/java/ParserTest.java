@@ -268,17 +268,15 @@ class ParserTest {
 		}
 		
 		@Test
-		@Disabled //TEST - implement Parse Lines
 		@DisplayName ("Over MAX Data")
 		void overMaxData(){
 			String FilePath = "FileOver16KInstructions.s";
 			
-			assertNotNull(parser.loadFile(FilePath));	// The File properties are valid
+			assertNull(parser.loadFile(FilePath));	// The File properties are valid
 			assertFalse(parser.parseLoadedFile());		// The File Contents . Are Not!
 			
 			appendError("- File contains too many instructions (16384 limit)!");
 			matchErrorsOnly();
-			fail("Not implemented");
 		}
 		
 		@Test
