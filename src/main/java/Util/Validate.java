@@ -98,13 +98,16 @@ public class Validate{
 	 <p>	see README for valid label definition.
 	 
 	 @see ErrorLog
-	 */
-	public boolean isValidLabel(int lineNo, @NotNull String label){
-		if (label.matches("[_a-z][_.\\-a-z\\d]*"))
-			return true;
-		
-		errLog.append("LineNo: "+lineNo+"\tLabel: \""+label+"\" Not Supported!");
-		return false;
+	 
+	 */@Nullable
+	public String isValidLabel(int lineNo, @Nullable String label){
+	 	if (label!=null) {
+			if (label.matches("[_a-z][_.\\-a-z\\d]*"))
+				return label;
+		  
+			errLog.append("LineNo: "+lineNo+"\tLabel: \""+label+"\" Not Supported!");
+		}
+		return null;
 	}
 	
 	/**
@@ -114,13 +117,11 @@ public class Validate{
 	 @see ErrorLog
 	 */
 	public boolean isValidOpCode(int lineNo, @NotNull String opcode){
-		boolean rtn = Arrays.asList(
-				Convert.splitCSV(SUPPORTED_OPCODES_CSV))
-				.contains(opcode);
-		if (!rtn)
+		if (!Arrays.asList( Convert.splitCSV(SUPPORTED_OPCODES_CSV)) .contains(opcode)) {
 			errLog.append("LineNo: "+lineNo+"\tOpcode: \""+opcode+"\" Not Supported!");
-		
-		return rtn;
+			return false;
+		}
+		return true;
 	}
 	
 	/**
@@ -129,6 +130,8 @@ public class Validate{
 	 Calls the appropriate validation method from {@link Val_Operands}
 	 And adds the necessary error messages
 	 
+	 <p><b>If Returned Object is Null, Then there are errors with the OpCode, or Operands</b></p>
+	 
 	 <li>First, checks operands spacing syntax</li>
 	 <li>Then, splits the operands</li>
 	 <li>Then, Checks the operands, individually in order</li>
@@ -136,21 +139,25 @@ public class Validate{
 	 @param opcode Instruction opcode, used to determine Operands format.
 	 //TODO R_type with shift amount uses [0, RT, RD, ShiftAmt]
 	 
-	 @return <li>R_type int[3] {RS, RT, RD}</li>
+	 @return
+	 <li>R_type int[3] {RS, RT, RD}</li>
 	 <li>I_type int[3] {RS, RT, Imm}</li>
 	 <li>J_type int[3] {}-1, -1, Address}</li>
+	 <li>Exit * <-null-></li>
+	 
+	 @see #isValidOpCode(int, String)
 	 */
 	@Nullable
-	public Operands splitValidOperands(int lineNo, @NotNull String opcode, String operands, @NotNull WarningsLog warningsLog){
+	public Operands splitValidOperands(int lineNo, @Nullable String opcode, String operands, @NotNull WarningsLog warningsLog){
 		final String operand_DelimiterRegex = ",\\s*";
 		final String openBracket_Regex = "-?\\d*\\s?\\(.+";
 		
-		if (!isValidOpCode(lineNo, opcode))
+		if (opcode==null)
 			return null;
-		// TODO Move operand validation to {@link Operands}
+		// TODO Move operand validation to {@link Operands}?
 		// NO Op - should be null
 		Operands rtn = null;
-		DataType type = DataType.NORMAL; // TODO check datatype before adding floating point support
+		DataType type = DataType.NORMAL; // TODO datatype check before adding floating point support
 		Integer rd, rs, rt, imm;
 		String label;
 		
@@ -159,7 +166,7 @@ public class Validate{
 			if (doesCSVContain(NO_OPERANDS_OPCODE, opcode))
 				rtn = Operands.getExit(); // Return Exit Operands (Blank)
 			else
-				errLog.append("LineNo "+lineNo+"\tNo Operands found!");
+				errLog.append("LineNo "+lineNo+"\t\tNo Operands found!");
 			
 		} else if (!doesCSVContain(NO_OPERANDS_OPCODE, opcode)) {    // Remainder of types require operands
 			//Split operands
@@ -168,7 +175,7 @@ public class Validate{
 			switch (ops_List.size()) {
 				case 1:
 					if (doesCSVContain(SUPPORTED_J_TYPE_OPCODE_CSV, opcode))
-						return Jump_LabelOrInt(lineNo, opcode, ops_List);
+						rtn = Jump_LabelOrInt(lineNo, opcode, ops_List);
 					break;
 				
 				case 2:
@@ -253,7 +260,7 @@ public class Validate{
 					}
 					
 				} else
-					errLog.append("LineNo: "+lineNo+"\tMissing closing bracket: \")\" !");
+					errLog.append("LineNo: "+lineNo+"\t\tMissing closing bracket: \")\" !");
 		
 		return null;
 	}
@@ -274,7 +281,7 @@ public class Validate{
 			// else
 			Integer imm = Val_Operands.convertInteger(lineNo, addr, errLog);
 			if (imm!=null) {
-				Integer address = AddressValidation.convertValidImm2Addr(imm);
+				Integer address = AddressValidation.convertValidImm2Addr(lineNo, imm, errLog);
 				if (address!=null && AddressValidation.isValidDataAddr(address, errLog))
 					return new Operands(opcode, zero, rt, imm);
 			}
@@ -282,6 +289,9 @@ public class Validate{
 		return null;
 	}
 	
+	/**
+	 Immediate values are shifted to be converted into addresses. Then the address is checked to be valid.
+	 */
 	private Operands Jump_LabelOrInt(int lineNo, @NotNull String opcode, @NotNull List<String> operands_list){
 		if (operands_list.size()==1) {
 			String addr = operands_list.get(0);
@@ -289,12 +299,12 @@ public class Validate{
 			
 			// Either Label/ Immediate
 			if (Val_Operands.isValidLabelOrInt(lineNo, addr, this, errLog)) {
-				if (Val_Operands.isLabel(addr)) // if Label - ^ isValidLabelOrInt does deeper check
+				if (Val_Operands.isLabel(addr)) // if Label - ^ isValidLabelOrInt already does deeper check
 					return new Operands(opcode, addr);
 				// else
 				imm = Val_Operands.convertInteger(lineNo, addr, errLog);
 				if (imm!=null) {
-					Integer address = AddressValidation.convertValidImm2Addr(imm);
+					Integer address = AddressValidation.convertValidImm2Addr(lineNo, imm, errLog);
 					if (address!=null && AddressValidation.isValidInstrAddr(address, errLog))
 						return new Operands(opcode, imm);
 				}
@@ -346,19 +356,19 @@ class Val_Operands{
 						}
 						value = Convert.r2Index(temp);
 					} catch (IllegalArgumentException e) {    // Register is not Named, or R, or index
-						errLog.append("LineNo: "+lineNo+"\tRegister: \""+register+"\" Not Valid!");
+						errLog.append("LineNo: "+lineNo+"\t\tRegister: \""+register+"\" Not Valid!");
 					}
 				}
 				
 				if (value!=null && (value<0 || value>31)) {// Check Range
-					errLog.append("LineNo: "+lineNo+"\tRegister: \""+register+"\" Not In Range!");
+					errLog.append("LineNo: "+lineNo+"\t\tRegister: \""+register+"\" Not In Range!");
 					return null;
 				}
 			} else {
-				errLog.append("LineNo: "+lineNo+"\tRegister: \""+register+"\" Not Recognised!");
+				errLog.append("LineNo: "+lineNo+"\t\tRegister: \""+register+"\" Not Recognised!");
 			}
 		} else {
-			errLog.append("LineNo: "+lineNo+"\tRegister: \""+register+"\" Wrong DataType!");
+			errLog.append("LineNo: "+lineNo+"\t\tRegister: \""+register+"\" Wrong DataType!");
 		}
 		
 		return value;
@@ -402,10 +412,9 @@ class Val_Operands{
 	static boolean isValidLabelOrInt(int lineNo, @NotNull String address, @NotNull Validate validate,
 									 @NotNull ErrorLog log){
 		if (isLabel(address))
-			return validate.isValidLabel(lineNo, address);
+			return validate.isValidLabel(lineNo, address)!=null;
 		
-		Integer integer = convertInteger(lineNo, address, log);
-		return integer!=null;
+		return convertInteger(lineNo, address, log)!=null;
 	}
 	
 	
@@ -427,8 +436,8 @@ class Val_Operands{
 			// is not an normal integer -- Imm stays null
 		}
 		if (imm==null) {
-			errLog.append("LineNo: "+lineNo+"\tImmediate: \""+immediate+"\" Not Valid Integer!");
-			return null;
+			errLog.append("LineNo: "+lineNo+"\t\tImmediate Value: \""+immediate+"\" Not Valid Integer!");
+			return null; // UNNECESSARY ?
 		}
 		return imm;
 	}
@@ -445,7 +454,7 @@ class Val_Operands{
 			if (immediate>=IMM_MIN && immediate<=IMM_MAX)
 				return immediate;
 			
-			errLog.append("LineNo: "+lineNo+"\tImmediate: \""+immediate+"\" Not In Range");
+			errLog.append("LineNo: "+lineNo+"\t\tImmediate Value: \""+immediate+"\" Not In Range");
 		}
 		return null;
 	}

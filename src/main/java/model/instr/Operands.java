@@ -80,12 +80,12 @@ public class Operands{
 	public Operands(String opcode, @Nullable Integer rs, @Nullable Integer rt, @Nullable Integer immediate){ // Immediate
 		this(rs, rt, null);
 		this.immediate = immediate;
-		this.instrType = InstrType.I_write;
 		
 		switch (opcode) {
 			case "addi":
 			case "lw":
-				break; // I_write already set
+				this.instrType = InstrType.I_write;
+				break;
 			case "sw":
 				this.instrType = InstrType.I_read;
 				break;

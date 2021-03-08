@@ -92,7 +92,8 @@ public class Convert{
 	@NotNull
 	public static Integer imm2Address(@NotNull Integer immediate){
 		final int MIN_IMM = -32768; // (-2^15)
-		final int MAX_IMM = (Integer.MAX_VALUE/4-1); // ({@link Integer#MAX_VALUE}/4)-1
+		final int MAX_IMM = (536870911); // ({@link Integer#MAX_VALUE}/4).floor
+		
 		if (immediate<MIN_IMM || immediate>MAX_IMM)
 			throw new IllegalArgumentException("Immediate Value is invalid");
 		return immediate << 2;
@@ -154,7 +155,7 @@ public class Convert{
 	@NotNull
 	public static String removeExtraWhitespace(@NotNull String string){
 		// Replace multiple spaces with single space
-		string = string.strip().replaceAll(" +", " ");
+		string = string.strip().replaceAll("[ \\t]+", " ");
 		return string;
 	}
 	

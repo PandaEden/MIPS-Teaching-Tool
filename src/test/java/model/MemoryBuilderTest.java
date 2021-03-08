@@ -1,15 +1,20 @@
 package model;
 
 import model.components.DataMemory;
+import model.instr.Operands;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.junit.jupiter.params.provider.ValueSource;
 import util.logs.ErrorLog;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -30,8 +35,12 @@ class MemoryBuilderTest{
 	private static final double DATA_MAX = DataMemory.MAX_DATA_ITEMS;
 	
 	private static final ErrorLog errors = new ErrorLog(new ArrayList<>());
-	private static final List<String> inValidWords =
+	private static final List<String> inValid_For_Word_Type =
 			Arrays.asList(""+Double.MAX_VALUE, ""+Double.MIN_VALUE, DEC_ZERO, ASCII_DATA, ASCIIZ_DATA);
+	private static final List<String> inValid_Words =
+			Arrays.asList(""+Long.MAX_VALUE, ""+Long.MIN_VALUE, "8589934592" , "-2147483649", "2147483648");
+				// Last 2 are 2^31, This becomes valid with Unsigned Support
+	
 	private static final List<String> validRanges = Arrays.asList("20", "200", "50", "5"); // reasonable sizes for range
 	private static final ArrayList<String> validPositiveWords = new ArrayList<>(
 			Arrays.asList(""+Integer.MAX_VALUE, INT_ZERO, TWO_30));
@@ -86,9 +95,9 @@ class MemoryBuilderTest{
 	}
 	
 	@Test
-	@DisplayName ("Test Invalid - AddData _Word -Single")
+	@DisplayName ("Test Invalid - AddData _Word -Single _Wrong Type of Data")
 	void testInvalid_AddDataWordSingle_WrongData(){
-		ArrayList<String> invalid = new ArrayList<>(inValidWords);
+		ArrayList<String> invalid = new ArrayList<>(inValid_For_Word_Type);
 		
 		for (String w : validWords) {        // add list of valid word, altered to be invalid
 			invalid.add(BLANK+w+BLANK); // added leading/trailing whitespace
@@ -101,6 +110,28 @@ class MemoryBuilderTest{
 			assertTrue(mb.retrieveData().isEmpty());
 			errors.clear();
 		}
+	}
+	
+	@Test
+	@DisplayName ("Test Invalid - AddData _Word -Single _InvalidInteger")
+	void testInvalidAddDataWordSingleInvalidInteger(){
+		for (String inv : inValid_Words) {
+			assertFalse(mb.addData(WORD, inv, errors));
+			assertEquals("Errors:\n\tData Value: ["+inv+"], Not Valid Signed Integer!\n",
+					errors.toString());
+			assertTrue(mb.retrieveData().isEmpty());
+			errors.clear();
+		}
+	}
+	
+	@ParameterizedTest
+	@NullAndEmptySource
+	@ValueSource(strings = {" ", "   ", "\t", "\n"})
+	@DisplayName ("Test Invalid - AddData _BlankOrNull")
+	void testInvalidAddDataBlankOrNull(String input){
+		assertFalse(mb.addData(WORD, input, errors));
+		
+		assertEquals("Errors:\n\tNo Data Given! For DataType: \".word\"!\n", errors.toString());
 	}
 	
 	// Add Range   <int_val>:<int_n>
@@ -263,21 +294,50 @@ class MemoryBuilderTest{
 	}
 	
 	// Not Valid DataType
-	@ParameterizedTest
-	@ValueSource (strings = {DWORD, DOUBLE, ASCII, ASCIIZ})
 	@DisplayName ("Test Add Data - Invalid DataType")
-	void testAddData_InvalidDataType(String text){
-		for (String w : validWords) {
-			assertThrows(IllegalStateException.class, () -> mb.addData(text, w, errors));
+	@ParameterizedTest (name = "{index} - {arguments} _dataType")
+	@ValueSource (strings = {DWORD, DOUBLE, ASCII, ASCIIZ})
+	void testAddData_InvalidDataType(String dataType){
+		for (String data : validWords) {
+			assertThrows(IllegalStateException.class, () -> mb.addData(dataType, data, errors));
 			assertFalse(errors.hasEntries());
 			assertTrue(mb.retrieveData().isEmpty());
 		}
 	}
-	// Push Label
-	
-	//Attach Labels to Address -- After pushing Data or Instr, they should point to their addr
-	
-	// Add Instr
-	
+	// Push Label	-- Presumed to be Valid, Parser should validate?
+	// PRIVATE Attach Labels to Address -- After pushing Data or Instr, they should point to their addr
 	// Assemble
+		// Scenario 1
+		// push a bunch of labels,
+			// addData - so all the labels point to data (all!)
+		// Point Instr (sw) to data, it should assemble fine
+			// Execute (Full)
+		// It should change the value.
+	
+		// Point Instr (jump) to data, it should fail at assembly!
+	
+		// Scenario 2
+		// Add a bunch of labels
+		// push instruction
+	
+	// Scenario 3&4 - pushing invalid data, then valid data, labels should attach to the valid label
+	
+	@Test
+	@DisplayName ("Test Null Inputs")
+	void testNullInputs(){
+		// Null Label
+		assertDoesNotThrow(() -> mb.pushLabel(null));
+		
+		// Null DataType
+		assertTrue(mb.addData(null, BLANK, errors));
+		
+		// Null Opcode
+		assertTrue(mb.addInstruction(null, Operands.getExit()));
+		// Null Operands ?
+		assertThrows(IllegalStateException.class, () -> mb.addInstruction("add", null));
+		
+		assertFalse(errors.hasEntries());
+		// Null Data
+			// Already Tested
+	}
 }

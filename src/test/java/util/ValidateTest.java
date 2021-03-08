@@ -19,13 +19,14 @@ class ValidateTest{
 	private static Validate validate;
 	
 	@BeforeAll
-	static void setUp(){
+	static void beforeAll(){
 		errLog = new ErrorLog(new ArrayList<>());
 		validate = new Validate(errLog);
 	}
 	
 	@AfterEach
 	void clear(){
+		//noErrors();		// Should be no Errors Not checked using assertError
 		errLog.clear();
 	}
 	
@@ -37,10 +38,13 @@ class ValidateTest{
 	}
 	
 	void assertError(String msg){
-		Assertions.assertAll(
-				() -> assertTrue(errLog.hasEntries()),
-				() -> assertEquals(errLog.toString(), "Errors:\n"+msg)
-		);
+		if (!msg.isBlank()) {
+			Assertions.assertAll(
+					() -> assertTrue(errLog.hasEntries()),
+					() -> assertEquals("Errors:\n\t"+msg+"\n", errLog.toString())
+			);
+		}
+		errLog.clear();
 	}
 	
 	@Test
@@ -65,36 +69,34 @@ class ValidateTest{
 	class AddressValidationTests{
 		//------INSTR ADDRESSES--------------
 		@ParameterizedTest
-		@ValueSource (longs = {0x00400000L, 0x004003E4L, 0x004FFFFCL})
+		@ValueSource (longs = {0x00400000L, 0x004003E4L, 0x004FFFFCL,0x00500000L-4})
 		@DisplayName ("Validate - Supported Instr Address")
 		void validateSupportedInstrAddress(long address){
 			assertTrue(AddressValidation.isSupportedInstrAddr((int) address, errLog));
-			noErrors();
-			assertEquals(Convert.address2Index((int) address), AddressValidation.addr2index((int) address, errLog));
-			noErrors();
+			assertEquals(Convert.address2Index((int) address), AddressValidation.addr2index((int) address, true, errLog));
 		}
 		
 		@ParameterizedTest
-		@ValueSource (longs = {0x00500000L, 0x08000000L, 0x0FFFFFFCL})
-		@DisplayName ("Validate - Not_Supported-Valid Instr Address")
+		@ValueSource (longs = {0x00500000L, 0x00500004L, 0x08000000L, 0x0FFFFFFCL, 0x01400010, })
+		@DisplayName ("Validate - Not_Supported Instr Address")
 		void validateNot_SupportedInstrAddress(long address){
 			assertFalse(AddressValidation.isSupportedInstrAddr((int) address, errLog));
-			assertError("\tInstruction Address: \""+Convert.uInt2Hex((int) address)+"\" Not Supported!\n");
+			assertError("Instruction Address: \""+Convert.uInt2Hex((int) address)+"\" Not Supported!");
+
+			assertNull(AddressValidation.addr2index((int) address, true, errLog));
+			assertError("Instruction Address: \""+Convert.uInt2Hex((int) address)+"\" Not Supported!");
 		}
 		
-		@Test
-		@DisplayName ("Validate - Invalid Instr Address_Under")
-		void validateInvalid_InstrAddressUnder(){
-			assertFalse(AddressValidation.isSupportedInstrAddr((int) 0x003FFFFCL, errLog));
-			assertError("\tInstruction Address: \"0x003FFFFC\" Not Valid!\n");
-		}
-		
-		@Test
-		@DisplayName ("Validate - Invalid Instr Address_Over")
-		void validateInvalid_InstrAddressOver(){
-			assertFalse(AddressValidation.isSupportedInstrAddr((int) 0x10000000L, errLog));
-			assertTrue(errLog.hasEntries());
-			assertEquals("Errors:\n\tInstruction Address: \"0x10000000\" Not Valid!\n", errLog.toString());
+		@ParameterizedTest
+		@ValueSource (ints = {Integer.MIN_VALUE, -0x00400000, 0, 0x00400000-4, 0x00400003,
+				0x10000000, 0x10010000, Integer.MAX_VALUE})
+		@DisplayName ("Validate - Not_-Valid Instr Address")
+		void validateNot_ValidInstrAddress(int address){
+			assertFalse(AddressValidation.isSupportedInstrAddr(address, errLog));
+			assertError("Instruction Address: \""+Convert.uInt2Hex(address)+"\" Not Valid!");
+			
+			assertNull(AddressValidation.addr2index(address, true, errLog));
+			assertError("Instruction Address: \""+Convert.uInt2Hex(address)+"\" Not Valid!");
 		}
 		
 		//------DATA ADDRESSES---------------
@@ -103,9 +105,8 @@ class ValidateTest{
 		@DisplayName ("Validate - Supported Data Address")
 		void validateSupportedDataAddress(long address){
 			assertTrue(AddressValidation.isSupportedDataAddr((int) address, errLog));
-			noErrors();
-			assertEquals(Convert.address2Index((int) address), AddressValidation.addr2index((int) address, errLog));
-			noErrors();
+			assertEquals(Convert.address2Index((int) address),
+					AddressValidation.addr2index((int) address, false, errLog));
 		}
 		
 		@ParameterizedTest
@@ -113,41 +114,37 @@ class ValidateTest{
 		@DisplayName ("Validate - Not_Supported-Valid Data Address")
 		void validateNot_SupportedDataAddress(long address){
 			assertFalse(AddressValidation.isSupportedDataAddr((int) address, errLog));
-			assertTrue(errLog.hasEntries());
-			assertEquals("Errors:\n\tData Address: \""
-					+Convert.uInt2Hex((int) address)+"\" Not Supported!\n", errLog.toString());
-			errLog.clear();
-			assertNull(AddressValidation.addr2index((int) address, errLog));
-			assertTrue(errLog.hasEntries());
+			assertError("Data Address: \""+Convert.uInt2Hex((int) address)+"\" Not Supported!");
+
+			assertNull(AddressValidation.addr2index((int) address, false, errLog));
+			assertError("Data Address: \""+Convert.uInt2Hex((int) address)+"\" Not Supported!");
 		}
 		
 		@Test
 		@DisplayName ("Validate - Invalid Data Address_Under")
 		void validateInvalid_DataAddressUnder(){
 			assertFalse(AddressValidation.isSupportedDataAddr(0x00400000, errLog));
-			assertTrue(errLog.hasEntries());
-			assertEquals("Errors:\n\tData Address: \"0x00400000\" Not Valid!\n", errLog.toString());
-			errLog.clear();
-			assertNull(AddressValidation.addr2index(0x10000000, errLog));
-			assertTrue(errLog.hasEntries());
+			assertError("Data Address: \"0x00400000\" Not Valid!");
+
+			assertNull(AddressValidation.addr2index(0x10000000, false, errLog));
+			assertError("Data Address: \"0x10000000\" Not Valid!");
 		}
 		
 		@Test
 		@DisplayName ("Validate - Invalid Data Address_Over")
 		void validateInvalid_DataAddressOver(){
 			assertFalse(AddressValidation.isSupportedDataAddr((int) 0x7FFFFFF8L, errLog));
-			assertTrue(errLog.hasEntries());
-			assertEquals("Errors:\n\tData Address: \"0x7FFFFFF8\" Not Valid!\n", errLog.toString());
-			errLog.clear();
-			assertNull(AddressValidation.addr2index((int) 0x78000000L, errLog));
-			assertTrue(errLog.hasEntries());
+			assertError("Data Address: \"0x7FFFFFF8\" Not Valid!");
+
+			assertNull(AddressValidation.addr2index((int) 0x78000000L, false, errLog));
+			assertError("Data Address: \"0x78000000\" Not Valid!");
 		}
 		
 		@Test
 		@DisplayName ("Validate - Data Address not DoubleWord Aligned")
 		void validateDataAddressNotDoubleWordAligned(){
 			assertFalse(AddressValidation.isSupportedDataAddr((int) 0x10010004L, errLog));
-			assertEquals("Errors:\n\tData Address: \"0x10010004\" Not DoubleWord Aligned!\n", errLog.toString());
+			assertError("Data Address: \"0x10010004\" Not DoubleWord Aligned!");
 		}
 	}
 	
@@ -160,7 +157,6 @@ class ValidateTest{
 		@DisplayName ("Validate Supported Directive")
 		void validateSupportedDirective(String directive){
 			assertTrue(validate.isValidDirective(5, directive));
-			noErrors();
 		}
 		
 		@ParameterizedTest
@@ -168,7 +164,7 @@ class ValidateTest{
 		@DisplayName ("Validate Not Supported Directive")
 		void validateNot_SupportedDirective(String directive){
 			assertFalse(validate.isValidDirective(10, directive));
-			assertError("\tLineNo: 10\tDirective: \""+directive+"\" Not Supported!\n");
+			assertError("LineNo: 10\tDirective: \""+directive+"\" Not Supported!");
 		}
 		
 		//DataTypes .word
@@ -177,7 +173,6 @@ class ValidateTest{
 		@DisplayName ("Validate Supported DataType")
 		void validateSupportedDataType(String type){
 			assertTrue(validate.isValidDataType(5, type));
-			noErrors();
 		}
 		
 		@ParameterizedTest
@@ -186,7 +181,7 @@ class ValidateTest{
 		@DisplayName ("Validate Not Supported DataType")
 		void validateNotSupportedDataType(String type){
 			assertFalse(validate.isValidDataType(20, type));
-			assertError("\tLineNo: 20\tDataType: \""+type+"\" Not Supported!\n");
+			assertError("LineNo: 20\tDataType: \""+type+"\" Not Supported!");
 		}
 		
 		//Labels _[a-z] separators ['.','-','_',a-z]*
@@ -194,16 +189,21 @@ class ValidateTest{
 		@ValueSource (strings = {"_label", "label", "also_a.label-with_splits", "label0"})
 		@DisplayName ("Validate Supported Labels")
 		void validateSupportedLabels(String label){
-			assertTrue(validate.isValidLabel(40, label));
-			noErrors();
+			assertNotNull(validate.isValidLabel(40, label));
 		}
 		
 		@ParameterizedTest
 		@ValueSource (strings = {"_ label with spaces", "73label", "CAPITALIZED", ".data"})
 		@DisplayName ("Validate Not Supported Labels")
 		void validateNot_SupportedLabels(String label){
-			assertFalse(validate.isValidLabel(72, label));
-			assertError("\tLineNo: 72\tLabel: \""+label+"\" Not Supported!\n");
+			assertNull(validate.isValidLabel(72, label));
+			assertError("LineNo: 72\tLabel: \""+label+"\" Not Supported!");
+		}
+		
+		@Test
+		@DisplayName ("test Null Label")
+		void testNullLabel(){
+			assertNull(validate.isValidLabel(72, null));
 		}
 		
 		//OpCodes add, sub, addi, lw, sw, j, jal, halt, exit
@@ -212,7 +212,6 @@ class ValidateTest{
 		@DisplayName ("Validate Supported Opcodes")
 		void validateSupportedOpcodes(String opcode){
 			assertTrue(validate.isValidOpCode(1, opcode));
-			noErrors();
 		}
 		
 		@ParameterizedTest
@@ -220,7 +219,7 @@ class ValidateTest{
 		@DisplayName ("Validate Not Supported Opcodes")
 		void validateNot_SupportedOpcodes(String opcode){
 			assertFalse(validate.isValidOpCode(230, opcode));
-			assertError("\tLineNo: 230\tOpcode: \""+opcode+"\" Not Supported!\n");
+			assertError("LineNo: 230\tOpcode: \""+opcode+"\" Not Supported!");
 		}
 	}
 	
@@ -228,11 +227,47 @@ class ValidateTest{
 	@DisplayName ("Validate Operands")
 	class Val_Operands{
 		private final DataType type = DataType.NORMAL;
+		private final WarningsLog warningsLog = new WarningsLog(new ArrayList<>());
+		
+		void assertZeroWarning(int lineNo, String regName){
+			Assertions.assertAll(
+					() -> assertTrue(warningsLog.hasEntries()),
+					() -> assertEquals("Warnings:\n\t"+"LineNo: "+lineNo+"\tDestination Register: \""+regName+"\" Cannot be modified!,"
+							+"\t Result will be ignored!"+"\n", warningsLog.toString())
+			);
+			warningsLog.clear();
+		}
+		
+		void noWarnings(){
+			Assertions.assertAll(
+					() -> assertFalse(warningsLog.hasEntries()),
+					() -> assertEquals("", warningsLog.toString())
+			);
+		}
+		
+		@AfterEach
+		void tearDown(){
+			noWarnings();
+			warningsLog.clear();
+		}
+		
+		@Test
+		@DisplayName ("Test isValidOperands Invalid Opcode")
+		void testIsValidOperands_InvalidOpcode(){
+			assertNull(validate.splitValidOperands(230, "panda", null, warningsLog));
+			assertError("LineNo 230\t\tNo Operands found!\n"+
+					"\tLineNo: 230\tOperands: [null] for Opcode: \"panda\" Not Valid !");
+		}
+		
+		@Test
+		@DisplayName ("Test isValidOperands Null Opcode")
+		void testIsValidOperands_NullOpcode(){
+			assertNull(validate.splitValidOperands(230, null, null, warningsLog));
+		}
 		
 		@Test
 		@DisplayName ("Test Operands, EXIT")
 		void testOperands_EXIT(){
-			WarningsLog warningsLog = new WarningsLog(new ArrayList<>());
 			Operands operands = validate.splitValidOperands(12, "exit", null, warningsLog);
 			assertNotNull(operands);
 			assertAll(
@@ -241,10 +276,9 @@ class ValidateTest{
 					() -> assertNull(operands.getRd()),
 					() -> assertNull(operands.getRs()),
 					() -> assertNull(operands.getRt()),
-					() -> assertEquals(Operands.InstrType.R, operands.getInstrType()),
-					() -> assertFalse(errLog.hasEntries()),
-					() -> assertFalse(warningsLog.hasEntries())
+					() -> assertEquals(Operands.InstrType.R, operands.getInstrType())
 			);
+			
 			Operands operands2 = validate.splitValidOperands(20, "halt", null, warningsLog);
 			assertNotNull(operands2);
 			assertAll(
@@ -253,24 +287,17 @@ class ValidateTest{
 					() -> assertNull(operands2.getRd()),
 					() -> assertNull(operands2.getRs()),
 					() -> assertNull(operands2.getRt()),
-					() -> assertEquals(Operands.InstrType.R, operands2.getInstrType()),
-					() -> assertFalse(errLog.hasEntries()),
-					() -> assertFalse(warningsLog.hasEntries())
+					() -> assertEquals(Operands.InstrType.R, operands2.getInstrType())
 			);
 		}
 		
 		@Test
 		@DisplayName ("Test Invalid Operands, Exit")
 		void testInvalid_Operands_Exit(){
-			WarningsLog warningsLog = new WarningsLog(new ArrayList<>());
 			Operands operands = validate.splitValidOperands(12, "exit", "$0, $0, $0", warningsLog);
 			assertNull(operands);
-			assertAll(
-					() -> assertTrue(errLog.hasEntries()),
-					() -> assertEquals("Errors:\n\tLineNo: 12\tOperands: [$0, $0, $0]"
-							+" for Opcode: \"exit\" Not Valid !\n", errLog.toString()),
-					() -> assertFalse(warningsLog.hasEntries())
-			);
+			
+			assertError("LineNo: 12\tOperands: [$0, $0, $0] for Opcode: \"exit\" Not Valid !");
 		}
 		
 		//-------------------------------------------------------------------
@@ -278,7 +305,6 @@ class ValidateTest{
 		@Test
 		@DisplayName ("Test Operands, ADD")
 		void testOperands_Add(){
-			WarningsLog warningsLog = new WarningsLog(new ArrayList<>());
 			Operands operands = validate.splitValidOperands(12, "add", "$8,r31, $s2", warningsLog);
 			assertNotNull(operands);
 			
@@ -288,54 +314,42 @@ class ValidateTest{
 					() -> assertEquals(Operands.InstrType.R, operands.getInstrType()),
 					() -> assertEquals(8, operands.getRd()),
 					() -> assertEquals(31, operands.getRs()),
-					() -> assertEquals(18, operands.getRt()),
-					() -> assertFalse(errLog.hasEntries()),
-					() -> assertFalse(warningsLog.hasEntries())
+					() -> assertEquals(18, operands.getRt())
 			);
 		}
 		
 		@Test
 		@DisplayName ("Test Operands, SUB")
 		void testOperands_Sub(){
-			WarningsLog warningsLog = new WarningsLog(new ArrayList<>());
 			Operands operands = validate.splitValidOperands(30, "sub", "$zero, 31, $s2", warningsLog);
 			// Second operands "31" should be invalid
-			String errors = "Errors:\n\tLineNo: 30\tRegister: \"31\" Not Recognised!\n"
-					+"\tLineNo: 30\tOperands: [$zero, 31, $s2] for Opcode: \"sub\" Not Valid !\n";
-			String warnings = "Warnings:\n\tLineNo: 30\tDestination Register: \"$zero\" Cannot be modified!,"
-					+"\t Result will be ignored!\n";
-			
+			// Zero Write Warning
 			assertAll(
 					() -> assertNull(operands),
-					() -> assertTrue(errLog.hasEntries()),
-					() -> assertEquals(errors, errLog.toString()),
-					() -> assertTrue(warningsLog.hasEntries()),
-					() -> assertEquals(warnings, warningsLog.toString())
+					() -> assertError("LineNo: 30\t\tRegister: \"31\" Not Recognised!\n"
+							+"\tLineNo: 30\tOperands: [$zero, 31, $s2] for Opcode: \"sub\" Not Valid !"),
+					() -> assertZeroWarning(30, "$zero")
 			);
 		}
 		
 		@Test
 		@DisplayName ("Test Invalid Operands, Multiple")
 		void testInvalid_Operands_Multiple(){
-			WarningsLog warningsLog = new WarningsLog(new ArrayList<>());
 			Operands operands = validate.splitValidOperands(30, "add", "$panda, 31, $ss", warningsLog);
-			
-			String errors = "Errors:\n\tLineNo: 30	Register: \"$panda\" Not Valid!\n"+
-					"\tLineNo: 30	Register: \"31\" Not Recognised!\n"+"\tLineNo: 30	Register: \"$ss\" Not Valid!\n"+
-					"\tLineNo: 30\tOperands: [$panda, 31, $ss] for Opcode: \"add\" Not Valid !\n";
-			
+			// Errors with all Operands
 			assertAll(
 					() -> assertNull(operands),
-					() -> assertTrue(errLog.hasEntries()),
-					() -> assertEquals(errors, errLog.toString()),
-					() -> assertFalse(warningsLog.hasEntries())
+					() -> assertError("LineNo: 30\t\tRegister: \"$panda\" Not Valid!\n"
+							+"\tLineNo: 30\t\tRegister: \"31\" Not Recognised!\n"
+							+"\tLineNo: 30\t\tRegister: \"$ss\" Not Valid!\n"
+							+"\tLineNo: 30\tOperands: [$panda, 31, $ss] for Opcode: \"add\" Not Valid !"
+					)
 			);
 		}
 		
 		@Test
 		@DisplayName ("Test Operands, Immediate")
 		void testOperandsImmediate(){
-			WarningsLog warningsLog = new WarningsLog(new ArrayList<>());
 			Operands operands = validate.splitValidOperands(72, "addi", "$1, r20, 75", warningsLog);
 			assertNotNull(operands);
 			
@@ -345,132 +359,132 @@ class ValidateTest{
 					() -> assertEquals(Operands.InstrType.I_write, operands.getInstrType()),
 					() -> assertNull(operands.getRd()),
 					() -> assertEquals(20, operands.getRs()),
-					() -> assertEquals(1, operands.getRt()),
-					() -> assertFalse(errLog.hasEntries()),
-					() -> assertFalse(warningsLog.hasEntries())
+					() -> assertEquals(1, operands.getRt())
 			);
 			
 			Operands operands2 = validate.splitValidOperands(72, "addi", "$1, r20, $s3", warningsLog);
 			assertNull(operands2);
-			assertTrue(errLog.hasEntries());
-			assertEquals("Errors:\n\tLineNo: 72\tImmediate: \"$s3\" Not Valid Integer!\n"+
-					"\tLineNo: 72\tOperands: [$1, r20, $s3] for Opcode: \"addi\" Not Valid !\n", errLog.toString());
-			Operands operands3 = validate.splitValidOperands(72, "addi", "$1, 0x20", warningsLog);
+			assertError("LineNo: 72\t\tImmediate Value: \"$s3\" Not Valid Integer!\n"+
+					"\tLineNo: 72\tOperands: [$1, r20, $s3] for Opcode: \"addi\" Not Valid !");
+			
+			Operands operands3 = validate.splitValidOperands(52, "addi", "$1, 0x20", warningsLog);
 			assertNull(operands3);
+			assertError("LineNo: 52\tOperands: [$1, 0x20] for Opcode: \"addi\" Not Valid !");
 		}
 		
 		@Test
 		@DisplayName ("Test Operands, Load")
 		void testOperandsLoad(){
-			WarningsLog warningsLog = new WarningsLog(new ArrayList<>());
 			Operands operands = validate.splitValidOperands(0, "lw", "$0, 20($1)", warningsLog);
 			assertNotNull(operands);
-			assertTrue(warningsLog.hasEntries());
-			assertFalse(errLog.hasEntries());
 			
-			warningsLog.clear();
+			assertZeroWarning(0, "$0");
+			
 			Operands operands2 = validate.splitValidOperands(5, "lw", "$2, panda", warningsLog);
 			assertNotNull(operands2);
-			assertFalse(warningsLog.hasEntries());
-			assertFalse(errLog.hasEntries());
 		}
 		
 		@Test
 		@DisplayName ("Test Operands, Store")
 		void testOperandsStore(){
-			WarningsLog warningsLog = new WarningsLog(new ArrayList<>());
 			Operands operands = validate.splitValidOperands(0, "sw", "$0, 20($1)", warningsLog);
 			assertNotNull(operands);
 			
-			warningsLog.clear();
+			// noWarnings();
 			Operands operands2 = validate.splitValidOperands(5, "sw", "$2, _panda", warningsLog);
 			assertNotNull(operands2);
-			assertFalse(warningsLog.hasEntries());
-			assertFalse(errLog.hasEntries());
 		}
 		
 		@Test
 		@DisplayName ("Test Operands, Base+Offset")
 		void testOperandsBaseOffset(){
-			WarningsLog warningsLog = new WarningsLog(new ArrayList<>());
 			Operands operands = validate.splitValidOperands(0, "sw", "$0, 20 ($1)", warningsLog);
 			assertNotNull(operands);
-			assertEquals("", warningsLog.toString());
-			assertEquals("", errLog.toString());
 			
-			operands = validate.splitValidOperands(0, "sw", "$0, ($1)", warningsLog);
-			assertNotNull(operands);
-			assertEquals("", warningsLog.toString());
-			assertEquals("", errLog.toString());
+			Operands operands2 = validate.splitValidOperands(0, "sw", "$0, ($1)", warningsLog);
+			assertNotNull(operands2);
 		}
 		
 		@Test
 		@DisplayName ("Test Operands, Jump")
 		void testOperandsJump(){
-			WarningsLog warningsLog = new WarningsLog(new ArrayList<>());
 			Operands operands = validate.splitValidOperands(0, "j", "0x100009", warningsLog);
 			assertNotNull(operands);
+			
 			Operands operands2 = validate.splitValidOperands(0, "jal", "cat", warningsLog);
 			assertNotNull(operands2);
-			assertFalse(warningsLog.hasEntries());
-			assertFalse(errLog.hasEntries());
-			// Invalid - Too many Operands
-			Operands operands3 = validate.splitValidOperands(0, "j", "0x100009, 50", warningsLog);
-			assertNull(operands3);
-			assertTrue(errLog.hasEntries());
+		}
+		
+		@ParameterizedTest
+		@ValueSource (ints = {(Integer.MAX_VALUE -50), Integer.MAX_VALUE, (Integer.MAX_VALUE/4)+1, -32769})
+		@DisplayName ("Test Invalid Operands, Jump _Immediate Out Of Range")
+		void testInvalid_OperandsJump_ImmOutOfRange(int address){
+			Operands operands1 = validate.splitValidOperands(0, "j", ""+address, warningsLog);
+			assertNull(operands1);
+			
+			assertError("LineNo: 0\tImmediate Value: \""+address+"\", Cannot Be Converted To A Valid Address!\n"
+					+"\tLineNo: 0\tOperands: ["+address+"] for Opcode: \"j\" Not Valid !");
+		}
+		
+		// Immediate Values (-2^15) to (2^29-1) Convert To Valid Addresses, but not Valid for Jump
+		// Jump Imm is limited to (2^20) to ((2^20 + 2^18))
+		@DisplayName ("Test Invalid Operands, Jump _Valid Immediate")
+		@ParameterizedTest (name = "{index} - {arguments} : InvalidOp Jump IMM")
+		@ValueSource (ints = {-32768, (Integer.MAX_VALUE/4), // (-2^15) and (2^29-1) Boundaries
+				0x0FFFFF, 0x140001,		// Out of Val Jump Imm Boundaries (2^20)-1 and (2^20 + 2^18)+1
+				0, 0x500004, 0x4000000-1})		// Extra Invalid Values
+		void testInvalid_OperandsJump_ValImm(int address){
+			Operands operands1 = validate.splitValidOperands(0, "j", ""+address, warningsLog);
+			assertNull(operands1);
+			
+			assertError("Instruction Address: \""+Convert.uInt2Hex(address*4)+"\" Not Valid!\n"
+					+"\tLineNo: 0\tOperands: ["+address+"] for Opcode: \"j\" Not Valid !");
 		}
 		
 		@Test
-		@Disabled // TODO - revisit when extending supported Instruction Range > 0x1000,0000.
-		@DisplayName ("Test Operands, Jump _ Invalid Address")
-		void testOperandsJumpInvalidAddress(){
-			// Invalid - >26bit
-			/*
-			2^26 = 67108864, which shifted by 2, becomes 268435456.
-			as Hexadecimal that is 0x1000,0000 which is already larger than the maximum supported address 0x0050,0000
-			So, a non 26bit value, is already caught as an invalid address.
-			 */
-			WarningsLog warningsLog = new WarningsLog(new ArrayList<>());
-			
-			Operands operands3 = validate.splitValidOperands(0, "j", "67108865", warningsLog);
-			assertNull(operands3);
-			assertTrue(errLog.hasEntries());
+		@DisplayName ("Test Invalid Operands, Jump _TooManyOperands")
+		void testInvalid_OperandsJump_TooManyOperands(){
+			// Invalid - Too many Operands
+			Operands operands = validate.splitValidOperands(0, "j", "0x100009, 50", warningsLog);
+			assertNull(operands);
+			assertError("LineNo: 0	Operands: [0x100009, 50] for Opcode: \"j\" Not Valid !");
 		}
 		
 		@Test
 		@DisplayName ("Test Valid Label Address")
 		void testValidLabelAddress(){
-			Assertions.assertTrue(util.Val_Operands.isValidLabelOrInt(7, "0x100000", validate, errLog));
-			Assertions.assertFalse(util.Val_Operands.isValidLabelOrInt(8, "panda?", validate, errLog));
-			assertTrue(errLog.hasEntries());
-			assertEquals("Errors:\n\tLineNo: 8\tLabel: \"panda?\" Not Supported!\n", errLog.toString());
-			errLog.clear();
+			assertTrue(util.Val_Operands.isValidLabelOrInt(7, "0x100000", validate, errLog));
 			
-			Assertions.assertTrue(util.Val_Operands.isValidLabelOrInt(8, "20", validate, errLog));
+			assertFalse(util.Val_Operands.isValidLabelOrInt(8, "panda?", validate, errLog));
+			assertError("LineNo: 8\tLabel: \"panda?\" Not Supported!");
 			
-			Assertions.assertTrue(util.Val_Operands.isValidLabelOrInt(9, "2", validate, errLog));
-			Assertions.assertFalse(util.Val_Operands.isValidLabelOrInt(9, "2_", validate, errLog));
-			errLog.clear();
+			assertTrue(util.Val_Operands.isValidLabelOrInt(8, "20", validate, errLog));
+			assertTrue(util.Val_Operands.isValidLabelOrInt(9, "2", validate, errLog));
 			
-			Assertions.assertTrue(util.Val_Operands.isValidLabelOrInt(9, "_main", validate, errLog));
-			assertFalse(errLog.hasEntries());
+			assertFalse(util.Val_Operands.isValidLabelOrInt(20, "2_", validate, errLog));
+			assertError("LineNo: 20\t\tImmediate Value: \"2_\" Not Valid Integer!");
+			
+			assertTrue(util.Val_Operands.isValidLabelOrInt(9, "_main", validate, errLog));
 		}
 		
 		//validateLoadRegister
 		@Test
 		@DisplayName ("Validate Convert Register")
 		void validateConvertRegister(){
-			Integer i = util.Val_Operands.convertRegister(30, "$0", DataType.FLOATING_POINT, errLog);
-			assertNull(i);
-			assertEquals("Errors:\n\tLineNo: 30\tRegister: \"$0\" Wrong DataType!\n", errLog.toString());
+			assertNull( util.Val_Operands.convertRegister(30, "$0", DataType.FLOATING_POINT, errLog));
+			//assertNull(i);
+			assertError("LineNo: 30\t\tRegister: \"$0\" Wrong DataType!");
 			errLog.clear();
+			
 			Integer z = util.Val_Operands.convertRegister(50, "$-40", DataType.NORMAL, errLog);
 			assertNull(z);
-			assertEquals("Errors:\n\tLineNo: 50\tRegister: \"$-40\" Not In Range!\n", errLog.toString());
+			
+			assertError("LineNo: 50\t\tRegister: \"$-40\" Not In Range!");
 			errLog.clear();
+			
 			Integer x = util.Val_Operands.convertRegister(20, "$50", DataType.NORMAL, errLog);
 			assertNull(x);
-			assertEquals("Errors:\n\tLineNo: 20\tRegister: \"$50\" Not In Range!\n", errLog.toString());
+			assertError("LineNo: 20\t\tRegister: \"$50\" Not In Range!");
 		}
 		
 		//zeroRegister warning
@@ -478,18 +492,14 @@ class ValidateTest{
 		@ValueSource (strings = {"$zero", "zero", "$r0", "r0", "$0"})
 		@DisplayName ("Validate Load Register with Zero")
 		void validateZeroLoadRegister(String text){
-			WarningsLog warningsLog = new WarningsLog(new ArrayList<>());
 			//isValidLoadRegister
 			Assertions.assertAll(
 					() -> Assertions.assertEquals(0, util.Val_Operands.convertRegister(7, text, type, errLog)),
-					() -> assertFalse(errLog.hasEntries()),
-					() -> assertFalse(warningsLog.hasEntries()),
+					this::noWarnings,
 					// convert Register should create no warnings, only convert Write register should!
 					() -> Assertions.assertEquals(0, util.Val_Operands.convertWriteRegister(7, text, type, errLog, warningsLog)),
-					() -> assertFalse(errLog.hasEntries()),
-					() -> assertTrue(warningsLog.hasEntries()),
-					() -> assertEquals("Warnings:\n\tLineNo: 7\tDestination Register: \""+text+
-							"\" Cannot be modified!,\t Result will be ignored!\n", warningsLog.toString())
+					ValidateTest.this::noErrors,
+					() -> assertZeroWarning(7, text)
 			);
 		}
 	}

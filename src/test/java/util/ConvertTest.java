@@ -122,21 +122,21 @@ class ConvertTest{
 		assertThrows(IllegalArgumentException.class, () -> Convert.imm2Address(Integer.MIN_VALUE));
 		
 		for (int i = 0; i<NumR; i++) {
-			assertThrows(IllegalArgumentException.class, () ->
+			assertThrows(IllegalArgumentException.class, () -> // Random
 					Convert.imm2Address(-random.nextInt(IMM_UNDER_MIN-Integer.MIN_VALUE)-IMM_UNDER_MIN));
 		}
 		
-		final int IMM_OVER_MAX = (Integer.MAX_VALUE/4);
-		// > 2>29+1
-		//Test  2>29+1
-		assertThrows(IllegalArgumentException.class, () -> Convert.imm2Address(IMM_OVER_MAX));
+		final int IMM_MAX = (Integer.MAX_VALUE/4); //2^29
+		
+		//Test  2^29+1
+		assertThrows(IllegalArgumentException.class, () -> Convert.imm2Address(IMM_MAX+1));
 		
 		//Test  Integer.Max
 		assertThrows(IllegalArgumentException.class, () -> Convert.imm2Address(Integer.MAX_VALUE));
 		
 		for (int i = 0; i<NumR; i++) {
-			assertThrows(IllegalArgumentException.class, () ->
-					Convert.imm2Address(random.nextInt(Integer.MAX_VALUE-IMM_OVER_MAX)+IMM_OVER_MAX));
+			assertThrows(IllegalArgumentException.class, () -> // Random
+					Convert.imm2Address(random.nextInt(Integer.MAX_VALUE-IMM_MAX)+IMM_MAX));
 		}
 	}
 	

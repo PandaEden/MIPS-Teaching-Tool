@@ -6,8 +6,10 @@ import model.instr.Operands;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import util.Convert;
+import util.Validate;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
+import util.logs.WarningsLog;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -69,10 +71,14 @@ public class MemoryBuilder{
 	private int ProgramCounter = INS_ADDR_BASE;
 	private int MEM_PTR = DATA_ADDR_BASE; //decimal representation of address
 	
+	// TODO - Move addData / addCSVArray / addRange .  to Parser
+	
 	/**
 	 Given valid input it will add the information to the {@link #dataArr},
 	 It will automatically collect any pushed {@link #labels} and attach to the
 	 address of the first (if a range or array) value added, in {@link #labelMap}
+	 
+	 <p><b>If DataType is Null, performs no action ,But -> Still returns True</b></p>
 	 
 	 <p>Supported Data Format: (.word)</p>
 	 <ul>
@@ -81,16 +87,19 @@ public class MemoryBuilder{
 	 <li>.word [±int]</li>
 	 </ul>
 	 
-	 @return boolean - success of adding all data.
+	 @return boolean - success of adding all of the data.
 	 
-	 @throws IllegalStateException dataType has not been pre-validated
+	 @throws IllegalStateException dataType not supported!/ Has not been Validated
+	 @see Validate#isValidDataType(int, String)
 	 */
-	public boolean addData(@NotNull String dataType, @NotNull String data, @NotNull ErrorLog errorLog){
+	public boolean addData(@Nullable String dataType, @Nullable String data, @NotNull ErrorLog errorLog){
 		final String SIGNED_INT = "-?\\d*";    // matches optional '-' sign, then any length int
+		if (dataType==null)
+			return true;
 		
 		// Validate.isValidDataType // Directive
-		if (data.isBlank()) {
-			errorLog.append("No Data given!");    //TODO Line Numbers ?
+		if (data==null||data.isBlank()) {
+			errorLog.append("No Data Given! For DataType: \""+dataType+"\"!");    //TODO Line Numbers ?
 		} else if (dataType.equals(".word")) {
 			if (MEM_PTR<DATA_ADDR_BASE+DATA_LIMIT*DATA_SIZE) {
 				if (data.contains(":"))
@@ -238,12 +247,16 @@ public class MemoryBuilder{
 	 the list is later read, attached to an addresses and cleared by the method
 	 {@link #attachLabelsToAddress(int)}
 	 
-	 @param label - String to be pushed
+	 <b>Input String is assumed to be valid, Parser should use {@link util.Validate#isValidLabel(int, String)}
+	 to check before running this method.
+	 <p>Null Input is ignored. and no action is performed.
 	 
 	 @see #attachLabelsToAddress(int)
+	 @see Validate#isValidLabel(int, String)
 	 */
-	public void pushLabel(String label){
-		labels.push(label);
+	public void pushLabel(@Nullable String label){
+		if (label!=null)
+			labels.push(label);
 	}
 	
 	/**
@@ -273,16 +286,26 @@ public class MemoryBuilder{
 	 instruction address, in {@link MemoryBuilder#labelMap}.
 	 <p>
 	 Returns False after reaching the instruction count limit.
+	 <p>
+	 <b>If Opcode is null, does nothing</b>
 	 
 	 @see MemoryBuilder#attachLabelsToAddress(int)
+	 @see Validate#isValidOpCode(int, String)
+	 @see Validate#splitValidOperands(int, String, String, WarningsLog)
+	 @throws IllegalStateException If Operands And Opcode are null
 	 */
-	public boolean addInstruction(String opcode, Operands operands){
+	public boolean addInstruction(@Nullable String opcode, Operands operands){
 		if (ProgramCounter<(INS_ADDR_BASE+LIMIT*ADDR_SIZE)) {
-			int index = Convert.address2Index(ProgramCounter);
-			
-			instructions.add(index, Instruction.buildInstruction(opcode, operands));
-			attachLabelsToAddress(ProgramCounter);
-			ProgramCounter += ADDR_SIZE;
+			if (opcode!=null) {
+				if (operands==null)
+					throw new IllegalStateException("Null Operands for Opcode: "+opcode);
+				
+				int index = Convert.address2Index(ProgramCounter);
+				
+				instructions.add(index, Instruction.buildInstruction(opcode, operands));
+				attachLabelsToAddress(ProgramCounter);
+				ProgramCounter += ADDR_SIZE;
+			}
 			return true;
 		}
 		return false;
@@ -294,16 +317,17 @@ public class MemoryBuilder{
 	
 	/**
 	 @return null means error during assembly, and application should be terminated.
+	 	<b>Even if errors are from before assembly!</b>
 	 */
 	public ArrayList<Instruction> assembleInstr(ErrorLog errorLog){
 		if (instructions.isEmpty()) {
 			errorLog.append("No Instructions Found!");
-		} else {
-			boolean assembled = true;
-			for (Instruction i : instructions) {
-				assembled &= i.assemble(errorLog, labelMap);
+		} else { // if errorLog already has errors, then assembly should report as failed anyway.
+			boolean assembled = errorLog.hasEntries();
+			for (Instruction instr: instructions) {
+				assembled &= instr.assemble(errorLog, labelMap);
 			}
-			if (assembled)
+			if (assembled)	// if no errors, new/existing
 				return instructions;
 			else
 				errorLog.append("Failed To Assemble Instructions!");

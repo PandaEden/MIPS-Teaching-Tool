@@ -1,11 +1,18 @@
-
-
-import Util.Log;
-import Util.Validate;
+import model.MemoryBuilder;
 import model.components.DataMemory;
-import model.instr.InstrMemory;
+import model.components.InstrMemory;
+import model.instr.Operands;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import util.Convert;
+import util.Validate;
+import util.logs.ErrorLog;
+import util.logs.WarningsLog;
 
-import java.util.ArrayList;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 
 /**
  Responsible for parsing files containing MIPS instructions and building a model for the emulator to run using.
@@ -22,50 +29,110 @@ import java.util.ArrayList;
  mistakes before re-parsing.
  */
 public class Parser{
+	private static final String DEFAULT_FILENAME = "FileInput.s";
+	private final ErrorLog errorLog;
+	private final WarningsLog warningsLog;
+	private final MemoryBuilder mb;
+	private Validate val = null;
+	private BufferedReader reader;
+	private boolean dataLimit = false, instrLimit = false;
 	
 	/**
 	 Initializes the Parser with an empty model. Either Load a file {@link #loadFile(String)}, and parse it {@link
-	#parseFile(String)} Which will also automatically assemble the models ready for execution.
+	#parseLoadedFile(String)} Which will also automatically assemble the models ready for execution.
 	 <p>
-	 Or, parse an array/ single line manually {@link #parseLines(String[])}/{@link #parseLine(String)}(for testing
+	 Or, parse an array/ single line manually {@link #parseLines(String[])}/{@link #parseLine(String, int)}(for testing
 	 purposes)
 	 <p>
 	 After you have parsed content. And there are no errors, run {@link #assemble()}
 	 
 	 @see #assemble()
-	 @see #parseFile(String)
+	 @see #parseLoadedFile(String)
 	 @see #parseLines(String[])
-	 @see #parseLine(String)
+	 @see #parseLine(String, int)
 	 */
-	public Parser(InstrMemory instrMemory, DataMemory dataMemory, Validate validate, Log log){
-	
+	public Parser(@NotNull MemoryBuilder memoryBuilder, @NotNull ErrorLog errorLog, @NotNull WarningsLog warningsLog){
+		this.mb = memoryBuilder;
+		this.errorLog = errorLog;
+		this.warningsLog = warningsLog;
+		this.val = new Validate(errorLog);
 	}
 	
 	/**
-	 Same as {@link #Parser(InstrMemory, DataMemory)}, But, it will automatically run {@link #parseFile(String)} on the parameter.
+	 Same as {@link #Parser(MemoryBuilder, ErrorLog, WarningsLog)}, But, it will automatically run {@link
+	#parseLoadedFile(String)} on the parameter.
 	 And then additionally run {@link #assemble()}. So you only need to retrieve the models built.
 	 <p>(if parser & assembler find no errors!)</p>
 	 
-	 @param filename address of file to load & parse.
-	 @see #parseFile(String)
+	 @param filepath address of file to load & parse.
+	 
+	 @see #parseLoadedFile(String)
 	 @see #assemble()
-	 @see #Parser(InstrMemory, DataMemory)
+	 @see #Parser(MemoryBuilder, ErrorLog, WarningsLog)
 	 */
-	public Parser(String filename, InstrMemory instrMemory, DataMemory dataMemory){
-	
+	public Parser(@NotNull String filepath, @NotNull MemoryBuilder memoryBuilder,
+				  @NotNull ErrorLog errorLog, @NotNull WarningsLog warningsLog){
+		this(memoryBuilder, errorLog, warningsLog);
+		parseLoadedFile(filepath);
 	}
 	
 	/**
 	 Apples file checks on the address given.
 	 <li>File Exists</li>
 	 <li>File is Accessible</li>
-	 <li>File is within the Line# limit {@link Util.Validate#Max_Lines}</li>
+	 <li>File is within the Line# limit {@link util.Validate#MAX_FILE_LINES}</li>
 	 
 	 @param filename address of file to load.
+	 
 	 @return success of loading file.
 	 */
-	public boolean loadFile(String filename){
-		return false;
+	public BufferedReader loadFile(@NotNull String filename){
+		if (filename.isBlank()) {
+			warningsLog.append("Filename Not Provided, Using Default File: \""+DEFAULT_FILENAME+"\"");
+			return null;
+		}
+		
+		String error = "File: \""+filename+"\", ";
+		BufferedReader reader = null;
+		
+		final int MAX_LINES = Validate.MAX_FILE_LINES;    //TODO move this here ?
+		boolean validFile = false;
+		try {
+			File temp = new File(filename);
+			
+			try {
+				String name = temp.getCanonicalPath();
+				File parent = temp.getParentFile();
+				
+				if (parent!=null)
+					name = name.substring(parent.getCanonicalPath().length()+1);
+				
+				error = "File: \""+name+"\", ";
+				
+				if (!temp.exists()) this.errorLog.append(error+"Does Not Exist!");
+				else if (!temp.isFile()) this.errorLog.append(error+"Is Not a File!");
+				else if (!temp.canRead()) this.errorLog.append(error+"Can Not Be Read!");
+				else {
+					reader = new BufferedReader(new FileReader(temp));
+					int lines = 0;
+					while (reader.readLine()!=null && lines<=MAX_LINES) lines++;
+					
+					if (lines<MAX_LINES)
+						validFile = true;
+					else
+						errorLog.append(error+"Has Too Many Lines!, Max Lines = ["+MAX_LINES+"]!");
+				}
+			} catch (IOException e) {
+				errorLog.append(error+"Not Valid FileName!");
+			} finally {
+				if (reader!=null) reader.close();
+			}
+		} catch (IOException e) {
+			// File is invalid,   valid is already set false
+		}
+		if (validFile)
+			return reader;
+		else return null;
 	}
 	
 	/**
@@ -75,10 +142,27 @@ public class Parser{
 	 <p>After, you should run {@link #assemble()}</p>
 	 
 	 @param filename address of file to load & parse.
+	 
 	 @return success of parsing file.
+	 
 	 @see #assemble()
 	 */
-	public boolean parseFile(String filename){
+	public boolean parseLoadedFile(String filename){
+		this.reader = loadFile(filename);
+		return parseLoadedFile();
+	}
+	
+	/**
+	 Parses the file loaded into the parser. Used after running {@link #loadFile(String)}.
+	 <p>After, you should run {@link #assemble()}</p>
+	 
+	 @return success of parsing file.
+	 
+	 @see #Parser(MemoryBuilder, ErrorLog, WarningsLog)
+	 @see #loadFile(String)
+	 @see #assemble()
+	 */
+	public boolean parseLoadedFile(){
 		return false;
 	}
 	
@@ -87,11 +171,185 @@ public class Parser{
 	 <p>Adds information to emulator's models</p>
 	 
 	 @param line MIPS instruction to be parsed.
+	 
 	 @return success of parsing instruction.
+	 
 	 @see #assemble()
 	 */
-	public boolean parseLine(String line){
-		return false;
+	public boolean parseLine(@NotNull String line, int lineNo){
+		String[] split = splitLine(line);
+		int errLength = errorLog.toString().length();
+		// parse mode -> ignored
+		// validate label
+		String label = this.val.isValidLabel(lineNo, split[0]);
+		if (label!=null)
+			mb.pushLabel(label);
+		
+		if (errLength<errorLog.toString().length())
+			errorLog.append("_");
+		
+		String arg1 = split[1];
+		String arg2 = split[2];
+		
+		if (arg1!=null && !arg1.isBlank()) {
+			// first character is a dot '.'
+			if (arg1.matches("\\..*")) {
+				// validate directive
+				if (this.val.isValidDirective(lineNo, arg1))
+					if (!dataLimit && this.val.isValidDataType(lineNo, arg1))// is valid DataType
+						if (!mb.addData(arg1, arg2, errorLog)) { // mb.addData
+							if (mb.retrieveData().size()>=DataMemory.MAX_DATA_ITEMS) {
+								warningsLog.append("LineNo: "+lineNo+"\tReached MAX Data Size!, No More Data Will Be Parsed!");
+								warningsLog.append("\t\t\tData Size Limit == ["+DataMemory.MAX_DATA_ITEMS+"]");
+								dataLimit = true;
+							}
+						}
+			} else if (!instrLimit) {
+				// validate opcode
+				// validate arg2 (operands)
+				// mb.addInstr
+				if ( this.val.isValidOpCode(lineNo, arg1)) {
+					Operands operands = this.val.splitValidOperands(lineNo, arg1, arg2, warningsLog);
+					if (operands!=null && !mb.addInstruction(arg1, operands)) {
+						warningsLog.append("LineNo: "+lineNo+"\tReached MAX Instructions!,"
+								+" No More Instructions  Will Be Parsed!");
+						warningsLog.append("\t\t\tInstruction Limit == ["+InstrMemory.MAX_INSTR_COUNT+"]");
+						instrLimit = true;
+					}
+				}
+			}
+		}
+		boolean rtn = errLength==errorLog.toString().length();
+		return (rtn);
+		
+		/* Notes on Parser implementation
+		.strip .toLowerCase
+		Contains ; or # -> split to comment
+		Contains : -> split to label --> Push Label (attached to the next DATA or INSTR pushed//)
+		split 'space' opcode =[0]
+		RE .strip <contents> [opcode] [operands]
+			opcode valid? : null ->Error, return false
+			int - opcode form
+				// 0 - R type   (add, sub)
+				// 1 - I type_1 (addi)   T, S, Imm
+				// 2 - I type_2 (lw)    T, Imm(S) or T, Imm  T is writtenTo
+				// 3 - I type_3 (sw)    T, Imm(S) or T, Imm
+				// 4 - J (j, jal)
+				// 5 - EXIT (halt, exit)
+	
+			(split.length >1 && opcode!=5)  - error, no operands found
+			if opcode=5, return Operands.getEXIT
+			operands=split[1]
+				Check Regex form
+					opcode 0 - [RD],\s*[RS],\s*[RT]
+					opcode 1 - [RT],\s*[RS],\s*[Imm]
+					opcode 2,3 - [RT],\s*[Imm](\s*[RS]\s*)   or [RT],\s*[Imm]
+					opcode 4 - [Address]
+				
+					Basic form check,  Allow [_,-,\.,a-z,0-9]*
+				
+				if 4, new string[1] = operands[2]
+				else, split remainder around [,\s*]
+				Then.strip
+				
+					Default - do nothing
+					[0] -(opcode =0,1,2) -> write register
+									(0) rd = ^, (1,2) rt = ^
+					[0] -(opcode =3) -> register
+										rt = ^
+					[0] -(opcode =4) -> Address (26bit Immediate)
+						return new Operand(Address)
+
+					[1] -(opcode 0,1) -> register
+					[1] -(opcode 2,3):
+						if "("
+							split "(",[1_1]
+							if ")" - Error no closing bracket
+							else - expecting last char to be ")"
+								trim last char ")"
+								.strip remainder
+									-> register
+										rs = ^
+							[1_0].strip -> Offsets // Current build, all Offsets can be Labels
+								imm/label = ^
+								if (Integer) return new Operand(opcode,rs,rt,imm)
+								if (String) return new Operand(opcode,rs,rt,null, label)
+
+					[3] -(0) -> rt
+						rt = ^ , return new Operand(rs,rt,rd)
+					[3] -(1) -> Immediate
+						imm = ^ , return new Operand(opcode,rs,rt,imm)
+		*/
+	}
+	
+	/**
+	 Splits a line into it's components
+	 <li>[0] - Labels</li>
+	 <li>[1] - Directive/ DataType/ Opcode</li>
+	 <li>[2] - Data/Operands</li>
+	 <li>[3] - Comments</li>
+	 */
+	@Nullable
+	String[] splitLine(@NotNull String line){
+		String comment, label, ARG1, ARG2;
+		comment = label = ARG1 = ARG2 = null;
+		String[] split;
+		
+		// Split Comments - reserve capitalization
+		split = splitComment(Convert.removeExtraWhitespace(line));
+		if (split.length==2)
+			comment = split[1];
+		//
+		line = split[0].toLowerCase().strip();    // Make the remainder lowercase
+		
+		// Split Labels
+		if (line.contains(":")) {
+			if (line.contains(".")) // if line contains '.'
+				split = line.split(":\\s?(?=.*\\.)", 2);    // forward lookup : before .
+			else
+				split = line.split(":\\s?", 2);
+			
+			if (split.length==2) {
+				label = split[0];
+				line = split[1];
+			} else
+				line = split[0];
+		}
+		
+		if (!line.isBlank()) {    // skip if rest of line is blank
+			// Split Arg1 (.directive/ .datatype/ opcode)
+			split = line.split("\\s", 2); // split around first white space
+			ARG1 = split[0];
+			
+			if (split.length==2 && !split[1].isEmpty())
+				ARG2 = split[1]; // if empty, remain null
+		}
+		
+		return new String[]{label, ARG1, ARG2, comment};
+	}
+	
+	/** Return: [0] contains line, if (length==2) [1] contains comment */
+	private String[] splitComment(@NotNull String line){
+		// Split at Comment, # or ;
+		String[] split;
+		
+		split = line.split("#", 2);
+		String comments = "";
+		if (split.length==2)
+			comments = "#"+split[1];
+		
+		line = split[0];
+		
+		split = line.split(";", 2);
+		if (split.length==2)
+			comments = ";"+split[1]+comments;
+		
+		line = split[0];
+		
+		if (comments.isBlank())
+			return new String[]{line};
+		else    // contains comments
+			return new String[]{line, comments};
 	}
 	
 	/**
@@ -99,11 +357,13 @@ public class Parser{
 	 <p>Adds information to emulator's models</p>
 	 
 	 @param arr collection of MIPS instructions to be parsed.
+	 
 	 @return success of parsing all the lines.
+	 
 	 @see #assemble()
 	 */
 	public boolean parseLines(String[] arr){
-		return false;
+		return false;//rtn= FALSE,   rtn = rtn OR (parseline)
 	}
 	
 	/**
@@ -116,93 +376,5 @@ public class Parser{
 	 */
 	public boolean assemble(){
 		return false;
-	}
-	
-	/**
-	 Empties the current models built by the parser.
-	 
-	 @see InstrMemory
-	 @see DataMemory
-	 @see LabelsCache
-	 */
-	public void clearModels(){
-	
-	}
-	
-	boolean parseLabels(){
-		return false;
-	}
-	
-	
-	private boolean addData(String directive, String data){
-		return false;
-	}
-	
-	/**
-	 returns Index in {@link DataMemory} of the first data item.
-	 
-	 -1 on Error
-	 */
-	private int addData_Word(int word){
-		return -1;
-	}
-	
-	/**
-	 returns Index in {@link InstrMemory} of the instruction.
-	 
-	 -1 on Error
-	 */
-	private int addInstr(int LineNo ,String opcode, String operands){
-		return -1;
-	}
-	
-	private boolean parseLabelCache(){
-		return false;
-	}
-	
-	/**
-	 Intermediary cache for instructions that utilize labels. Since labels can be utilized before the line which declares
-	 them, The use of labels correctly can only be checked, after the entire input has been parsed.
-	 
-	 @see #assemble()
-	 */
-	private class LabelsCache{
-		/*Labels are found in the Parser in 2 scenarios,
-		Attaching to the next instruction/data,  or being used by an instruction.
-		
-		 Where it is attaching to the next instr/data, it should be pushed to a stack/list.
-		 	using the returned index from addData / addInstr and the appropriate
-		 And add the label to a labelMap with references the address.
-		 
-		 Where an instruction uses a Label as an operand, It will instead return a placeholder instruction
-		 Which (lineNo, opcode, operands, label)
-		 
-		 When assemble is run, replace any placeholder instructions, with the actual instr with an address,
-		  by referencing labelsMap
-		*/
-		
-		/**
-		 Adds the label to the labelsStack if {@link Util.Validate#isValidLabel(String)}
-		 */
-		private boolean pushLabel(String label){
-			return false;
-		}
-		
-		/**
-		 given an address, pops all the labels off the labelsStack,
-		 and adds to the to labelsMap, with the value of the address given.
-		 
-		 Does not validate the address is valid! - This is done at the assemble stage.
-		 */
-		private boolean attachLabelsToAddress(int address){
-			return false;
-		}
-		
-		/**
-		 resets the labelsStack & labelsMap to empty.
-		 */
-		public void clear(){
-		
-		}
 	}
 }
