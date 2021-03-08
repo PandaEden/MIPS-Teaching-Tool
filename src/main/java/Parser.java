@@ -13,6 +13,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Scanner;
 
 /**
  Responsible for parsing files containing MIPS instructions and building a model for the emulator to run using.
@@ -163,7 +165,14 @@ public class Parser{
 	 @see #assemble()
 	 */
 	public boolean parseLoadedFile(){
-		return false;
+		ArrayList<String> lines = new ArrayList<>();
+		if (this.reader!=null) {
+			Scanner scanner = new Scanner(this.reader);
+			if (scanner.hasNextLine()) {
+				lines.add(scanner.nextLine());
+			}
+		}
+		return parseLines((String[]) lines.toArray());
 	}
 	
 	/**
@@ -196,7 +205,7 @@ public class Parser{
 			if (arg1.matches("\\..*")) {
 				// validate directive
 				if (this.val.isValidDirective(lineNo, arg1))
-					if (!dataLimit && this.val.isValidDataType(lineNo, arg1))// is valid DataType
+					if (!dataLimit && this.val.isDataType(arg1)) // is DataType
 						if (!mb.addData(arg1, arg2, errorLog)) { // mb.addData
 							if (mb.retrieveData().size()>=DataMemory.MAX_DATA_ITEMS) {
 								warningsLog.append("LineNo: "+lineNo+"\tReached MAX Data Size!, No More Data Will Be Parsed!");
@@ -208,7 +217,7 @@ public class Parser{
 				// validate opcode
 				// validate arg2 (operands)
 				// mb.addInstr
-				if ( this.val.isValidOpCode(lineNo, arg1)) {
+				if (this.val.isValidOpCode(lineNo, arg1)) {
 					Operands operands = this.val.splitValidOperands(lineNo, arg1, arg2, warningsLog);
 					if (operands!=null && !mb.addInstruction(arg1, operands)) {
 						warningsLog.append("LineNo: "+lineNo+"\tReached MAX Instructions!,"
@@ -219,67 +228,7 @@ public class Parser{
 				}
 			}
 		}
-		boolean rtn = errLength==errorLog.toString().length();
-		return (rtn);
-		
-		/* Notes on Parser implementation
-		.strip .toLowerCase
-		Contains ; or # -> split to comment
-		Contains : -> split to label --> Push Label (attached to the next DATA or INSTR pushed//)
-		split 'space' opcode =[0]
-		RE .strip <contents> [opcode] [operands]
-			opcode valid? : null ->Error, return false
-			int - opcode form
-				// 0 - R type   (add, sub)
-				// 1 - I type_1 (addi)   T, S, Imm
-				// 2 - I type_2 (lw)    T, Imm(S) or T, Imm  T is writtenTo
-				// 3 - I type_3 (sw)    T, Imm(S) or T, Imm
-				// 4 - J (j, jal)
-				// 5 - EXIT (halt, exit)
-	
-			(split.length >1 && opcode!=5)  - error, no operands found
-			if opcode=5, return Operands.getEXIT
-			operands=split[1]
-				Check Regex form
-					opcode 0 - [RD],\s*[RS],\s*[RT]
-					opcode 1 - [RT],\s*[RS],\s*[Imm]
-					opcode 2,3 - [RT],\s*[Imm](\s*[RS]\s*)   or [RT],\s*[Imm]
-					opcode 4 - [Address]
-				
-					Basic form check,  Allow [_,-,\.,a-z,0-9]*
-				
-				if 4, new string[1] = operands[2]
-				else, split remainder around [,\s*]
-				Then.strip
-				
-					Default - do nothing
-					[0] -(opcode =0,1,2) -> write register
-									(0) rd = ^, (1,2) rt = ^
-					[0] -(opcode =3) -> register
-										rt = ^
-					[0] -(opcode =4) -> Address (26bit Immediate)
-						return new Operand(Address)
-
-					[1] -(opcode 0,1) -> register
-					[1] -(opcode 2,3):
-						if "("
-							split "(",[1_1]
-							if ")" - Error no closing bracket
-							else - expecting last char to be ")"
-								trim last char ")"
-								.strip remainder
-									-> register
-										rs = ^
-							[1_0].strip -> Offsets // Current build, all Offsets can be Labels
-								imm/label = ^
-								if (Integer) return new Operand(opcode,rs,rt,imm)
-								if (String) return new Operand(opcode,rs,rt,null, label)
-
-					[3] -(0) -> rt
-						rt = ^ , return new Operand(rs,rt,rd)
-					[3] -(1) -> Immediate
-						imm = ^ , return new Operand(opcode,rs,rt,imm)
-		*/
+		return (errLength==errorLog.toString().length());
 	}
 	
 	/**
@@ -363,7 +312,13 @@ public class Parser{
 	 @see #assemble()
 	 */
 	public boolean parseLines(String[] arr){
-		return false;//rtn= FALSE,   rtn = rtn OR (parseline)
+		boolean rtn = arr.length>0;
+		int lineNo = 1;
+		
+		for (String s : arr) {
+			rtn &= parseLine(s, lineNo++);
+		}
+		return rtn;
 	}
 	
 	/**
@@ -374,7 +329,7 @@ public class Parser{
 	 
 	 @return success of assembly.
 	 */
-	public boolean assemble(){
-		return false;
+	public ArrayList<model.Instruction> assemble(){
+		return mb.assembleInstr(errorLog);
 	}
 }

@@ -9,17 +9,17 @@ import util.logs.Logger;
 /**
  Wrapper for int[32] registers. Must be size 32
  Null inputs are ignored.
- 
+ <p>
  Out of Range inputs throw {@link IndexOutOfBoundsException}
  */
 public class RegisterBank{
-	public RegFormat regFormat = RegFormat.R;
 	private final int[] registers;
 	private final ExecutionLog executionLog;
+	private final String NAME = "RegisterBank";
+	public RegFormat regFormat = RegFormat.R;
 	private Integer LAST_READ0 = null;
 	private Integer LAST_READ1 = null;
 	private Integer LAST_WRITTEN = null;
-	private final String NAME = "RegisterBank";
 	
 	//TODO Add Named versions of Read/Write, so the Opperand Name [RD/RS/RT] can be printed to the log with the action.
 	
@@ -43,12 +43,12 @@ public class RegisterBank{
 		LAST_READ1 = null;
 		int val = 0;
 		
-		if (index == null) {
+		if (index==null) {
 			LAST_READ0 = null;
 			noAction();
-		} else if (inRange(index)){
+		} else if (inRange(index)) {
 			LAST_READ0 = index;
-			val=this.registers[index];
+			val = this.registers[index];
 			
 			this.executionLog.append(NAME+":\t"+"Reading Value["+val+"]\tFrom Register Index["+fmtReg(index)+"]!");
 		}
@@ -69,25 +69,28 @@ public class RegisterBank{
 	 @see Convert#namedRegisters
 	 */
 	public int[] read(@Nullable Integer index0, @Nullable Integer index1){
-		int data0=0,data1=0;
+		int data0 = 0, data1 = 0;
 		
-		if (index0 == null && index1 == null) {
-			LAST_READ0 = null; LAST_READ1 = null;
+		if (index0==null && index1==null) {
+			LAST_READ0 = null;
+			LAST_READ1 = null;
 			noAction();
 			
-		} else if (index0 != null && index1 == null){
+		} else if (index0!=null && index1==null) {
 			data0 = read(index0);
 			
-		} else if (index0==null){ // index0 == null && index1 != null
-			LAST_READ0 = null; LAST_READ1 = index1;
+		} else if (index0==null) { // index0 == null && index1 != null
+			LAST_READ0 = null;
+			LAST_READ1 = index1;
 			if (inRange(index1)) {
 				data1 = this.registers[index1];
 				this.executionLog.append(NAME+":\t"+"Reading Value["+data1+"]\tFrom Register Index["
 						+fmtReg(index1)+"]!");
 			}
 		} else { // index0 != null && index1 != null
-			LAST_READ0=index0; LAST_READ1=index1;
-			if (inRange(index0)&&inRange(index1)){
+			LAST_READ0 = index0;
+			LAST_READ1 = index1;
+			if (inRange(index0) && inRange(index1)) {
 				data0 = this.registers[index0];
 				data1 = this.registers[index1];
 				this.executionLog.append(NAME+":\t"+"Reading Values["+data0+", "+data1
@@ -112,13 +115,13 @@ public class RegisterBank{
 	 */
 	@SuppressWarnings ("UnusedReturnValue")
 	public boolean write(@Nullable Integer index, @Nullable Integer data){
-		if (index==null || data == null || index ==0) {
-			LAST_WRITTEN=null;
+		if (index==null || data==null || index==0) {
+			LAST_WRITTEN = null;
 			noAction();
 			return false;
-		} else if (inRange(index)){
-			LAST_WRITTEN=index;
-			this.registers[index]=data;
+		} else if (inRange(index)) {
+			LAST_WRITTEN = index;
+			this.registers[index] = data;
 			this.executionLog.append(NAME+":\t"+"Writing Value["+data+"]\tTo Register Index["+fmtReg(index)+"]!");
 		}
 		return true;
@@ -127,7 +130,7 @@ public class RegisterBank{
 	public boolean inRange(int index){
 		int MIN_INDEX = 0;
 		int MAX_INDEX = 31;
-		if (index >=MIN_INDEX && index <=MAX_INDEX)
+		if (index>=MIN_INDEX && index<=MAX_INDEX)
 			return true;
 		else
 			throw new IndexOutOfBoundsException("Index must be >="+MIN_INDEX+" and <="+MAX_INDEX+"!");
@@ -145,7 +148,7 @@ public class RegisterBank{
 	@NotNull
 	public String format(){
 		StringBuilder rtn = new StringBuilder("-----------REGISTER-BANK-------------\n");
-		int I1=0, I2=8, I3=16, I4=24;
+		int I1 = 0, I2 = 8, I3 = 16, I4 = 24;
 		
 		for (int i = 0; i<8; i++) {
 			rtn.append("|").append(fmtRegWithData(I1++))
@@ -162,7 +165,7 @@ public class RegisterBank{
 	 Formats the register depending on {@link RegFormat}, and combines with the value at that register
 	 */
 	private String fmtRegWithData(int index){
-		return colorReg(index, regName(index) + ": "+registers[index]);
+		return colorReg(index, regName(index)+": "+registers[index]);
 	}
 	
 	/**
@@ -174,7 +177,6 @@ public class RegisterBank{
 	
 	/**
 	 Depending on the status colorize the output, and add an asterisk if {@link #LAST_WRITTEN}
-	 
 	 */
 	private String colorReg(int index, String reg){
 		final String READ_COL = Logger.Color.GREEN_ANSI;
@@ -182,15 +184,15 @@ public class RegisterBank{
 		
 		if (LAST_READ0!=null)
 			if (index==LAST_READ0)
-				reg= Logger.Color.formatColored(READ_COL, reg);
+				reg = Logger.Color.formatColored(READ_COL, reg);
 		
 		if (LAST_READ1!=null)
 			if (index==LAST_READ1)
-				reg=Logger.Color.formatColored(READ_COL, reg);
+				reg = Logger.Color.formatColored(READ_COL, reg);
 		
 		if (LAST_WRITTEN!=null)
 			if (index==LAST_WRITTEN)
-				reg=Logger.Color.formatColored(WRITE_COL, "*"+reg);
+				reg = Logger.Color.formatColored(WRITE_COL, "*"+reg);
 		
 		return reg;
 	}

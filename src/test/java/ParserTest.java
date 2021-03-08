@@ -310,24 +310,31 @@ class ParserTest {
 	
 	// Parsing
 	@Test
-	@Disabled //TEST - implement Parse Line
 	@DisplayName ("- Invalid Directive")
 	void invalidDirective(){
-		appendError("Directive \".nonMipsDirective\" not supported!");
-		appendSeeDocs();
+		appendError("LineNo: -5\tDirective: \".nonmipsdirective\" Not Supported!");
+		//appendSeeDocs();
 		
 		assertFalse(parser.parseLine("  .nonMipsDirective ", -5));
-		assertFalse(parser.assemble());
+		matchErrorsOnly();
+		assertNull(parser.assemble());
+		appendError("No Instructions Found!");
 		matchErrorsOnly();
 	}
 	
 	@ParameterizedTest
-	@Disabled //TEST - implement Parse Line
-	
 	@ValueSource(strings = {".data",".text",".code"})
 	@DisplayName ("Valid Directive")
 	void validDirective(String directive){
+		boolean s = parser.parseLine(directive, -5);
+		if (!s){
+			System.out.println(errLog);
+		}
 		
 		assertTrue(parser.parseLine(directive, -5));
+		noErrorOrWarnings();
+		assertNull(parser.assemble());
+		appendError("No Instructions Found!");
+		matchErrorsOnly();
 	}
 }

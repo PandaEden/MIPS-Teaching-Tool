@@ -8,7 +8,6 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import util.logs.ErrorLog;
-import util.logs.Logger;
 import util.logs.WarningsLog;
 
 import java.util.ArrayList;
@@ -70,7 +69,7 @@ class ValidateTest{
 	class AddressValidationTests{
 		//------INSTR ADDRESSES--------------
 		@ParameterizedTest
-		@ValueSource (longs = {0x00400000L, 0x004003E4L, 0x004FFFFCL,0x00500000L-4})
+		@ValueSource (longs = {0x00400000L, 0x004003E4L, 0x004FFFFCL, 0x00500000L-4})
 		@DisplayName ("Validate - Supported Instr Address")
 		void validateSupportedInstrAddress(long address){
 			assertTrue(AddressValidation.isSupportedInstrAddr((int) address, errLog));
@@ -78,12 +77,12 @@ class ValidateTest{
 		}
 		
 		@ParameterizedTest
-		@ValueSource (longs = {0x00500000L, 0x00500004L, 0x08000000L, 0x0FFFFFFCL, 0x01400010, })
+		@ValueSource (longs = {0x00500000L, 0x00500004L, 0x08000000L, 0x0FFFFFFCL, 0x01400010,})
 		@DisplayName ("Validate - Not_Supported Instr Address")
 		void validateNot_SupportedInstrAddress(long address){
 			assertFalse(AddressValidation.isSupportedInstrAddr((int) address, errLog));
 			assertError("Instruction Address: \""+Convert.uInt2Hex((int) address)+"\" Not Supported!");
-
+			
 			assertNull(AddressValidation.addr2index((int) address, true, errLog));
 			assertError("Instruction Address: \""+Convert.uInt2Hex((int) address)+"\" Not Supported!");
 		}
@@ -116,7 +115,7 @@ class ValidateTest{
 		void validateNot_SupportedDataAddress(long address){
 			assertFalse(AddressValidation.isSupportedDataAddr((int) address, errLog));
 			assertError("Data Address: \""+Convert.uInt2Hex((int) address)+"\" Not Supported!");
-
+			
 			assertNull(AddressValidation.addr2index((int) address, false, errLog));
 			assertError("Data Address: \""+Convert.uInt2Hex((int) address)+"\" Not Supported!");
 		}
@@ -126,7 +125,7 @@ class ValidateTest{
 		void validateInvalid_DataAddressUnder(){
 			assertFalse(AddressValidation.isSupportedDataAddr(0x00400000, errLog));
 			assertError("Data Address: \"0x00400000\" Not Valid!");
-
+			
 			assertNull(AddressValidation.addr2index(0x10000000, false, errLog));
 			assertError("Data Address: \"0x10000000\" Not Valid!");
 		}
@@ -136,7 +135,7 @@ class ValidateTest{
 		void validateInvalid_DataAddressOver(){
 			assertFalse(AddressValidation.isSupportedDataAddr((int) 0x7FFFFFF8L, errLog));
 			assertError("Data Address: \"0x7FFFFFF8\" Not Valid!");
-
+			
 			assertNull(AddressValidation.addr2index((int) 0x78000000L, false, errLog));
 			assertError("Data Address: \"0x78000000\" Not Valid!");
 		}
@@ -173,7 +172,8 @@ class ValidateTest{
 		@ValueSource (strings = {".word"})
 		@DisplayName ("Validate Supported DataType")
 		void validateSupportedDataType(String type){
-			assertTrue(validate.isValidDataType(5, type));
+			assertTrue(validate.isValidDirective(0, type));
+			assertTrue(validate.isDataType(type));
 		}
 		
 		@ParameterizedTest
@@ -181,8 +181,7 @@ class ValidateTest{
 				".data", ".text", ".code"})
 		@DisplayName ("Validate Not Supported DataType")
 		void validateNotSupportedDataType(String type){
-			assertFalse(validate.isValidDataType(20, type));
-			assertError("LineNo: 20\tDataType: \""+type+"\" Not Supported!");
+			assertFalse(validate.isDataType(type));
 		}
 		
 		//Labels _[a-z] separators ['.','-','_',a-z]*
@@ -417,7 +416,7 @@ class ValidateTest{
 		}
 		
 		@ParameterizedTest
-		@ValueSource (ints = {(Integer.MAX_VALUE -50), Integer.MAX_VALUE, (Integer.MAX_VALUE/4)+1, -32769})
+		@ValueSource (ints = {(Integer.MAX_VALUE-50), Integer.MAX_VALUE, (Integer.MAX_VALUE/4)+1, -32769})
 		@DisplayName ("Test Invalid Operands, Jump _Immediate Out Of Range")
 		void testInvalid_OperandsJump_ImmOutOfRange(int address){
 			Operands operands = validate.splitValidOperands(0, "j", ""+address, warningsLog);
@@ -432,18 +431,19 @@ class ValidateTest{
 		@DisplayName ("Test Invalid Operands, Jump _Valid-NotSupported Immediate")
 		@ParameterizedTest (name = "{index} - {arguments} : InvalidOp Jump IMM")
 		@ValueSource (ints = {-32768, (Integer.MAX_VALUE/4), // (-2^15) and (2^29-1) Boundaries
-				0x0FFFFF, 0x140001,		// Out of Supp Jump Imm Boundaries (2^20)-1 and (2^20 + 2^18)+1
-				0, 0x500004, 0x4000000-1})		// Extra Invalid Values
+				0x0FFFFF, 0x140001,        // Out of Supp Jump Imm Boundaries (2^20)-1 and (2^20 + 2^18)+1
+				0, 0x500004, 0x4000000-1})
+		// Extra Invalid Values
 		void testInvalid_OperandsJump_ValImm(int address){
 			Operands operands = validate.splitValidOperands(0, "j", ""+address, warningsLog);
 			
 			assertNull(operands);
 			int a = address*4;
 			String err = "Instruction Address: \""+Convert.uInt2Hex(a)+"\" Not ";
-			if (a>=0x10000000||a < 0x00400000){
-				err+="Valid!\n";		// -32768, Integer.MAX_VALUE/4, 0x0FFFFF, 0
-			}else {
-				err+="Supported!\n";
+			if (a>=0x10000000 || a<0x00400000) {
+				err += "Valid!\n";        // -32768, Integer.MAX_VALUE/4, 0x0FFFFF, 0
+			} else {
+				err += "Supported!\n";
 			}
 			assertError(err+"\tLineNo: 0\tOperands: ["+address+"] for Opcode: \"j\" Not Valid !");
 		}
@@ -478,7 +478,7 @@ class ValidateTest{
 		@Test
 		@DisplayName ("Validate Convert Register")
 		void validateConvertRegister(){
-			assertNull( util.Val_Operands.convertRegister(30, "$0", DataType.FLOATING_POINT, errLog));
+			assertNull(util.Val_Operands.convertRegister(30, "$0", DataType.FLOATING_POINT, errLog));
 			//assertNull(i);
 			assertError("LineNo: 30\t\tRegister: \"$0\" Wrong DataType!");
 			errLog.clear();

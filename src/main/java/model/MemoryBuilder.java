@@ -98,7 +98,7 @@ public class MemoryBuilder{
 			return true;
 		
 		// Validate.isValidDataType // Directive
-		if (data==null||data.isBlank()) {
+		if (data==null || data.isBlank()) {
 			errorLog.append("No Data Given! For DataType: \""+dataType+"\"!");    //TODO Line Numbers ?
 		} else if (dataType.equals(".word")) {
 			if (MEM_PTR<DATA_ADDR_BASE+DATA_LIMIT*DATA_SIZE) {
@@ -289,10 +289,10 @@ public class MemoryBuilder{
 	 <p>
 	 <b>If Opcode is null, does nothing</b>
 	 
+	 @throws IllegalStateException If Operands And Opcode are null
 	 @see MemoryBuilder#attachLabelsToAddress(int)
 	 @see Validate#isValidOpCode(int, String)
 	 @see Validate#splitValidOperands(int, String, String, WarningsLog)
-	 @throws IllegalStateException If Operands And Opcode are null
 	 */
 	public boolean addInstruction(@Nullable String opcode, Operands operands){
 		if (ProgramCounter<(INS_ADDR_BASE+LIMIT*ADDR_SIZE)) {
@@ -317,17 +317,17 @@ public class MemoryBuilder{
 	
 	/**
 	 @return null means error during assembly, and application should be terminated.
-	 	<b>Even if errors are from before assembly!</b>
+	 <b>Even if errors are from before assembly!</b>
 	 */
 	public ArrayList<Instruction> assembleInstr(ErrorLog errorLog){
 		if (instructions.isEmpty()) {
 			errorLog.append("No Instructions Found!");
 		} else { // if errorLog already has errors, then assembly should report as failed anyway.
 			boolean assembled = errorLog.hasEntries();
-			for (Instruction instr: instructions) {
+			for (Instruction instr : instructions) {
 				assembled &= instr.assemble(errorLog, labelMap);
 			}
-			if (assembled)	// if no errors, new/existing
+			if (assembled)    // if no errors, new/existing
 				return instructions;
 			else
 				errorLog.append("Failed To Assemble Instructions!");

@@ -29,7 +29,7 @@ public class Validate{
 	
 	//TODO make this auto generate based on {@link DataType} - perhaps a HashMap?
 	private static final String SUPPORTED_DATATYPE_CSV = (".word");
-	private static final String SUPPORTED_DIRECTIVES_CSV = (".data, .text, .code"+","+SUPPORTED_DATATYPE_CSV);
+	private static final String SUPPORTED_DIRECTIVES_CSV = (".data, .text, .code");
 	//TODO refactor to Enum? or, Loop Up Table ?
 	
 	// Operands should only belong to one subset, the subsets can then be merged
@@ -54,6 +54,8 @@ public class Validate{
 			SUPPORTED_R_TYPE_OPCODE_CSV+","+SUPPORTED_I_TYPE_OPCODE_CSV+","+SUPPORTED_J_TYPE_OPCODE_CSV+","
 					+NO_OPERANDS_OPCODE;
 	
+	//TODO , CSV's should be split at initialization
+	
 	private final ErrorLog errLog;
 	
 	public Validate(ErrorLog errLog){
@@ -62,34 +64,21 @@ public class Validate{
 	
 	/**
 	 If not valid, adds to the {@link #errLog}.
-	 <p>	see README for list of supported directive.
+	 <p>	see README for list of supported directives. and DataTypes.
 	 
 	 @see ErrorLog
 	 */
 	public boolean isValidDirective(int lineNo, @NotNull String directive){
-		boolean rtn = Arrays.asList(
-				Convert.splitCSV(SUPPORTED_DIRECTIVES_CSV))
-				.contains(directive);
+		boolean rtn = (doesCSVContain(SUPPORTED_DIRECTIVES_CSV, directive) || isDataType(directive));
+		
 		if (!rtn)
 			errLog.append("LineNo: "+lineNo+"\tDirective: \""+directive+"\" Not Supported!");
 		
 		return rtn;
 	}
 	
-	/**
-	 If not valid, adds to the {@link #errLog}.
-	 <p>	see README for valid data types.
-	 
-	 @see ErrorLog
-	 */
-	public boolean isValidDataType(int lineNo, @NotNull String dataType){
-		boolean rtn = Arrays.asList(
-				Convert.splitCSV(SUPPORTED_DATATYPE_CSV))
-				.contains(dataType);
-		if (!rtn)
-			errLog.append("LineNo: "+lineNo+"\tDataType: \""+dataType+"\" Not Supported!");
-		
-		return rtn;
+	public boolean isDataType(@NotNull String dataType){
+		return (doesCSVContain(SUPPORTED_DATATYPE_CSV, dataType));
 	}
 	
 	
@@ -98,13 +87,13 @@ public class Validate{
 	 <p>	see README for valid label definition.
 	 
 	 @see ErrorLog
-	 
-	 */@Nullable
+	 */
+	@Nullable
 	public String isValidLabel(int lineNo, @Nullable String label){
-	 	if (label!=null) {
+		if (label!=null) {
 			if (label.matches("[_a-z][_.\\-a-z\\d]*"))
 				return label;
-		  
+			
 			errLog.append("LineNo: "+lineNo+"\tLabel: \""+label+"\" Not Supported!");
 		}
 		return null;
@@ -117,7 +106,7 @@ public class Validate{
 	 @see ErrorLog
 	 */
 	public boolean isValidOpCode(int lineNo, @NotNull String opcode){
-		if (!Arrays.asList( Convert.splitCSV(SUPPORTED_OPCODES_CSV)) .contains(opcode)) {
+		if (!Arrays.asList(Convert.splitCSV(SUPPORTED_OPCODES_CSV)).contains(opcode)) {
 			errLog.append("LineNo: "+lineNo+"\tOpcode: \""+opcode+"\" Not Supported!");
 			return false;
 		}
@@ -139,8 +128,7 @@ public class Validate{
 	 @param opcode Instruction opcode, used to determine Operands format.
 	 //TODO R_type with shift amount uses [0, RT, RD, ShiftAmt]
 	 
-	 @return
-	 <li>R_type int[3] {RS, RT, RD}</li>
+	 @return <li>R_type int[3] {RS, RT, RD}</li>
 	 <li>I_type int[3] {RS, RT, Imm}</li>
 	 <li>J_type int[3] {}-1, -1, Address}</li>
 	 <li>Exit * <-null-></li>
