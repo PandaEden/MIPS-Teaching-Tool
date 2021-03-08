@@ -282,7 +282,7 @@ public class Validate{
 			Integer imm = Val_Operands.convertInteger(lineNo, addr, errLog);
 			if (imm!=null) {
 				Integer address = AddressValidation.convertValidImm2Addr(lineNo, imm, errLog);
-				if (address!=null && AddressValidation.isValidDataAddr(address, errLog))
+				if (address!=null && AddressValidation.isSupportedDataAddr(address, errLog))
 					return new Operands(opcode, zero, rt, imm);
 			}
 		}
@@ -305,7 +305,7 @@ public class Validate{
 				imm = Val_Operands.convertInteger(lineNo, addr, errLog);
 				if (imm!=null) {
 					Integer address = AddressValidation.convertValidImm2Addr(lineNo, imm, errLog);
-					if (address!=null && AddressValidation.isValidInstrAddr(address, errLog))
+					if (address!=null && AddressValidation.isSupportedInstrAddr(address, errLog))
 						return new Operands(opcode, imm);
 				}
 				

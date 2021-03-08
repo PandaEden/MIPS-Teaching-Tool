@@ -8,6 +8,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import util.logs.ErrorLog;
+import util.logs.Logger;
 import util.logs.WarningsLog;
 
 import java.util.ArrayList;
@@ -411,16 +412,16 @@ class ValidateTest{
 			Operands operands = validate.splitValidOperands(0, "j", "0x100009", warningsLog);
 			assertNotNull(operands);
 			
-			Operands operands2 = validate.splitValidOperands(0, "jal", "cat", warningsLog);
-			assertNotNull(operands2);
+			Operands operands1 = validate.splitValidOperands(0, "jal", "cat", warningsLog);
+			assertNotNull(operands1);
 		}
 		
 		@ParameterizedTest
 		@ValueSource (ints = {(Integer.MAX_VALUE -50), Integer.MAX_VALUE, (Integer.MAX_VALUE/4)+1, -32769})
 		@DisplayName ("Test Invalid Operands, Jump _Immediate Out Of Range")
 		void testInvalid_OperandsJump_ImmOutOfRange(int address){
-			Operands operands1 = validate.splitValidOperands(0, "j", ""+address, warningsLog);
-			assertNull(operands1);
+			Operands operands = validate.splitValidOperands(0, "j", ""+address, warningsLog);
+			assertNull(operands);
 			
 			assertError("LineNo: 0\tImmediate Value: \""+address+"\", Cannot Be Converted To A Valid Address!\n"
 					+"\tLineNo: 0\tOperands: ["+address+"] for Opcode: \"j\" Not Valid !");
@@ -428,17 +429,23 @@ class ValidateTest{
 		
 		// Immediate Values (-2^15) to (2^29-1) Convert To Valid Addresses, but not Valid for Jump
 		// Jump Imm is limited to (2^20) to ((2^20 + 2^18))
-		@DisplayName ("Test Invalid Operands, Jump _Valid Immediate")
+		@DisplayName ("Test Invalid Operands, Jump _Valid-NotSupported Immediate")
 		@ParameterizedTest (name = "{index} - {arguments} : InvalidOp Jump IMM")
 		@ValueSource (ints = {-32768, (Integer.MAX_VALUE/4), // (-2^15) and (2^29-1) Boundaries
-				0x0FFFFF, 0x140001,		// Out of Val Jump Imm Boundaries (2^20)-1 and (2^20 + 2^18)+1
+				0x0FFFFF, 0x140001,		// Out of Supp Jump Imm Boundaries (2^20)-1 and (2^20 + 2^18)+1
 				0, 0x500004, 0x4000000-1})		// Extra Invalid Values
 		void testInvalid_OperandsJump_ValImm(int address){
-			Operands operands1 = validate.splitValidOperands(0, "j", ""+address, warningsLog);
-			assertNull(operands1);
+			Operands operands = validate.splitValidOperands(0, "j", ""+address, warningsLog);
 			
-			assertError("Instruction Address: \""+Convert.uInt2Hex(address*4)+"\" Not Valid!\n"
-					+"\tLineNo: 0\tOperands: ["+address+"] for Opcode: \"j\" Not Valid !");
+			assertNull(operands);
+			int a = address*4;
+			String err = "Instruction Address: \""+Convert.uInt2Hex(a)+"\" Not ";
+			if (a>=0x10000000||a < 0x00400000){
+				err+="Valid!\n";		// -32768, Integer.MAX_VALUE/4, 0x0FFFFF, 0
+			}else {
+				err+="Supported!\n";
+			}
+			assertError(err+"\tLineNo: 0\tOperands: ["+address+"] for Opcode: \"j\" Not Valid !");
 		}
 		
 		@Test
