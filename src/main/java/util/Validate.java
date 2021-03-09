@@ -1,27 +1,3 @@
-/******************************************************************************
- * MIT License                                                                *
- *                                                                            *
- * Copyright (c) 2020 Adnaan Hussain                                          *
- *                                                                            *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell  *
- * copies of the Software, and to permit persons to whom the Software is      *
- * furnished to do so, subject to the following conditions:                   *
- *                                                                            *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.                            *
- *                                                                            *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR *
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,   *
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE*
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER     *
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- * SOFTWARE.                                                                  *
- ******************************************************************************/
-
 package util;
 
 import model.DataType;
@@ -161,8 +137,8 @@ public class Validate{
 	 */
 	@Nullable
 	public Operands splitValidOperands(int lineNo, @Nullable String opcode, String operands, @NotNull WarningsLog warningsLog){
-		final String operand_DelimiterRegex = ",\\s*";
-		final String openBracket_Regex = "-?\\d*\\s?\\(.+";
+		final String operand_DelimiterRegex = "\\s?,\\s?";
+		final String openBracket_Regex = "-?(0x)?\\d*\\s?\\(.+";
 		
 		if (opcode==null)
 			return null;
@@ -243,7 +219,7 @@ public class Validate{
 	
 	@Nullable
 	private Operands rt_ImmRs(int lineNo, @NotNull String opcode, @NotNull Integer rt, @NotNull String immRs){
-		final String openBracket_Regex = "-?\\d*\\s?\\(.+";
+		final String openBracket_Regex = "-?(0x)?\\d*\\s?\\(.+";
 		final String closeBracket_Regex = ".+\\)";
 		final String openBracket_DelimiterRegex = "\\s*\\(\\s*";
 		final String closeBracket_DelimiterRegex = "\\s*\\)\\s*";

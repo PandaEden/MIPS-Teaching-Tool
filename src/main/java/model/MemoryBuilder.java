@@ -90,7 +90,8 @@ public class MemoryBuilder{
 	 @return boolean - success of adding all of the data.
 	 
 	 @throws IllegalStateException dataType not supported!/ Has not been Validated
-	 @see Validate#isValidDataType(int, String)
+	 @see Validate#isValidDirective(int, String)
+	 @see Validate#isDataType(String) 
 	 */
 	public boolean addData(@Nullable String dataType, @Nullable String data, @NotNull ErrorLog errorLog){
 		final String SIGNED_INT = "-?\\d*";    // matches optional '-' sign, then any length int
@@ -311,6 +312,7 @@ public class MemoryBuilder{
 		return false;
 	}
 	
+	/** May Have 0 Entries, This does not mean it is invalid */
 	public HashMap<Integer, Double> retrieveData(){
 		return dataArr;
 	}
@@ -323,10 +325,12 @@ public class MemoryBuilder{
 		if (instructions.isEmpty()) {
 			errorLog.append("No Instructions Found!");
 		} else { // if errorLog already has errors, then assembly should report as failed anyway.
-			boolean assembled = errorLog.hasEntries();
+			boolean assembled = !errorLog.hasEntries();
+			
 			for (Instruction instr : instructions) {
 				assembled &= instr.assemble(errorLog, labelMap);
 			}
+			
 			if (assembled)    // if no errors, new/existing
 				return instructions;
 			else

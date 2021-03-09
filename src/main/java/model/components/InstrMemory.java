@@ -16,10 +16,10 @@ import java.util.ArrayList;
  Index's are word-aligned (multiple of 4).
  <p>
  use {@link AddressValidation#isSupportedInstrAddr(int, ErrorLog)} and
- {@link AddressValidation#addr2index(int, ErrorLog)}
+ {@link AddressValidation#addr2index(int, boolean, ErrorLog)}
  
- @see util.AddressValidation#isSupportedInstrAddr(int, util.logs.ErrorLog)
- @see util.AddressValidation#addr2index(int, util.logs.ErrorLog) */
+ @see AddressValidation#isSupportedInstrAddr(int, util.logs.ErrorLog)
+ @see AddressValidation#addr2index(int, boolean, ErrorLog) */
 public class InstrMemory{
 	public static final int BASE_INSTR_ADDRESS = 0x00400000;
 	public static final int OVER_SUPPORTED_INSTR_ADDRESS = 0x00500000;
@@ -49,7 +49,7 @@ public class InstrMemory{
 	public Instruction InstructionFetch(int PC_Address){
 		String hex_addr = Convert.uInt2Hex(PC_Address);
 		//Supported Instr Address
-		if ((PC_Address<=BASE_INSTR_ADDRESS || PC_Address>=OVER_SUPPORTED_INSTR_ADDRESS))
+		if ((PC_Address<BASE_INSTR_ADDRESS || PC_Address>=OVER_SUPPORTED_INSTR_ADDRESS))
 			throw new IndexOutOfBoundsException("Address "+hex_addr+" Not In Range!");
 		if (PC_Address%ADDR_SIZE!=0)
 			throw new IllegalArgumentException("Address "+hex_addr+" Not Word Aligned!");
@@ -63,23 +63,6 @@ public class InstrMemory{
 			return Instruction.buildInstruction("exit", Operands.getExit());
 		}
 	}
-	
-	/*
-	/**
-	 Replaces the model {@link InstrMemory} encapsulates
-	 @throws NullPointerException
-	 * /
-	public boolean loadModel(Instruction[] instructions){
-		return false;
-	}
 
-	/**
-	 Returns the data model {@link InstrMemory} encapsulates.
-	 * /
-	public float[] getModel(){
-		return null;
-	}
-
-	TODO move process output into here & test
-	*/
+	//TODO move process output into here & test
 }

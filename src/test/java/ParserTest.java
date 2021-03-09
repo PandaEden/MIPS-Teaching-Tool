@@ -1,10 +1,15 @@
 import static org.junit.jupiter.api.Assertions.*;
 
+import model.Instruction;
 import model.MemoryBuilder;
-import org.junit.jupiter.api.condition.DisabledIfSystemProperties;
+import model.components.DataMemory;
+import model.components.InstrMemory;
+import model.components.RegisterBank;
 import org.junit.jupiter.api.condition.DisabledOnOs;
 import util.Convert;
 import util.logs.ErrorLog;
+import util.logs.ExecutionLog;
+import util.logs.Logger;
 import util.logs.WarningsLog;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -42,6 +47,8 @@ class ParserTest {
 	}
 	
 	private void noErrorOrWarnings( ){
+		errLog.println();
+		warnLog.println();
 		Assertions.assertAll(
 				() -> assertFalse(errLog.hasEntries()),
 				() -> assertFalse(warnLog.hasEntries()),
@@ -62,7 +69,7 @@ class ParserTest {
 				() -> assertTrue(errLog.hasEntries()),
 				() -> assertFalse(warnLog.hasEntries()),
 				() -> assertEquals(errorFormat, errLog.toString())
-		);
+		);errLog.clear();
 	}
 	
 	private void matchWarningsOnly( ){
@@ -70,7 +77,7 @@ class ParserTest {
 				() -> assertFalse(errLog.hasEntries()),
 				() -> assertTrue(warnLog.hasEntries()),
 				() -> assertEquals(warningsFormat, warnLog.toString())
-		);
+		);warnLog.clear();
 	}
 	
 	private void nullObjectErrors(Object object, String errorFormat){
@@ -113,8 +120,10 @@ class ParserTest {
 		@Test
 		@DisplayName("File Over MAX Lines")
 		void fileOverMaxLines() {
-			nullObjectErrors(parser.loadFile(TEST_RESOURCES_DIR+"FileOver30Klines.s"),
-					"File: \"FileOver30Klines.s\", Has Too Many Lines!, Max Lines = [512]!");
+			assertFalse(parser.parseFile(parser.loadFile(TEST_RESOURCES_DIR+"FileOver30Klines.s")));
+			
+			appendError("File: \"FileOver30Klines.s\", Has Too Many Lines!, Max Lines = [512]!");
+			matchErrorsOnly();
 		}
 		
 		@ParameterizedTest
@@ -255,28 +264,27 @@ class ParserTest {
 	class ParseInvalidLinesTest {
 		
 		@Test
-		@Disabled //TEST - implement Parse Lines
 		@DisplayName ("Over MAX Instructions")
 		void overMax4Instructions(){
-			String FilePath = "Parse_FileOver16KInstructions.s";
+			String FilePath = TEST_RESOURCES_DIR+"Parse_FileOver256Instructions.s";
 			
-			assertNotNull(parser.loadFile(FilePath));	// The File properties are valid
-			assertFalse(parser.parseLoadedFile());		// The File Contents . Are Not!
+			assertTrue(parser.parseFile(parser.loadFile(FilePath)));
 			
-			appendError("- File contains too many instructions (16384 limit)!");
-			matchErrorsOnly();
+			appendWarning("LineNo: 257\tReached MAX Instructions!, No More Instructions  Will Be Parsed!\n"+
+					"\t\t\t\tInstruction Limit == [256]");
+			matchWarningsOnly();
 		}
 		
 		@Test
 		@DisplayName ("Over MAX Data")
 		void overMaxData(){
-			String FilePath = "FileOver16KInstructions.s";
+			String FilePath = TEST_RESOURCES_DIR+"Parse_FileOver256DataIndexs.s";
 			
-			assertNull(parser.loadFile(FilePath));	// The File properties are valid
-			assertFalse(parser.parseLoadedFile());		// The File Contents . Are Not!
+			assertTrue(parser.parseFile(parser.loadFile(FilePath)));
 			
-			appendError("- File contains too many instructions (16384 limit)!");
-			matchErrorsOnly();
+			appendWarning("LineNo: 3\tReached MAX Data Size!, No More Data Will Be Parsed!\n"+
+					"\t\t\t\tData Size Limit == [256]");
+			matchWarningsOnly();
 		}
 		
 		@Test

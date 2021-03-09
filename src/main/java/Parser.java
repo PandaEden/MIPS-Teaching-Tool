@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import util.Convert;
 import util.Validate;
 import util.logs.ErrorLog;
+import util.logs.ExecutionLog;
 import util.logs.WarningsLog;
 
 import java.io.BufferedReader;
@@ -14,7 +15,6 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Scanner;
 
 /**
  Responsible for parsing files containing MIPS instructions and building a model for the emulator to run using.
@@ -35,22 +35,20 @@ public class Parser{
 	private final ErrorLog errorLog;
 	private final WarningsLog warningsLog;
 	private final MemoryBuilder mb;
-	private Validate val = null;
-	private BufferedReader reader;
+	private final Validate val;
+	private String errorFn = " NOT SET !";
 	private boolean dataLimit = false, instrLimit = false;
 	
 	/**
 	 Initializes the Parser with an empty model. Either Load a file {@link #loadFile(String)}, and parse it {@link
-	#parseLoadedFile(String)} Which will also automatically assemble the models ready for execution.
+	#loadParseFile(String)} Which will also automatically assemble the models ready for execution.
 	 <p>
-	 Or, parse an array/ single line manually {@link #parseLines(String[])}/{@link #parseLine(String, int)}(for testing
-	 purposes)
+	 Or, single line manually {@link #parseLine(String, int)}(for testing purposes)
 	 <p>
 	 After you have parsed content. And there are no errors, run {@link #assemble()}
 	 
 	 @see #assemble()
-	 @see #parseLoadedFile(String)
-	 @see #parseLines(String[])
+	 @see #loadParseFile(String)
 	 @see #parseLine(String, int)
 	 */
 	public Parser(@NotNull MemoryBuilder memoryBuilder, @NotNull ErrorLog errorLog, @NotNull WarningsLog warningsLog){
@@ -62,79 +60,21 @@ public class Parser{
 	
 	/**
 	 Same as {@link #Parser(MemoryBuilder, ErrorLog, WarningsLog)}, But, it will automatically run {@link
-	#parseLoadedFile(String)} on the parameter.
-	 And then additionally run {@link #assemble()}. So you only need to retrieve the models built.
+	#loadParseFile(String)} on the parameter.
+	 
+	 Run {@link #assemble()} to retrieve the models built. if Null, then there were errors!
 	 <p>(if parser & assembler find no errors!)</p>
 	 
 	 @param filepath address of file to load & parse.
 	 
-	 @see #parseLoadedFile(String)
+	 @see #loadParseFile(String)
 	 @see #assemble()
 	 @see #Parser(MemoryBuilder, ErrorLog, WarningsLog)
 	 */
 	public Parser(@NotNull String filepath, @NotNull MemoryBuilder memoryBuilder,
 				  @NotNull ErrorLog errorLog, @NotNull WarningsLog warningsLog){
 		this(memoryBuilder, errorLog, warningsLog);
-		parseLoadedFile(filepath);
-	}
-	
-	/**
-	 Apples file checks on the address given.
-	 <li>File Exists</li>
-	 <li>File is Accessible</li>
-	 <li>File is within the Line# limit {@link util.Validate#MAX_FILE_LINES}</li>
-	 
-	 @param filename address of file to load.
-	 
-	 @return success of loading file.
-	 */
-	public BufferedReader loadFile(@NotNull String filename){
-		if (filename.isBlank()) {
-			warningsLog.append("Filename Not Provided, Using Default File: \""+DEFAULT_FILENAME+"\"");
-			return null;
-		}
-		
-		String error = "File: \""+filename+"\", ";
-		BufferedReader reader = null;
-		
-		final int MAX_LINES = Validate.MAX_FILE_LINES;    //TODO move this here ?
-		boolean validFile = false;
-		try {
-			File temp = new File(filename);
-			
-			try {
-				String name = temp.getCanonicalPath();
-				File parent = temp.getParentFile();
-				
-				if (parent!=null)
-					name = name.substring(parent.getCanonicalPath().length()+1);
-				
-				error = "File: \""+name+"\", ";
-				
-				if (!temp.exists()) this.errorLog.append(error+"Does Not Exist!");
-				else if (!temp.isFile()) this.errorLog.append(error+"Is Not a File!");
-				else if (!temp.canRead()) this.errorLog.append(error+"Can Not Be Read!");
-				else {
-					reader = new BufferedReader(new FileReader(temp));
-					int lines = 0;
-					while (reader.readLine()!=null && lines<=MAX_LINES) lines++;
-					
-					if (lines<MAX_LINES)
-						validFile = true;
-					else
-						errorLog.append(error+"Has Too Many Lines!, Max Lines = ["+MAX_LINES+"]!");
-				}
-			} catch (IOException e) {
-				errorLog.append(error+"Not Valid FileName!");
-			} finally {
-				if (reader!=null) reader.close();
-			}
-		} catch (IOException e) {
-			// File is invalid,   valid is already set false
-		}
-		if (validFile)
-			return reader;
-		else return null;
+		loadParseFile(filepath);
 	}
 	
 	/**
@@ -149,9 +89,47 @@ public class Parser{
 	 
 	 @see #assemble()
 	 */
-	public boolean parseLoadedFile(String filename){
-		this.reader = loadFile(filename);
-		return parseLoadedFile();
+	public boolean loadParseFile(String filename){
+		return parseFile(loadFile(filename));
+	}
+	
+	/**
+	 Apples file checks on the address given.
+	 <li>File Exists</li>
+	 <li>File is Accessible</li>
+	 
+	 @param filename address of file to load.
+	 
+	 @return File object, if the File is valid
+	 */
+	public File loadFile(@NotNull String filename){
+		if (filename.isBlank()) {
+			warningsLog.append("Filename Not Provided, Using Default File: \""+DEFAULT_FILENAME+"\"");
+			return null;
+		}
+		
+		errorFn = "File: \""+filename+"\", ";
+		File rtn = null;
+		try {
+			File temp = new File(filename);
+			
+			String name = temp.getCanonicalPath();
+			File parent = temp.getParentFile();
+			
+			if (parent!=null)
+				name = name.substring(parent.getCanonicalPath().length()+1);
+			
+			errorFn = "File: \""+name+"\", ";
+			
+			if (!temp.exists()) this.errorLog.append(errorFn+"Does Not Exist!");
+			else if (!temp.isFile()) this.errorLog.append(errorFn+"Is Not a File!");
+			else if (!temp.canRead()) this.errorLog.append(errorFn+"Can Not Be Read!");
+			else rtn=temp;
+		} catch (IOException e) {
+			errorLog.append(errorFn+"Not Valid FileName!");
+			// File is invalid,   rtn is null by default
+		}
+		return rtn;
 	}
 	
 	/**
@@ -164,19 +142,35 @@ public class Parser{
 	 @see #loadFile(String)
 	 @see #assemble()
 	 */
-	public boolean parseLoadedFile(){
-		ArrayList<String> lines = new ArrayList<>();
-		if (this.reader!=null) {
-			Scanner scanner = new Scanner(this.reader);
-			if (scanner.hasNextLine()) {
-				lines.add(scanner.nextLine());
+	public boolean parseFile(File file){
+		boolean rtn = true;
+		final int MAX_LINES = Validate.MAX_FILE_LINES;
+		
+		BufferedReader reader = null;
+		if (file!=null) {
+			try {
+				reader = new BufferedReader(new FileReader(file));
+				int lineNo = 1;
+				
+				for(String line = reader.readLine(); line!=null; line=reader.readLine()){
+					if (lineNo>=MAX_LINES){
+						errorLog.append(errorFn+"Has Too Many Lines!, Max Lines = ["+MAX_LINES+"]!");
+						rtn = false;
+						break;
+					}
+					rtn &= parseLine(line, lineNo++);
+				}
+			} catch (IOException e) {
+				errorLog.append(errorFn+"Not Valid FileName!");
+			} finally {
+				try {
+					if (reader!=null) reader.close(); // Close reader
+				} catch (IOException e) { e.printStackTrace(); }
 			}
-		}
+		} else
+			return false;
 		
-		String[] stockArr = new String[lines.size()];
-		stockArr = lines.toArray(stockArr);
-		
-		return parseLines(stockArr);
+		return rtn;
 	}
 	
 	/**
@@ -198,12 +192,11 @@ public class Parser{
 		if (label!=null)
 			mb.pushLabel(label);
 		
-		if (errLength<errorLog.toString().length())
+		if (errLength<errorLog.toString().length())	// caused by Invalid Label
 			errorLog.append("_");
 		
 		String arg1 = split[1];
 		String arg2 = split[2];
-		
 		if (arg1!=null && !arg1.isBlank()) {
 			// first character is a dot '.'
 			if (arg1.matches("\\..*")) {
@@ -228,7 +221,7 @@ public class Parser{
 								+" No More Instructions  Will Be Parsed!");
 						warningsLog.append("\t\t\tInstruction Limit == ["+InstrMemory.MAX_INSTR_COUNT+"]");
 						instrLimit = true;
-					}
+					}// TODO Change to report Error
 				}
 			}
 		}
@@ -306,34 +299,15 @@ public class Parser{
 	}
 	
 	/**
-	 Parses an array of lines for MIPS Syntax.
-	 <p>Adds information to emulator's models</p>
-	 
-	 @param arr collection of MIPS instructions to be parsed.
-	 
-	 @return success of parsing all the lines.
-	 
-	 @see #assemble()
-	 */
-	public boolean parseLines(String[] arr){
-		boolean rtn = arr.length>0;
-		int lineNo = 1;
-		
-		for (String s : arr) {
-			rtn &= parseLine(s, lineNo++);
-		}
-		return rtn;
-	}
-	
-	/**
-	 Finalises the emulator's model by assembling the Labels into addresses.
-	 <p>And updates instructions referencing labels with immediate values.</p>
-	 <p>
-	 After running this, if it returns true, you are safe to retrieve the models.
+	 Wrapper for {@link MemoryBuilder#assembleInstr(ErrorLog)}
 	 
 	 @return success of assembly.
 	 */
 	public ArrayList<model.Instruction> assemble(){
 		return mb.assembleInstr(errorLog);
+	}
+	
+	public DataMemory getMem(ExecutionLog log){
+		return new DataMemory(mb.retrieveData(), log);
 	}
 }

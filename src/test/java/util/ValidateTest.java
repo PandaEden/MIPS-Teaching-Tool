@@ -319,6 +319,22 @@ class ValidateTest{
 		}
 		
 		@Test
+		@DisplayName ("Test Operands, RType_Spacing")
+		void testOperands_R_Type_Spacing(){
+			Operands operands = validate.splitValidOperands(12, "sub", "$24 , $s4, $s0", warningsLog);
+			assertNotNull(operands);
+			
+			assertAll(
+					() -> assertNull(operands.getLabel()),
+					() -> assertNull(operands.getImmediate()),
+					() -> assertEquals(Operands.InstrType.R, operands.getInstrType()),
+					() -> assertEquals(24, operands.getRd()),
+					() -> assertEquals(20, operands.getRs()),
+					() -> assertEquals(16, operands.getRt())
+			);
+		}
+		
+		@Test
 		@DisplayName ("Test Operands, SUB")
 		void testOperands_Sub(){
 			Operands operands = validate.splitValidOperands(30, "sub", "$zero, 31, $s2", warningsLog);
@@ -403,6 +419,14 @@ class ValidateTest{
 			
 			Operands operands2 = validate.splitValidOperands(0, "sw", "$0, ($1)", warningsLog);
 			assertNotNull(operands2);
+		}
+		
+		@Test
+		@DisplayName ("Test Operands, Base+Offset Hex")
+		void testOperandsBaseOffsetHex(){
+			Operands operands = validate.splitValidOperands(0, "sw", "$0, 0x290($8)", warningsLog);
+			assertNotNull(operands);
+			assertEquals(656, operands.getImmediate());
 		}
 		
 		@Test
