@@ -1,16 +1,19 @@
+import org.jetbrains.annotations.Nullable;
+import control.Execute;
+
 import model.Instruction;
 import model.MemoryBuilder;
 import model.components.DataMemory;
 import model.components.InstrMemory;
 import model.components.RegisterBank;
-import org.jetbrains.annotations.Nullable;
+
+import setup.Parser;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
 import util.logs.Logger;
 import util.logs.WarningsLog;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Scanner;
 
 public class Main{
@@ -31,7 +34,16 @@ public class Main{
 			errorLog.println();
 			System.out.println("xyz");
 		}else{
-			execute(instructions);
+			// Setup Components
+			ExecutionLog executionLog=new ExecutionLog( new ArrayList<>( ) );
+			DataMemory dm=new DataMemory( MEMORY_BUILDER.retrieveData( ), executionLog );
+			RegisterBank rb=new RegisterBank( new int[ 32 ], executionLog );
+			InstrMemory im=new InstrMemory( instructions, executionLog );
+			
+			// Execute
+			Execute.execute( dm, rb, im, executionLog );
+			
+			// Print Results
 			Logger.Color.colorSupport=true;
 			errorLog.println();
 			warningsLog.println();
@@ -42,28 +54,6 @@ public class Main{
 		// InstrMem <--
 		// InstrMem.fetch(PC) ; PC = NPC ;
 		// NPC <- Execute(PC);
-	}
-	
-	private static void execute(ArrayList<Instruction> instructions){
-		ExecutionLog exLog = new ExecutionLog(new ArrayList<>());
-		DataMemory dataMem = new DataMemory(new HashMap<>(), exLog);
-		RegisterBank regBank = new RegisterBank(new int[32], exLog);
-		InstrMemory instrMemory = new InstrMemory(instructions, exLog);
-		
-		execute(dataMem, regBank, instrMemory, exLog);
-		exLog.println();
-	}
-	
-	public static void execute(DataMemory dataMem, RegisterBank regBank, InstrMemory instrMemory, ExecutionLog exLog){
-		//
-		Instruction ins;
-		for (Integer PC = InstrMemory.BASE_INSTR_ADDRESS;
-			 PC!=null;
-			 PC = ins.execute(PC, dataMem, regBank, exLog)) {
-			exLog.println();exLog.clear(); // print ExecutionLog
-			System.out.print(regBank.format()); // print RegisterBank status
-			ins = instrMemory.InstructionFetch(PC);
-		}
 	}
 	
 	@SuppressWarnings ("UnusedReturnValue")

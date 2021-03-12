@@ -31,12 +31,14 @@ import java.util.ArrayList;
  mistakes before re-parsing.
  */
 public class Parser{
-	private static final String DEFAULT_FILENAME = "FileInput.s";
+	public static final String DEFAULT_FILENAME = "FileInput.s";
+	public static final int MAX_LINES = 512; //2^8
+	
 	private final ErrorLog errorLog;
 	private final WarningsLog warningsLog;
 	private final MemoryBuilder mb;
 	private final Validate val;
-	private String errorFn = " NOT SET !";
+	private String errorFn = " NOT SET !"; // This should not be returned!, Error Messages should be meaningful!
 	private boolean dataLimit = false, instrLimit = false;
 	
 	/**
@@ -144,7 +146,6 @@ public class Parser{
 	 */
 	public boolean parseFile(File file){
 		boolean rtn = true;
-		final int MAX_LINES = Validate.MAX_FILE_LINES;
 		
 		BufferedReader reader = null;
 		if (file!=null) {

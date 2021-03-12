@@ -23,8 +23,8 @@ import java.util.List;
 
 class ParserTest {
 	private static final String TEST_RESOURCES_DIR = "src"+File.separator+"test"+File.separator+"resources"+File.separator;
-	private static ErrorLog errLog = new ErrorLog( new ArrayList<>());;
-	private static WarningsLog warnLog = new WarningsLog(new ArrayList<>());
+	private static final ErrorLog errLog = new ErrorLog( new ArrayList<>());
+	private static final WarningsLog warnLog = new WarningsLog(new ArrayList<>());
 	
 	private static Parser parser;
 	private static MemoryBuilder mb;
@@ -56,14 +56,6 @@ class ParserTest {
 		);
 	}
 	
-	private void matchErrorsAndWarnings( ){
-		Assertions.assertAll(
-				() -> assertTrue(errLog.hasEntries()),
-				() -> assertTrue(warnLog.hasEntries()),
-				() -> assertEquals(errorFormat+warningsFormat, errLog.toString()+warnLog.toString())
-		);
-	}
-	
 	private void matchErrorsOnly( ){
 		Assertions.assertAll(
 				() -> assertTrue(errLog.hasEntries()),
@@ -86,8 +78,6 @@ class ParserTest {
 		matchErrorsOnly();
 	}
 	
-	// Appends see documentation text, to the end of ErrorsLog expected format.
-	private void appendSeeDocs(){ errorFormat+="#See documentation (README.md)!\n"; }
 	// Appends line to end of ErrorsLog expected format, with newline & tab at the start.
 	private void appendError(String text){ errorFormat+="\t"+text+"\n"; }
 	// Appends line to end of WarningsLog expected format, with newline & tab at the start.
@@ -342,5 +332,51 @@ class ParserTest {
 		assertNull(parser.assemble());
 		appendError("No Instructions Found!");
 		matchErrorsOnly();
+	}
+	
+	
+	@Test
+	@DisplayName ("Test Parse _File-Invalid")
+	void testParseFileInvalid(){
+		assertFalse(parser.loadParseFile(TEST_RESOURCES_DIR+"Parse_Invalid.s"));
+		matchWarningsOnly();
+	}
+	
+	@Test
+	@DisplayName ("Test Parse _File-Valid")
+	void testParseFileValid(){
+		assertTrue(parser.loadParseFile(TEST_RESOURCES_DIR+"Execution_NoBranches.s"));
+		noErrorOrWarnings();
+	}
+	
+	@Test
+	@DisplayName ("Test Parse_Assemble_Execute")
+	void testParseAssembleExecute(){
+		ExecutionLog log = new ExecutionLog(new ArrayList<>());
+		
+		assertTrue(parser.loadParseFile(TEST_RESOURCES_DIR+"Execution_NoBranches.s"));
+		noErrorOrWarnings();
+		
+		ArrayList<Instruction> instrs = mb.assembleInstr(errLog);
+		DataMemory dataMemory = parser.getMem(log);
+		RegisterBank rb = new RegisterBank(new int[32], log);
+		
+		noErrorOrWarnings();
+		assertNotNull(instrs);
+		
+		InstrMemory instrMemory = new InstrMemory(instrs, log);
+		
+		System.out.println(instrs.toString());
+		
+		Main.execute(dataMemory, rb, instrMemory, log);
+		Logger.Color.colorSupport=true;
+		errLog.println();
+		warnLog.println();
+		log.println();
+		
+		System.out.println(mb.retrieveData());
+		System.out.println(rb);
+		
+		org.junit.jupiter.api.Assertions.fail("Not implemented");
 	}
 }
