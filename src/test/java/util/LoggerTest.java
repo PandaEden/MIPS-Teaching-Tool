@@ -2,9 +2,10 @@ package util;
 
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.params.shadow.com.univocity.parsers.annotations.Nested;
+import test_util.NullOrBlankProvider;
 
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
@@ -17,6 +18,8 @@ import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@Tag ("Utility")
+@DisplayName ("Utility - Logger Test")
 class LoggerTest {
 	private Logger logger;
 	private ArrayList<String> logs;
@@ -58,7 +61,7 @@ class LoggerTest {
 	}
 	
 	@Test
-	@DisplayName ("Logger Does Not Trim Extra Whitespace")
+	@DisplayName ("Logger Does Not Trim Internal Whitespace")
 	void loggerTestStringWithWhiteSpace() {
 		logger.append( "something else    with spaces" );
 		assertEquals( 1, logs.size( ) );
@@ -70,18 +73,17 @@ class LoggerTest {
 		);
 	}
 	
-	@ParameterizedTest
+	@ParameterizedTest (name="Ignore Null or Blank[{index}] - Append: \"{0}\"")
 	@Nested
-	@NullAndEmptySource
-	@ValueSource (strings={ "  ", "\t", "\n" })
-	@DisplayName ("Logger ignore Append Blank or Null")
-	void loggerTestIgnoresBlankOrNull(String text) {
-		logger.append( text );
+	@ArgumentsSource (NullOrBlankProvider.class)
+	@DisplayName ("Logger Append Ignore Null or Blank")
+	void loggerTestIgnoresBlankOrNull(String blankText) {
+		logger.append( blankText );
 		assertTrue( logs.isEmpty( ) );    // adding Blank/Null shouldn't change the size
 		
 		logger.append( "something" );
 		
-		logger.append( text );
+		logger.append( blankText );
 		assertEquals( 1, logs.size( ) );
 	}
 	
@@ -100,12 +102,14 @@ class LoggerTest {
 	}
 	
 	@Test
+	@Tag ("Accessing")
 	@DisplayName ("getName")
 	void loggerTestGetName() {
 		assertEquals( "Test", logger.getName( ) );
 	}
 	
 	@Test
+	@Tag ("Output")
 	@DisplayName ("System Print")
 	void systemPrint() {
 		// Setup - redirecting Standard Output
@@ -122,7 +126,7 @@ class LoggerTest {
 	}
 	
 	@Test
-	@DisplayName ("Test Logger Extensions")
+	@DisplayName ("Test Logger Extensions (SubClasses)")
 	void testSubLogs() {
 		logs.add( "panda" );
 		logs.add( "another Panda" );
@@ -157,6 +161,8 @@ class LoggerTest {
 	}
 	
 	@org.junit.jupiter.api.Nested
+	@Tag ("Output")
+	@Tag( "Color" )
 	@DisplayName ("Color Support")
 	class ColorSupport {
 		boolean preset;
@@ -172,7 +178,7 @@ class LoggerTest {
 			Logger.Color.colorSupport=preset; // reset colour support
 		}
 		
-		@ParameterizedTest
+		@ParameterizedTest (name="Color[{index}] - Ansi: \"{arguments}\"")
 		@ValueSource (strings={
 				Logger.Color.ANSI_RESET,
 				Logger.Color.BLACK_ANSI,

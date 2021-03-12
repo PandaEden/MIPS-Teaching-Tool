@@ -12,7 +12,8 @@ import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName ("RegisterBank Test")
+@Tag ("Component")
+@DisplayName ("Component - RegisterBank Test")
 class RegisterBankTest {
 	private static final String PREFIX="Execution:\n\tRegisterBank:\t";
 	private static final String NOACTION=PREFIX + "No Action!\n";
@@ -59,6 +60,7 @@ class RegisterBankTest {
 	}
 	
 	@Nested
+	@Tag ("Output")
 	@DisplayName ("Output")
 	class Output {
 		RegisterBank.RegFormat defaultFormat;
@@ -70,7 +72,7 @@ class RegisterBankTest {
 		void tearDown() { RegisterBank.regFormat=defaultFormat; } // Restore Format
 		
 		@Test
-		@DisplayName ("Output Format")
+		@DisplayName ("Format Output")
 		void format() {
 			RegisterBank.regFormat=RegisterBank.RegFormat.R;
 			// Make everything =5 so output is predicable
@@ -102,6 +104,7 @@ class RegisterBankTest {
 		}
 		
 		@Test
+		@Order (2)
 		@DisplayName ("Format $R")
 		void format$_R() {
 			RegisterBank.regFormat=RegisterBank.RegFormat.$R;
@@ -111,6 +114,7 @@ class RegisterBankTest {
 		}
 		
 		@Test
+		@Order (3)
 		@DisplayName ("Format R")
 		void formatR() {
 			RegisterBank.regFormat=RegisterBank.RegFormat.R;
@@ -120,6 +124,7 @@ class RegisterBankTest {
 		}
 		
 		@Test
+		@Order (4)
 		@DisplayName ("Format $Named")
 		void format$_Named() {
 			RegisterBank.regFormat=RegisterBank.RegFormat.$Named;
@@ -129,6 +134,7 @@ class RegisterBankTest {
 		}
 		
 		@Test
+		@Order (5)
 		@DisplayName ("Format Named")
 		void formatNamed() {
 			RegisterBank.regFormat=RegisterBank.RegFormat.Named;
@@ -140,95 +146,106 @@ class RegisterBankTest {
 	}
 	
 	@Nested
-	@DisplayName ("Read")
+	@Tag ("Accessing")
+	@DisplayName ("SingleWord")
 	class Read {
+		
 		@Test
-		@DisplayName ("Read")
-		void readRegisterBank() {
+		@DisplayName ("Read RegisterBank_Length")
+		void read() {
 			for ( int i=0; i<regs.length; i++ ) {
 				assertEquals( regs[ i ], rb.read( i ) );
-				assertEquals( PREFIX + "Reading Value[" + regs[ i ] + "]\tFrom Register Index[R" + i + "]!\n",
-							  log.toString( ) );
+				assertReadingValue( i );
 				
 				log.clear( );
 			}
 		}
 		
-		@Test
-		@DisplayName ("DoubleRead")
-		void doubleRead() { // Reading 2 operands
-			int[] temp=rb.read( 10, 20 );
-			assertAll(
-					() -> assertEquals( regs[ 10 ], temp[ 0 ] ),
-					() -> assertEquals( regs[ 20 ], temp[ 1 ] ),
-					() -> assertEquals( PREFIX + "Reading Values[" + regs[ 10 ] + ", " + regs[ 20 ]
-										+ "]\tFrom Register Indexes[R10, R20]!\n", log.toString( ) )
-			);
+		void assertReadingValue(int index) {
+			assertEquals( PREFIX + "Reading Value[" + regs[ index ]
+						  + "]\tFrom Register Index[R" + index + "]!\n",
+						  log.toString( ) );
 		}
 		
 		@Test
-		@DisplayName ("Read Single Null")
-		void readNull() {
+		@DisplayName ("Read Null")
+		void nullValue() {
 			assertAll(
 					() -> assertEquals( 0, rb.read( null ) ),
 					() -> assertEquals( NOACTION, log.toString( ) )
 			);
 		}
 		
-		@Test
-		@DisplayName ("DoubleRead_SingleNull_First")
-		void doubleRead_SingleNull_0() {
-			int[] temp=rb.read( null, 20 );
-			assertAll(
-					() -> assertEquals( 0, temp[ 0 ] ),
-					() -> assertEquals( regs[ 20 ], temp[ 1 ] ),
-					() -> assertEquals( PREFIX + "Reading Value[" + regs[ 20 ]
-										+ "]\tFrom Register Index[R20]!\n", log.toString( ) )
-			);
-		}
-		
-		@Test
-		@DisplayName ("DoubleRead_SingleNull_Second")
-		void doubleRead_SingleNull_1() {
-			int[] temp=rb.read( 30, null );
-			assertAll(
-					() -> assertEquals( regs[ 30 ], temp[ 0 ] ),
-					() -> assertEquals( 0, temp[ 1 ] ),
-					() -> assertEquals( PREFIX + "Reading Value[" + regs[ 30 ]
-										+ "]\tFrom Register Index[R30]!\n", log.toString( ) )
-			);
-		}
-		
-		@Test
-		@DisplayName ("DoubleRead_DoubleNull")
-		void doubleRead_DoubleNull() {
-			int[] temp=rb.read( null, null );
-			assertAll(
-					() -> assertEquals( 0, temp[ 0 ] ),
-					() -> assertEquals( 0, temp[ 1 ] ),
-					() -> assertEquals( NOACTION, log.toString( ) )
-			);
-		}
-		
-		@ParameterizedTest (name="Index: \"{0}\" - OutOfBounds")
+		@ParameterizedTest (name="Read - OutOfBounds[{index}] - Index: \"{0}\"")
 		@ValueSource (ints={ -1, 32, 64, -20 })
 		@DisplayName ("Read OutOfBounds")
-		void read_OutOfBounds(int index) {
+		void outOfBounds(int index) {
 			//<0 >31
 			assertThrows( IndexOutOfBoundsException.class, () -> rb.read( index ) );
 		}
 		
-		@ParameterizedTest (name="Indexes: \"{arguments}\" - OutOfBounds")
-		@CsvSource ({ "0, -1", "-1, 0", "-1, -1" })
-		@DisplayName ("DoubleRead OutOfBounds")
-		void doubleRead_OutOfBounds(int index0, int index1) {
-			//<0 >31
-			assertThrows( IndexOutOfBoundsException.class, () -> rb.read( index0, index1 ) );
+		@Nested
+		@DisplayName ("DoubleWord")
+		class DoubleWord {
+			@Test
+			@DisplayName ("DoubleWord Read")
+			void doubleRead() { // Reading 2 operands
+				int[] temp=rb.read( 10, 20 );
+				assertAll(
+						() -> assertEquals( regs[ 10 ], temp[ 0 ] ),
+						() -> assertEquals( regs[ 20 ], temp[ 1 ] ),
+						() -> assertEquals( PREFIX + "Reading Values[" + regs[ 10 ] + ", " + regs[ 20 ]
+											+ "]\tFrom Register Indexes[R10, R20]!\n", log.toString( ) )
+				);
+			}
+			
+			@Test
+			@DisplayName ("DoubleWord Read - SingleNull - First")
+			void doubleRead_SingleNull_0() {
+				int[] temp=rb.read( null, 20 );
+				assertAll(
+						() -> assertEquals( 0, temp[ 0 ] ),
+						() -> assertEquals( regs[ 20 ], temp[ 1 ] ),
+						() -> assertReadingValue( 20 )
+				);
+			}
+			
+			@Test
+			@DisplayName ("DoubleWord Read - SingleNull - Second")
+			void doubleRead_SingleNull_1() {
+				int[] temp=rb.read( 30, null );
+				assertAll(
+						() -> assertEquals( regs[ 30 ], temp[ 0 ] ),
+						() -> assertEquals( 0, temp[ 1 ] ),
+						() -> assertReadingValue( 30 )
+				);
+			}
+			
+			@Test
+			@DisplayName ("DoubleWord Read - DoubleNull")
+			void doubleRead_DoubleNull() {
+				int[] temp=rb.read( null, null );
+				assertAll(
+						() -> assertEquals( 0, temp[ 0 ] ),
+						() -> assertEquals( 0, temp[ 1 ] ),
+						() -> assertEquals( NOACTION, log.toString( ) )
+				);
+			}
+			
+			@ParameterizedTest (name="DoubleWord Read - OutOfBounds[{index}] - Indexes: \"{arguments}\"")
+			@CsvSource ({ "0, -1", "-1, 0", "-1, -1" })
+			@DisplayName ("DoubleRead OutOfBounds")
+			void doubleRead_OutOfBounds(int index0, int index1) {
+				//<0 >31
+				assertThrows( IndexOutOfBoundsException.class, () -> rb.read( index0, index1 ) );
+			}
+			
 		}
 		
 	}
 	
 	@Nested
+	@Tag ("Mutating")
 	@DisplayName ("Store")
 	class Store {
 		@Test
@@ -254,7 +271,7 @@ class RegisterBankTest {
 		
 		@Test
 		@DisplayName ("Store Zero")
-		void StoreZero() {
+		void zero() {
 			rb.write( 0, 57 );
 			assertAll(
 					() -> assertEquals( 0, regs[ 0 ] ),
@@ -265,7 +282,7 @@ class RegisterBankTest {
 		
 		@Test
 		@DisplayName ("Store Null - Index")
-		void StoreNullIndex() {
+		void nullIndex() {
 			rb.write( null, 57 );
 			assertAll(
 					() -> assertEquals( 0, regs[ 0 ] ),
@@ -276,7 +293,7 @@ class RegisterBankTest {
 		
 		@Test
 		@DisplayName ("Store Null - Data")
-		void StoreNullData() {
+		void nullData() {
 			rb.write( 20, null );
 			assertAll(
 					() -> assertEquals( 0, regs[ 0 ] ),
@@ -287,7 +304,7 @@ class RegisterBankTest {
 		
 		@Test
 		@DisplayName ("Store Null - Index & Data")
-		void StoreNull_IndexAndData() {
+		void null_IndexAndData() {
 			rb.write( null, null );
 			assertAll(
 					() -> assertEquals( 0, regs[ 0 ] ),
