@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @DisplayName ("Component - RegisterBank Test")
 class RegisterBankTest {
 	private static final String PREFIX="Execution:\n\tRegisterBank:\t";
-	private static final String NOACTION=PREFIX + "No Action!\n";
+	private static final String NO_ACTION=PREFIX + "No Action!\n";
 	private final Random random=new Random( );
 	private final ExecutionLog log=new ExecutionLog( new ArrayList<>( ) );
 	private int[] regs;
@@ -56,7 +56,7 @@ class RegisterBankTest {
 	@DisplayName ("Test NoAction _ RegBank")
 	void NoActionRegBank() {
 		rb.noAction( );
-		assertEquals( NOACTION, log.toString( ) );
+		assertEquals( NO_ACTION, log.toString( ) );
 	}
 	
 	@Nested
@@ -172,7 +172,7 @@ class RegisterBankTest {
 		void nullValue() {
 			assertAll(
 					() -> assertEquals( 0, rb.read( null ) ),
-					() -> assertEquals( NOACTION, log.toString( ) )
+					() -> assertEquals( NO_ACTION, log.toString( ) )
 			);
 		}
 		
@@ -228,7 +228,7 @@ class RegisterBankTest {
 				assertAll(
 						() -> assertEquals( 0, temp[ 0 ] ),
 						() -> assertEquals( 0, temp[ 1 ] ),
-						() -> assertEquals( NOACTION, log.toString( ) )
+						() -> assertEquals( NO_ACTION, log.toString( ) )
 				);
 			}
 			
@@ -275,7 +275,7 @@ class RegisterBankTest {
 			rb.write( 0, 57 );
 			assertAll(
 					() -> assertEquals( 0, regs[ 0 ] ),
-					() -> assertEquals( NOACTION, log.toString( ) ),
+					() -> assertEquals( NO_ACTION, log.toString( ) ),
 					() -> assertEquals( 0, rb.read( 0 ) )
 			);
 		}
@@ -286,7 +286,7 @@ class RegisterBankTest {
 			rb.write( null, 57 );
 			assertAll(
 					() -> assertEquals( 0, regs[ 0 ] ),
-					() -> assertEquals( NOACTION, log.toString( ) ),
+					() -> assertEquals( NO_ACTION, log.toString( ) ),
 					() -> assertEquals( 0, rb.read( 0 ) )
 			);
 		}
@@ -297,7 +297,7 @@ class RegisterBankTest {
 			rb.write( 20, null );
 			assertAll(
 					() -> assertEquals( 0, regs[ 0 ] ),
-					() -> assertEquals( NOACTION, log.toString( ) ),
+					() -> assertEquals( NO_ACTION, log.toString( ) ),
 					() -> assertEquals( 0, rb.read( 0 ) )
 			);
 		}
@@ -308,7 +308,7 @@ class RegisterBankTest {
 			rb.write( null, null );
 			assertAll(
 					() -> assertEquals( 0, regs[ 0 ] ),
-					() -> assertEquals( NOACTION, log.toString( ) ),
+					() -> assertEquals( NO_ACTION, log.toString( ) ),
 					() -> assertEquals( 0, rb.read( 0 ) )
 			);
 		}

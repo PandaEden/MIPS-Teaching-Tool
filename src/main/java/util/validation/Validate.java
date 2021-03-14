@@ -1,9 +1,12 @@
-package util;
+package util.validation;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import model.DataType;
 import model.instr.Operands;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
+import util.Convert;
 import util.logs.ErrorLog;
 import util.logs.Logger;
 import util.logs.WarningsLog;
@@ -154,7 +157,7 @@ public class Validate{
 			if (doesCSVContain(NO_OPERANDS_OPCODE, opcode))
 				rtn = Operands.getExit(); // Return Exit Operands (Blank)
 			else
-				errLog.append("LineNo "+lineNo+"\t\tNo Operands found!");
+				errLog.appendEx("LineNo: "+lineNo+"\t\tNo Operands found");
 			
 		} else if (!doesCSVContain(NO_OPERANDS_OPCODE, opcode)) {    // Remainder of types require operands
 			//Split operands
@@ -213,7 +216,7 @@ public class Validate{
 		}
 		
 		if (rtn==null)
-			errLog.append("LineNo: "+lineNo+"\tOperands: ["+operands+"] for Opcode: \""+opcode+"\" Not Valid !");
+			errLog.appendEx("LineNo: "+lineNo+"\tOperands: ["+operands+"] for Opcode: \""+opcode+"\" Not Valid");
 		return rtn;
 	}
 	
@@ -344,7 +347,7 @@ class Val_Operands{
 						}
 						value = Convert.r2Index(temp);
 					} catch (IllegalArgumentException e) {    // Register is not Named, or R, or index
-						errLog.append("LineNo: "+lineNo+"\t\tRegister: \""+register+"\" Not Valid!");
+						errLog.append("LineNo: "+lineNo+"\t\tRegister: \""+register+"\" Not Recognised!");
 					}
 				}
 				
@@ -352,7 +355,7 @@ class Val_Operands{
 					errLog.append("LineNo: "+lineNo+"\t\tRegister: \""+register+"\" Not In Range!");
 					return null;
 				}
-			} else {
+			} else {	// Index Registers Require '$'
 				errLog.append("LineNo: "+lineNo+"\t\tRegister: \""+register+"\" Not Recognised!");
 			}
 		} else {
@@ -417,7 +420,7 @@ class Val_Operands{
 		Integer imm = null;
 		try {    // try hex
 			if (isHex(immediate))
-				imm = Convert.hex2uInt(immediate);
+				imm = Integer.decode( immediate );
 			else if (isInt(immediate))
 				imm = Integer.parseInt(immediate);
 		} catch (Exception e) {
@@ -435,28 +438,28 @@ class Val_Operands{
 	 Checks if immediate is valid 16 bit value, skips check if null input
 	 */
 	@Nullable
-	public static Integer is16Bit(@Nullable Integer immediate, int lineNo, @NotNull ErrorLog errLog){
-		final int IMM_MAX = 32767;
-		final int IMM_MIN = -32768;
-		if (immediate!=null) {
-			if (immediate>=IMM_MIN && immediate<=IMM_MAX)
+	public static Integer is16Bit(@Nullable Integer immediate, int lineNo, @NotNull ErrorLog errLog) {
+		final int IMM_MAX=32767;
+		final int IMM_MIN=-32768;
+		if ( immediate!=null ) {
+			if ( immediate>=IMM_MIN && immediate<=IMM_MAX )
 				return immediate;
 			
-			errLog.append("LineNo: "+lineNo+"\t\tImmediate Value: \""+immediate+"\" Not In Range");
+			errLog.append( "LineNo: " + lineNo + "\t\tImmediate Value: \"" + immediate + "\" Not In Range" );
 		}
 		return null;
 	}
 	
-	private static boolean isInt(String string){
-		return string.matches("-?\\d+");
+	private static boolean isInt(String string) {
+		return string.matches( "-?\\d+" );
 	}
 	
-	private static boolean isHex(String string){
-		return string.matches("0x.*");
+	private static boolean isHex(String string) {
+		return string.matches( "0x.*" );
 	}
 	//------ Check Format ----------------
 	
-	static boolean isLabel(String string){
-		return string.matches("[_a-z].*");//[_a-z][_.\-a-z\d]*
+	static boolean isLabel(String string) {
+		return string.matches( "[_a-z].*" );//[_a-z][_.\-a-z\d]*
 	}
 }

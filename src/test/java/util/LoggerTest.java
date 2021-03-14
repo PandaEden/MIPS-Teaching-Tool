@@ -4,8 +4,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.junit.jupiter.params.shadow.com.univocity.parsers.annotations.Nested;
-import test_util.NullOrBlankProvider;
+import test_util.providers.BlankProvider;
 
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
@@ -74,8 +73,7 @@ class LoggerTest {
 	}
 	
 	@ParameterizedTest (name="Ignore Null or Blank[{index}] - Append: \"{0}\"")
-	@Nested
-	@ArgumentsSource (NullOrBlankProvider.class)
+	@ArgumentsSource( BlankProvider.NullNwLn.class )
 	@DisplayName ("Logger Append Ignore Null or Blank")
 	void loggerTestIgnoresBlankOrNull(String blankText) {
 		logger.append( blankText );
@@ -160,7 +158,7 @@ class LoggerTest {
 		);
 	}
 	
-	@org.junit.jupiter.api.Nested
+	@Nested
 	@Tag ("Output")
 	@Tag( "Color" )
 	@DisplayName ("Color Support")

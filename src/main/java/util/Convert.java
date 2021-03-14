@@ -1,8 +1,11 @@
 package util;
 
+import org.jetbrains.annotations.NotNull;
+
 import model.components.DataMemory;
 import model.components.InstrMemory;
-import org.jetbrains.annotations.NotNull;
+
+import util.validation.Validate;
 
 /**
  Provides common conversions between data types. Input should be checked using appropriate {@link Validate} method
@@ -16,12 +19,12 @@ import org.jetbrains.annotations.NotNull;
  <li>R_Register - "R0 -R31, or F0-F31"</li>
  <li>Named_Register - "Zero, S0-8, T0-9"</li>
  */
-public class Convert{
+public class Convert {
 	
 	// Named registers are necessary - but AT,K#,GP,SP,FP are not implemented properly
-	public static String[] namedRegisters = splitCSV(
-			("ZERO, AT, V0,V1, A0,A1,A2,A3,"+"T0,T1,T2,T3,T4,T5,T6,T7,"
-					+"S0,S1,S2,S3,S4,S5,S6,S7,"+"T8,T9,"+"K1,K2,"+"GP,SP,S8, RA").toLowerCase()
+	public static String[] namedRegisters=splitCSV(
+			("ZERO, AT, V0,V1, A0,A1,A2,A3," + "T0,T1,T2,T3,T4,T5,T6,T7,"
+			 + "S0,S1,S2,S3,S4,S5,S6,S7," + "T8,T9," + "K1,K2," + "GP,SP,S8, RA").toLowerCase( )
 	);//TODO add FP reference.
 	
 	/**
@@ -34,48 +37,27 @@ public class Convert{
 	 @return "0x########" (Capitalized)
 	 */
 	@NotNull
-	public static String uInt2Hex(@NotNull Integer immediate){
-		StringBuilder rtn = new StringBuilder(Integer.toHexString(immediate).toUpperCase());
-		while (rtn.length()<8) {
-			rtn.insert(0, "0");
+	public static String uInt2Hex(@NotNull Integer immediate) {
+		StringBuilder rtn=new StringBuilder( Integer.toHexString( immediate ).toUpperCase( ) );
+		while ( rtn.length( )<8 ) {
+			rtn.insert( 0, "0" );
 		}
-		return "0x"+rtn;
+		return "0x" + rtn;
 	}
 	
 	/**
 	 Converts a Hexadecimal String to a signed 32 bit integer.
-	 (can't be longer that 10 chars, 2 for sign "0x", 8 for value)
 	 
-	 @param hex expects first two chars to be "0x" notation.
+	 @param hex preferred first two chars to be "0x" notation.
 	 
 	 @return signed 32bit integer value of hex.
 	 
 	 @throws IllegalArgumentException if hex is invalid format.
 	 */
 	@NotNull
-	static Integer hex2uInt(@NotNull String hex){
-		if (hex.length()<=2)
-			throw new IllegalArgumentException("Hex String must be at least 3 chars to contain \"0x sign\"!");
-		if (hex.length()>10)
-			throw new IllegalArgumentException("Hex String must be less than 10 chars long!");
-		if (!hex.matches("(^0[x][0-9a-f]{1,8}$)"))
-			throw new IllegalArgumentException("Does not match Hex format (expects lowercase and \"0x\" sign)!");
-		
-		return Integer.parseInt(hex.substring(2), 16);
-	}
-	
-	/**
-	 Converts an address to an immediate ((unsigned)right shift 2 bits aka divide by 4, ignoring remainder)
-	 
-	 @return address (unsigned)right shifted by 2.
-	 
-	 @throws IllegalArgumentException not valid
-	 */
-	@NotNull
-	public static Integer address2Imm(@NotNull Integer address){
-		if (address<0)
-			throw new IllegalArgumentException("Address are unsigned!");
-		return address >>> 2;
+	@Deprecated
+	public static Integer hex2uInt(@NotNull String hex) {
+		return (hex.startsWith( "0x" ))?Integer.decode(hex):Integer.parseInt( hex.substring( 2 ), 16 );
 	}
 	
 	/**
@@ -90,13 +72,13 @@ public class Convert{
 	 @see DataMemory#BASE_DATA_ADDRESS
 	 */
 	@NotNull
-	public static Integer imm2Address(@NotNull Integer immediate){
-		final int MIN_IMM = -32768; // (-2^15)
-		final int MAX_IMM = (536870911); // ({@link Integer#MAX_VALUE}/4).floor
+	public static Integer imm2Address(@NotNull Integer immediate) {
+		final int MIN_IMM=-32768; // (-2^15)
+		final int MAX_IMM=(536870911); // ({@link Integer#MAX_VALUE}/4).floor
 		
-		if (immediate<MIN_IMM || immediate>MAX_IMM)
-			throw new IllegalArgumentException("Immediate Value is invalid");
-		return immediate << 2;
+		if ( immediate<MIN_IMM || immediate>MAX_IMM )
+			throw new IllegalArgumentException( "Immediate Value is invalid" );
+		return immediate<<2;
 	}
 	
 	/**
@@ -114,27 +96,37 @@ public class Convert{
 	 @see DataMemory#OVER_SUPPORTED_DATA_ADDRESS
 	 */
 	@NotNull
-	public static Integer address2Index(@NotNull Integer address){
-		final int DATA_ALIGN = 8;
-		final int WORD_ALIGN = 4;
-		
-		if (address>=DataMemory.BASE_DATA_ADDRESS)
-			if (address>=DataMemory.OVER_SUPPORTED_DATA_ADDRESS)
-				throw new IllegalArgumentException("Address >= OVER_SUPPORTED_DATA_ADDRESS!");
-			else if (address%DATA_ALIGN!=0)
-				throw new IllegalArgumentException("Data Address is not DoubleWord aligned!");
-			else // Valid Data Address
-				return (address2Imm(address-DataMemory.BASE_DATA_ADDRESS)); // multiple of 2.
-		
-		if (address>=InstrMemory.BASE_INSTR_ADDRESS)
-			if (address>=InstrMemory.OVER_SUPPORTED_INSTR_ADDRESS)
-				throw new IllegalArgumentException("Address >= OVER_SUPPORTED_INSTR_ADDRESS!");
-			else if (address%WORD_ALIGN!=0)
-				throw new IllegalArgumentException("Instr Address is not Word Aligned!");
-			else // Valid Instr Address
-				return (address2Imm(address-InstrMemory.BASE_INSTR_ADDRESS));
-		
-		throw new IllegalArgumentException("Address Below Instr Address!");
+	private static Integer address2Index(@NotNull Integer address, String type, int base, int over, String size_name, int size) {
+		if ( address<base )
+			throw new IllegalArgumentException( "Address Below " + type + " Address!" );
+		else if ( address>=over )
+			throw new IllegalArgumentException( "Address OVER_SUPPORTED " + type + " ADDRESS!" );
+		else if ( address%size!=0 )
+			throw new IllegalArgumentException( "Data Address is not " + size_name + " aligned!" );
+		else // Valid Data Address
+			return (address2Imm( address - base )); // multiple of 2.
+	}
+	
+	public static Integer instrAddr2Index(@NotNull Integer address){
+		return address2Index(  address, "Instr", InstrMemory.BASE_INSTR_ADDRESS,
+							   InstrMemory.OVER_SUPPORTED_INSTR_ADDRESS, "Word", 4);
+	}
+	public static Integer dataAddr2Index(@NotNull Integer address){
+		return address2Index(  address, "Data", DataMemory.BASE_DATA_ADDRESS,
+							   DataMemory.OVER_SUPPORTED_DATA_ADDRESS, "DoubleWord", 8);
+	}
+	/**
+	 Converts an address to an immediate ((unsigned)right shift 2 bits aka divide by 4, ignoring remainder)
+	 
+	 @return address (unsigned)right shifted by 2.
+	 
+	 @throws IllegalArgumentException not valid
+	 */
+	@NotNull
+	public static Integer address2Imm(@NotNull Integer address) {
+		if ( address<0 )
+			throw new IllegalArgumentException( "Address are unsigned!" );
+		return address >>> 2;
 	}
 	
 	/**
@@ -145,17 +137,17 @@ public class Convert{
 	 @return array of individual Strings.
 	 */
 	@NotNull
-	public static String[] splitCSV(@NotNull String CSV){
-		return Convert.removeExtraWhitespace(CSV).split("\\s*,\\s*");
+	public static String[] splitCSV(@NotNull String CSV) {
+		return Convert.removeExtraWhitespace( CSV ).split( "\\s*,\\s*" );
 	}
 	
 	/**
 	 Returns the String any whitespace is shortened to only 1 space, and leading/trailing spaces removed.
 	 */
 	@NotNull
-	public static String removeExtraWhitespace(@NotNull String string){
+	public static String removeExtraWhitespace(@NotNull String string) {
 		// Replace multiple spaces with single space
-		string = string.strip().replaceAll("[ \\t]+", " ");
+		string=string.strip( ).replaceAll( "[ \\t]+", " " );
 		return string;
 	}
 	
@@ -166,15 +158,15 @@ public class Convert{
 	 @throws IllegalArgumentException Not valid R style Register
 	 */
 	@NotNull
-	public static String r2Named(@NotNull String r_Register){
-		if (!r_Register.matches("^r\\d{1,2}$"))
-			throw new IllegalArgumentException("Not valid R Register");
+	public static String r2Named(@NotNull String r_Register) {
+		if ( !r_Register.matches( "^r\\d{1,2}$" ) )
+			throw new IllegalArgumentException( "Not valid R Register" );
 		
 		try {
-			int index = Integer.parseInt(r_Register.substring(1));
-			return Convert.namedRegisters[index];
-		} catch (ArrayIndexOutOfBoundsException e) {
-			throw new IllegalArgumentException("Array Index Out Of Bounds: "+e.getMessage());
+			int index=Integer.parseInt( r_Register.substring( 1 ) );
+			return Convert.namedRegisters[ index ];
+		} catch ( ArrayIndexOutOfBoundsException e ) {
+			throw new IllegalArgumentException( "Array Index Out Of Bounds: " + e.getMessage( ) );
 		}
 	}
 	
@@ -186,14 +178,14 @@ public class Convert{
 	 @see model.components.RegisterBank
 	 */
 	@NotNull
-	public static Integer r2Index(@NotNull String r_Register){
-		if (!r_Register.matches("^r\\d{1,2}$"))
-			throw new IllegalArgumentException("Not valid R Register");
+	public static Integer r2Index(@NotNull String r_Register) {
+		if ( !r_Register.matches( "^r\\d{1,2}$" ) )
+			throw new IllegalArgumentException( "Not valid R Register" );
 		
-		int index = Integer.parseInt(r_Register.substring(1));
+		int index=Integer.parseInt( r_Register.substring( 1 ) );
 		
-		if (index>namedRegisters.length) // Tests if the Register is valid index
-			throw new IllegalArgumentException("Register Index Out Of Bounds");
+		if ( index>namedRegisters.length ) // Tests if the Register is valid index
+			throw new IllegalArgumentException( "Register Index Out Of Bounds" );
 		
 		return index;
 	}
@@ -205,13 +197,13 @@ public class Convert{
 	 @throws IllegalArgumentException Not valid Register Name
 	 */
 	@NotNull
-	public static String named2R(@NotNull String named){
-		for (int i = 0; i<Convert.namedRegisters.length; i++) {
-			if (Convert.namedRegisters[i].equals(named)) {
-				return "r"+i;
+	public static String named2R(@NotNull String named) {
+		for ( int i=0; i<Convert.namedRegisters.length; i++ ) {
+			if ( Convert.namedRegisters[ i ].equals( named ) ) {
+				return "r" + i;
 			}
 		}
-		throw new IllegalArgumentException("Not Valid Named Register");
+		throw new IllegalArgumentException( "Not Valid Named Register" );
 	}
 	
 	/**
@@ -220,10 +212,11 @@ public class Convert{
 	 @throws IllegalArgumentException Not valid Index for register
 	 */
 	@NotNull
-	public static String index2R(@NotNull Integer index){
-		if (index>Convert.namedRegisters.length) // Tests if the Register is valid index
-			throw new IllegalArgumentException("Register Index Out Of Bounds");
+	public static String index2R(@NotNull Integer index) {
+		if ( index>Convert.namedRegisters.length ) // Tests if the Register is valid index
+			throw new IllegalArgumentException( "Register Index Out Of Bounds" );
 		
-		return "r"+index;
+		return "r" + index;
 	}
+	
 }
