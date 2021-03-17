@@ -1,4 +1,4 @@
-package test_util.providers;
+package _test_util.providers;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
@@ -8,7 +8,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
-public class Non_OperandsProvider {
+import static _test_util.providers.Trim.listOf1;
+
+public class SetupProvider {
 	private static final List<String> Directives_Only=List.of(
 			".data", ".text", ".code"
 	);
@@ -27,7 +29,6 @@ public class Non_OperandsProvider {
 	private static final List<String> Invalid_Labels_Only=List.of(
 			"_ label with spaces", "73label", "CAPITALIZED"
 	);
-	private static List<String> first(List<String> list){return list.subList( 0,1 );}
 	
 	public static class ValidDirectives implements ArgumentsProvider {
 		public Stream<Arguments> provideArguments(ExtensionContext context) {
@@ -48,7 +49,7 @@ public class Non_OperandsProvider {
 	
 	public static class InvalidDataTypes implements ArgumentsProvider {
 		public Stream<Arguments> provideArguments(ExtensionContext context) {
-			return Stream.of(Invalid_Directives, Invalid_DataTypes_Only, first(Directives_Only), first(Labels))
+			return Stream.of( Invalid_Directives, Invalid_DataTypes_Only, listOf1( Directives_Only), listOf1( Labels))
 						 .flatMap( Collection::stream ).map( Arguments::of );}
 	}
 	
@@ -58,7 +59,7 @@ public class Non_OperandsProvider {
 	}
 	public static class InvalidLabels implements ArgumentsProvider {
 		public Stream<Arguments> provideArguments(ExtensionContext context) {
-			return Stream.of(Invalid_Labels_Only, first(DataTypes_Only))
+			return Stream.of( Invalid_Labels_Only, listOf1( DataTypes_Only))
 						 .flatMap( Collection::stream ).map( Arguments::of );}
 	}
 }

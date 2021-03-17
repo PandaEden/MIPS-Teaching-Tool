@@ -9,7 +9,7 @@ public class ErrorLog extends Logger {
 	
 	@Override
 	public String toString() {
-		return Color.fmtColored( Color.RED_ANSI, super.toString( ) );
+		return Color.fmtColored( Color.ERR_LOG, super.toString( ) );
 	}
 	
 }

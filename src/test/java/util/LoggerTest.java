@@ -4,7 +4,10 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import test_util.providers.BlankProvider;
+import _test.Tags;
+import _test.Tags.Pkg;
+
+import _test.providers.BlankProvider;
 
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
@@ -17,8 +20,8 @@ import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@Tag ("Utility")
-@DisplayName ("Utility - Logger Test")
+@Tag (Pkg.UTIL)
+@DisplayName (Pkg.UTIL+" - Logger Test")
 class LoggerTest {
 	private Logger logger;
 	private ArrayList<String> logs;
@@ -29,65 +32,88 @@ class LoggerTest {
 		logger=new Logger( "Test", logs );
 	}
 	
-	@Test
-	@DisplayName ("Append")
-	void loggerTestAppend() {
-		logger.append( "err1" );
-		logger.append( "err2" );
-		//noinspection ResultOfMethodCallIgnored
-		Assertions.assertAll(
-				() -> assertTrue( logger.hasEntries( ) ),
-				() -> assertEquals( "Test:\n\terr1\n\terr2\n", logger.toString( ) ),
-				() -> assertEquals( "err1", logs.get( 0 ) ),
-				() -> assertThrows( IndexOutOfBoundsException.class, () -> logs.get( 2 ) ),
-				() -> assertFalse( logs.isEmpty( ) )
-		);
-	}
-	
-	@Test
-	@DisplayName ("Append ExclamationMark")
-	void loggerTestAppend_ExclamationMark() {
-		logger.appendEx( "err1" );
-		logger.appendEx( "err2" );
-		//noinspection ResultOfMethodCallIgnored
-		Assertions.assertAll(
-				() -> assertTrue( logger.hasEntries( ) ),
-				() -> assertEquals( "Test:\n\terr1 !\n\terr2 !\n", logger.toString( ) ),
-				() -> assertEquals( "err1 !", logs.get( 0 ) ),
-				() -> assertThrows( IndexOutOfBoundsException.class, () -> logs.get( 2 ) ),
-				() -> assertFalse( logs.isEmpty( ) )
-		);
-	}
-	
-	@Test
-	@DisplayName ("Logger Does Not Trim Internal Whitespace")
-	void loggerTestStringWithWhiteSpace() {
-		logger.append( "something else    with spaces" );
-		assertEquals( 1, logs.size( ) );
-		Assertions.assertAll(
-				() -> assertTrue( logger.hasEntries( ) ),
-				() -> assertEquals( "Test:\n\tsomething else    with spaces\n", logger.toString( ) ),
-				() -> assertEquals( "something else    with spaces", logs.get( 0 ) ),
-				() -> assertFalse( logs.isEmpty( ) )
-		);
-	}
-	
-	@ParameterizedTest (name="Ignore Null or Blank[{index}] - Append: \"{0}\"")
-	@ArgumentsSource( BlankProvider.NullNwLn.class )
-	@DisplayName ("Logger Append Ignore Null or Blank")
-	void loggerTestIgnoresBlankOrNull(String blankText) {
-		logger.append( blankText );
-		assertTrue( logs.isEmpty( ) );    // adding Blank/Null shouldn't change the size
+	@Nested
+	@Tag(Tags.MUT)
+	class Append {
+		@Test
+		void append() {
+			logger.append( "err1" );
+			logger.append( "err2" );
+			//noinspection ResultOfMethodCallIgnored
+			Assertions.assertAll(
+					() -> assertTrue( logger.hasEntries( ) ),
+					() -> assertEquals( "Test:\n\terr1\n\terr2\n", logger.toString( ) ),
+					() -> assertEquals( "err1", logs.get( 0 ) ),
+					() -> assertThrows( IndexOutOfBoundsException.class, () -> logs.get( 2 ) ),
+					() -> assertFalse( logs.isEmpty( ) )
+			);
+		}
+		@Test
+		void Append_ExclamationMark() {
+			logger.appendEx( "err1 " );
+			logger.appendEx( "err2 " );
+			//noinspection ResultOfMethodCallIgnored
+			Assertions.assertAll(
+					() -> assertTrue( logger.hasEntries( ) ),
+					() -> assertEquals( "Test:\n\terr1 !\n\terr2 !\n", logger.toString( ) ),
+					() -> assertEquals( "err1 !", logs.get( 0 ) ),
+					() -> assertThrows( IndexOutOfBoundsException.class, () -> logs.get( 2 ) ),
+					() -> assertFalse( logs.isEmpty( ) )
+			);
+		}
 		
-		logger.append( "something" );
+		@Test
+		void append_String_With_Internal_WhiteSpace() {
+			logger.append( "something else    with spaces" );
+			assertEquals( 1, logs.size( ) );
+			Assertions.assertAll(
+					() -> assertTrue( logger.hasEntries( ) ),
+					() -> assertEquals( "Test:\n\tsomething else    with spaces\n", logger.toString( ) ),
+					() -> assertEquals( "something else    with spaces", logs.get( 0 ) ),
+					() -> assertFalse( logs.isEmpty( ) )
+			);
+		}
 		
-		logger.append( blankText );
-		assertEquals( 1, logs.size( ) );
+		@ParameterizedTest (name="Ignore Null or Blank[{index}] - Append: \"{0}\"")
+		@ArgumentsSource( BlankProvider.NullNwLn.class )
+		void append_Ignores_BlankOrNull(String blankText) {
+			logger.append( blankText );
+			assertTrue( logs.isEmpty( ) );    // adding Blank/Null shouldn't change the size
+			
+			logger.append( "something" );
+			
+			logger.append( blankText );
+			assertEquals( 1, logs.size( ) );
+		}
+		
+		@Test
+		@Tag( Tags.OUT)
+		void append_Prefix_LineNo() {
+			assertNull(logger.setPrefix( "Pre:" ));
+			logger.append( "No LineNo" );
+			assertEquals("Pre:", logger.setLineNoPrefix( 5 ));
+			logger.appendEx( "\tThing" );
+			logger.append( "Another Thing" );
+			assertEquals("LineNo: 5", logger.clearPrefix());
+			logger.append( "No Prefix" );
+			logger.append( 20,"Another Thing" );	// Single Line Prefix LineNo
+			logger.append( "No Prefix" );
+			
+			assertEquals( "Test:\n"
+						  +"\tPre:\tNo LineNo\n"
+						  +"\tLineNo: 5\t\tThing!\n"
+						  +"\tLineNo: 5\tAnother Thing\n"
+						  +"\tNo Prefix\n"
+						  +"\tLineNo: 20\tAnother Thing\n"
+						  +"\tNo Prefix\n",
+						  logger.toString());
+		}
+		
 	}
 	
 	@Test
-	@DisplayName ("Clear Logger")
-	void loggerTestClearLog() {
+	@Tag(Tags.MUT)
+	void Clear_Logger() {
 		logs.add( "panda" );
 		assertTrue( logger.hasEntries( ) ); // Test Invalid if false
 		
@@ -100,16 +126,15 @@ class LoggerTest {
 	}
 	
 	@Test
-	@Tag ("Accessing")
-	@DisplayName ("getName")
-	void loggerTestGetName() {
+	@Tag (Tags.ACC)
+	void Get_Name() {
 		assertEquals( "Test", logger.getName( ) );
 	}
 	
 	@Test
-	@Tag ("Output")
-	@DisplayName ("System Print")
-	void systemPrint() {
+	@Tag (Tags.OUT)
+	@Tag ("Accessing")
+	void System_Print() {
 		// Setup - redirecting Standard Output
 		final PrintStream standardOut=System.out;
 		final ByteArrayOutputStream outputStreamCaptor=new ByteArrayOutputStream( );
@@ -125,7 +150,7 @@ class LoggerTest {
 	
 	@Test
 	@DisplayName ("Test Logger Extensions (SubClasses)")
-	void testSubLogs() {
+	void testSub_Logs() {
 		logs.add( "panda" );
 		logs.add( "another Panda" );
 		
@@ -159,10 +184,9 @@ class LoggerTest {
 	}
 	
 	@Nested
-	@Tag ("Output")
+	@Tag (Tags.OUT)
 	@Tag( "Color" )
-	@DisplayName ("Color Support")
-	class ColorSupport {
+	class Color_Support {
 		boolean preset;
 		
 		@BeforeEach
@@ -188,8 +212,8 @@ class LoggerTest {
 				Logger.Color.CYAN_ANSI,
 				Logger.Color.WHITE_ANSI
 		})
-		@DisplayName ("Test FormatColoured")
-		void testColor(String color) {
+
+		void Format_Colored(String color) {
 			System.out.println( Logger.Color.fmtColored( color, "<PANDA>" ) );
 			assertEquals( color + "PANDA\u001B[0m", Logger.Color.fmtColored( color, "PANDA" ) );
 		}

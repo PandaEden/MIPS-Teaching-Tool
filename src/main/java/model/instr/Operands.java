@@ -2,7 +2,9 @@ package model.instr;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import util.AddressValidation;
+import org.jetbrains.annotations.VisibleForTesting;
+
+import util.validation.AddressValidation;
 import util.Convert;
 import util.logs.ErrorLog;
 
@@ -14,8 +16,9 @@ import java.util.HashMap;
  <p>
  Methods, may return null - if it is not used by the operand.
  */
-public class Operands{
-	private InstrType instrType;
+public class Operands {
+	@VisibleForTesting
+	protected InstrType instrType;
 	private boolean immediateSet;
 	//RS is only used for reading.
 	//RD is only used for writing. And only used in R_types.
@@ -37,39 +40,16 @@ public class Operands{
 	private String label;
 	
 	/**
-	 Intended for "EXIT" all values set to null.
-	 */
-	private Operands(){
-		this.rs = null;
-		this.rt = null;
-		this.rd = null;
-		this.immediate = null;
-		this.label = null;
-		this.instrType = InstrType.R;
-		this.immediateSet = false;
-	}
-	
-	/**
-	 InstrType.R; (add, sub) . or EXIT
-	 */
-	public Operands(@Nullable Integer rs, @Nullable Integer rt, @Nullable Integer rd){
-		this();
-		this.rs = rs;
-		this.rt = rt;
-		this.rd = rd;
-	}
-	
-	/**
 	 Expects Immediate to be valid if label is null,
 	 <p> [int opcode] needs to be 1 (addi), 2 (lw) or 3 (sw).
 	 
 	 @throws IllegalArgumentException if label is blank
 	 */
-	public Operands(String opcode, @Nullable Integer rt, @NotNull String label){
-		this(opcode, null, rt, null); // rs is set to 0 at assembly
-		this.label = label;
-		if (label.isBlank())
-			throw new IllegalArgumentException("Operands cannot be set with blank Label! : "+opcode);
+	public Operands(String opcode, @Nullable Integer rt, @NotNull String label) {
+		this( opcode, null, rt, null ); // rs is set to 0 at assembly
+		this.label=label;
+		if ( label.isBlank( ) )
+			throw new IllegalArgumentException( "Operands cannot be set with blank Label! : " + opcode );
 	}
 	
 	/**
@@ -77,44 +57,69 @@ public class Operands{
 	 
 	 @throws IllegalArgumentException opcode out of range
 	 */
-	public Operands(String opcode, @Nullable Integer rs, @Nullable Integer rt, @Nullable Integer immediate){ // Immediate
-		this(rs, rt, null);
-		this.immediate = immediate;
+	public Operands(String opcode, @Nullable Integer rs, @Nullable Integer rt, @Nullable Integer immediate) { // Immediate
+		this( rs, rt, null );
+		this.immediate=immediate;
 		
-		switch (opcode) {
+		switch ( opcode ) {
 			case "addi":
 			case "lw":
-				this.instrType = InstrType.I_write;
+				this.instrType=InstrType.I_rt_write;
 				break;
 			case "sw":
-				this.instrType = InstrType.I_read;
+				this.instrType=InstrType.I_rt_read;
 				break;
 			default:
-				throw new IllegalArgumentException(" Invalid opcode for Immediate type : "+opcode);
+				throw new IllegalArgumentException( " Invalid opcode for Immediate type : " + opcode );
 		}
-		immediateSet = (immediate!=null);
+		immediateSet=(immediate!=null);
+	}
+	
+	/**
+	 InstrType.R; (add, sub) . or EXIT
+	 */
+	public Operands(@Nullable Integer rs, @Nullable Integer rt, @Nullable Integer rd) {
+		this( );
+		this.rs=rs;
+		this.rt=rt;
+		this.rd=rd;
+	}
+	
+	/**
+	 Intended for "EXIT" all values set to null.
+	 */
+	private Operands() {
+		this.rs=null;
+		this.rt=null;
+		this.rd=null;
+		this.immediate=null;
+		this.label=null;
+		this.instrType=InstrType.R;
+		this.immediateSet=false;
 	}
 	
 	/** Jump */
-	public Operands(@NotNull String opcode, @NotNull String label){
-		this();
-		this.label = label;
-		this.instrType = InstrType.J;
+	public Operands(@NotNull String opcode, @NotNull String label) {
+		this( );
+		this.label=label;
+		if ( label.isBlank( ) )
+			throw new IllegalArgumentException( "Operands cannot be set with blank Label! : " + opcode );
+		this.instrType=InstrType.J;
 	}
 	
 	/** Jump */
-	public Operands(@NotNull String opcode, @NotNull Integer address){
-		this();
-		this.immediate = address;
-		this.instrType = InstrType.J;
+	public Operands(@NotNull String opcode, @NotNull Integer address) {
+		this( );
+		this.immediate=address;
+		this.instrType=InstrType.J;
 	}
 	
 	/**
 	 @return pre-defined NULL operands for EXIT type instruction.
 	 */
 	@NotNull
-	public static Operands getExit(){
-		return new Operands();
+	public static Operands getExit() {
+		return new Operands( );
 	}
 	
 	/**
@@ -126,62 +131,62 @@ public class Operands{
 	 
 	 @throws IllegalArgumentException if used with null label in Operands.
 	 */
-	public boolean setImmediate(@NotNull ErrorLog errorLog, @NotNull HashMap<String, Integer> labelMap){
-		if (this.instrType==InstrType.R)
-			throw new IllegalArgumentException("Cannot setImmediate for Register type!");
+	public boolean setImmediate(@NotNull ErrorLog errorLog, @NotNull HashMap<String, Integer> labelMap) {
+		if ( this.instrType==InstrType.R )
+			throw new IllegalArgumentException( "Cannot setImmediate for Register type!" );
 		
-		if (this.label==null || this.label.isBlank())
-			throw new IllegalArgumentException("Cannot setImmediate with Blank/Null internal Label!");
+		if ( this.label==null || this.label.isBlank( ) )
+			throw new IllegalArgumentException( "Cannot setImmediate with Blank/Null internal Label!" );
 		
-		if (this.immediate!=null || rs!=null)
-			throw new IllegalArgumentException("Cannot setImmediate when Immediate/RS are not null!");
+		if ( this.immediateSet )
+			throw new IllegalStateException( "Immediate has already been set!" );
 		
-		if (this.immediateSet)
-			throw new IllegalArgumentException("Immediate has already been set");
+		if ( rs!=null )
+			throw new IllegalStateException( "Cannot setImmediate when RS is Not null!" );
 		
-		if (!labelMap.containsKey(this.label)) {
-			errorLog.append("Label \""+this.label+"\" Not Found!");
+		if ( !labelMap.containsKey( this.label ) ) {
+			errorLog.appendEx( "Label \"" + this.label + "\" Not Found" );
 			return false;
 		}
-		int address = labelMap.get(this.label);
-		final String invalidInstrAddr = "Label: \""+this.label+"\" points to Invalid Instruction Address!";
-		final String invalidDataAddr = "Label: \""+this.label+"\" points to Invalid Data Address!";
+		int address=labelMap.get( this.label );
+		final String invalidInstrAddr="Label: \"" + this.label + "\" points to Invalid Instruction Address";
+		final String invalidDataAddr="Label: \"" + this.label + "\" points to Invalid Data Address";
 		
-		switch (this.instrType) {
+		switch ( this.instrType ) {
 			case J:
-				if (AddressValidation.isSupportedInstrAddr(address, errorLog))
-					this.immediate = Convert.address2Imm(address);
+				if ( AddressValidation.isSupportedInstrAddr( address, errorLog ) )
+					this.immediate=Convert.address2Imm( address );
 				else
-					errorLog.append(invalidInstrAddr);
+					errorLog.appendEx( invalidInstrAddr );
 				break;
-			case I_read:
-			case I_write:
-				if (AddressValidation.isSupportedDataAddr(address, errorLog)) {
-					this.immediate = address;
-					this.rs = 0;
+			case I_rt_read:
+			case I_rt_write:
+				if ( AddressValidation.isSupportedDataAddr( address, errorLog ) ) {
+					this.immediate=Convert.address2Imm( address );
+					this.rs=0;
 				} else
-					errorLog.append(invalidDataAddr);
+					errorLog.appendEx( invalidDataAddr );
 				break;
 			default:
-				throw new IllegalArgumentException("Cannot setImmediate for "+this.instrType+" type!");
+				throw new IllegalStateException( "Cannot setImmediate for " + this.instrType + " type!" );
 		}
 		// to avoid repeat attempts. If this method gives an error the input file needs to be edited
-		this.immediateSet = true;
+		this.immediateSet=true;
 		return (this.immediate!=null); // returns True if Immediate has been set.
 	}
 	
 	@Nullable
-	public Integer getRs(){
+	public Integer getRs() {
 		return this.rs;
 	}
 	
 	@Nullable
-	public Integer getRt(){
+	public Integer getRt() {
 		return this.rt;
 	}
 	
 	@Nullable
-	public Integer getRd(){
+	public Integer getRd() {
 		return this.rd;
 	}
 	
@@ -191,26 +196,39 @@ public class Operands{
 	 @return Immediate, if set, or NULL.
 	 */
 	@Nullable
-	public Integer getImmediate(){
+	public Integer getImmediate() {
 		return this.immediate;
 	}
 	
 	@Nullable
-	public String getLabel(){
+	public String getLabel() {
 		return this.label;
 	}
 	
 	@NotNull
-	public InstrType getInstrType(){
+	public InstrType getInstrType() {
 		return this.instrType;
 	}
 	
 	
 	@NotNull
-	public enum InstrType{
+	public enum InstrType {
 		R,
-		I_read,
-		I_write,
+		I_rt_read,
+		I_rt_write,
 		J
 	}
+	
+	@Override public String toString ( ) {
+		return "Operands{ " +
+			   "instrType= " + instrType +
+			   ", immediateSet= " + immediateSet +
+			   ", rs= " + rs +
+			   ", rt= " + rt +
+			   ", rd= " + rd +
+			   ", immediate= " + immediate +
+			   ", label= '" + label + '\'' +
+			   " }";
+	}
+	
 }

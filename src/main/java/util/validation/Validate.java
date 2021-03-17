@@ -33,14 +33,6 @@ public class Validate{
 	private static final List<String>  SUPPORTED_DIRECTIVES_CSV = List.of(".data", ".text", ".code");
 	//TODO refactor to Enum? or, Loop Up Table ?
 	
-	// ALL SUPPORTED OPCODES
-	private static final List<String> SUPPORTED_OPCODES_CSV =
-			Stream.of(OperandsValidation.SUPPORTED_R_TYPE_OPCODE_CSV, OperandsValidation.SUPPORTED_I_TYPE_OPCODE_CSV ,
-					  OperandsValidation.SUPPORTED_J_TYPE_OPCODE_CSV, OperandsValidation.NO_OPERANDS_OPCODE)
-				  .flatMap(Collection::stream ).collect(Collectors.toList( ) );
-	
-	//TODO , CSV's should be split at initialization
-	
 	private final ErrorLog errLog;
 	
 	public Validate(ErrorLog errLog){
@@ -84,34 +76,12 @@ public class Validate{
 	}
 	
 	/**Wrapper for {@link #isValidDirective(int, String, ErrorLog)}*/
-	public boolean directive(int lineNo, @NotNull String directive){
+	public boolean isValidDirective(int lineNo, @NotNull String directive){
 		return isValidDirective( lineNo, directive, this.errLog );
 	}
 	
 	/**Wrapper for {@link #isValidLabel(int, String, ErrorLog)}*/
-	public String label(int lineNo, @NotNull String label){
+	public String isValidLabel(int lineNo, @NotNull String label){
 		return isValidLabel( lineNo, label, this.errLog );
 	}
-	
-	
-	/**
-	 If not valid, adds to the {@link #errLog}
-	 <p>	see README for list of supported opcodes.
-	 
-	 @see ErrorLog
-	 */
-	public boolean isValidOpCode(int lineNo, @NotNull String opcode){
-		if (!SUPPORTED_OPCODES_CSV.contains(opcode)) {
-			errLog.append("LineNo: "+lineNo+"\tOpcode: \""+opcode+"\" Not Supported!");
-			return false;
-		}
-		return true;
-	}
-	
-	/** Wrapper for {@link util.validation.OperandsValidation#splitValidOperands(int, java.lang.String, java.lang.String)}*/
-	 public Operands splitValidOperands(int lineNo, String opcode, String operands, WarningsLog warningsLog) {
-		OperandsValidation operandsValidation = new OperandsValidation( errLog, warningsLog );
-		return operandsValidation.splitValidOperands( lineNo, opcode, operands);
-	}
-	
 }

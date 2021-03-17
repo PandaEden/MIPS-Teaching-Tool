@@ -48,24 +48,24 @@ public class Convert {
 	/**
 	 Converts a Hexadecimal String to a signed 32 bit integer.
 	 
-	 @param hex preferred first two chars to be "0x" notation.
+	 @param hex requires first two chars to be "0x" notation.
 	 
 	 @return signed 32bit integer value of hex.
 	 
 	 @throws IllegalArgumentException if hex is invalid format.
 	 */
-	@NotNull
-	@Deprecated
-	public static Integer hex2uInt(@NotNull String hex) {
-		return (hex.startsWith( "0x" ))?Integer.decode(hex):Integer.parseInt( hex.substring( 2 ), 16 );
+	public static int hex2uInt(@NotNull String hex) {
+		if ( hex.startsWith( "0x" ) )
+			return Integer.parseUnsignedInt( hex.substring( 2 ), 16 );
+		else
+			throw new IllegalArgumentException("Does not match Hex format (expects lowercase and \"0x\" sign)!");
 	}
 	
 	/**
 	 Converts an integer into an address (left shift 2 bits aka multiply by 4)
 	 <p>
 	 <b>Add the returned value to the relevant base address!</b>
-	 <p> Immediate can be a maximum of ({@link Integer#MAX_VALUE}/4 -1) === (2^29 -1)
-	 <p> Negative Immediate can be a minimum of (-2^15)
+	 <p><b>Immediate can be a maximum of (2^26-1) and a minimum of (-2^15)</b>
 	 
 	 @throws IllegalArgumentException not valid Immediate.
 	 @see InstrMemory#BASE_INSTR_ADDRESS
@@ -74,7 +74,7 @@ public class Convert {
 	@NotNull
 	public static Integer imm2Address(@NotNull Integer immediate) {
 		final int MIN_IMM=-32768; // (-2^15)
-		final int MAX_IMM=(536870911); // ({@link Integer#MAX_VALUE}/4).floor
+		final int MAX_IMM=(67108863); // (2^26-1)
 		
 		if ( immediate<MIN_IMM || immediate>MAX_IMM )
 			throw new IllegalArgumentException( "Immediate Value is invalid" );

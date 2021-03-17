@@ -282,9 +282,9 @@ Labels point to the next valid data/instruction.
 
 > This can cause a scenario where a tag was intended to point to data on the same line.
 >
-> ​	But due to an error with the data formatting it is not recognised.
+> 	But due to an error with the data formatting it is not recognised.
 >
-> ​	Then the label will incorrectly be attached to the next instruction.
+> 	Then the label will incorrectly be attached to the next instruction.
 
 Therefore users should fix Parsing Errors, before Assembly Errors.
 

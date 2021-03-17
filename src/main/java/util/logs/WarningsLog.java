@@ -9,8 +9,7 @@ public class WarningsLog extends Logger {
 	
 	@Override
 	public String toString() {
-		return Color.fmtColored( Color.YELLOW_ANSI, super.toString( ) );
+		return Color.fmtColored( Color.WARN_LOG, super.toString( ) );
 	}
 	
 }
-

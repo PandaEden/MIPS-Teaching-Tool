@@ -1,11 +1,16 @@
+package setup;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import model.MemoryBuilder;
 import model.components.DataMemory;
 import model.components.InstrMemory;
 import model.instr.Operands;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+
 import util.Convert;
-import util.Validate;
+import util.validation.OperandsValidation;
+import util.validation.Validate;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
 import util.logs.WarningsLog;
@@ -19,51 +24,36 @@ import java.util.ArrayList;
 /**
  Responsible for parsing files containing MIPS instructions and building a model for the emulator to run using.
  <p>
- The Parser has 3 main sections: File Checks: Instruction Format: Label assembly:
+ The setup.Parser has 3 main sections: File Checks: Instruction Format: Label assembly:
  <p>
  View the specification on the GitHub for more information of valid MIPS Syntax instructions.
  <p>
- The Parser also logs mistakes with file syntax in an Error & Warnings log. If any Errors are present, these will need to
+ The setup.Parser also logs mistakes with file syntax in an Error & Warnings log. If any Errors are present, these will
+ need to
  be corrected before the emulator will run. Warnings will not prevent execution, and in some cases (e.g. 'nop') might be
  intended by the user.
  <p>
- The Parser will attempt to collect as many errors as possible before terminating to allow the user to correct multiple
+ The setup.Parser will attempt to collect as many errors as possible before terminating to allow the user to correct
+ multiple
  mistakes before re-parsing.
  */
-public class Parser{
-	public static final String DEFAULT_FILENAME = "FileInput.s";
-	public static final int MAX_LINES = 512; //2^8
+public class Parser {
+	public static final String DEFAULT_FILENAME="FileInput.s";
+	public static final int MAX_LINES=512; //2^8
 	
 	private final ErrorLog errorLog;
 	private final WarningsLog warningsLog;
 	private final MemoryBuilder mb;
 	private final Validate val;
-	private String errorFn = " NOT SET !"; // This should not be returned!, Error Messages should be meaningful!
-	private boolean dataLimit = false, instrLimit = false;
+	private final OperandsValidation opsVal;
 	
-	/**
-	 Initializes the Parser with an empty model. Either Load a file {@link #loadFile(String)}, and parse it {@link
-	#loadParseFile(String)} Which will also automatically assemble the models ready for execution.
-	 <p>
-	 Or, single line manually {@link #parseLine(String, int)}(for testing purposes)
-	 <p>
-	 After you have parsed content. And there are no errors, run {@link #assemble()}
-	 
-	 @see #assemble()
-	 @see #loadParseFile(String)
-	 @see #parseLine(String, int)
-	 */
-	public Parser(@NotNull MemoryBuilder memoryBuilder, @NotNull ErrorLog errorLog, @NotNull WarningsLog warningsLog){
-		this.mb = memoryBuilder;
-		this.errorLog = errorLog;
-		this.warningsLog = warningsLog;
-		this.val = new Validate(errorLog);
-	}
+	private String errorFn=" NOT SET !"; // This should not be returned!, Error Messages should be meaningful!
+	private boolean dataLimit=false, instrLimit=false;
 	
 	/**
 	 Same as {@link #Parser(MemoryBuilder, ErrorLog, WarningsLog)}, But, it will automatically run {@link
 	#loadParseFile(String)} on the parameter.
-	 
+	 <p>
 	 Run {@link #assemble()} to retrieve the models built. if Null, then there were errors!
 	 <p>(if parser & assembler find no errors!)</p>
 	 
@@ -74,9 +64,31 @@ public class Parser{
 	 @see #Parser(MemoryBuilder, ErrorLog, WarningsLog)
 	 */
 	public Parser(@NotNull String filepath, @NotNull MemoryBuilder memoryBuilder,
-				  @NotNull ErrorLog errorLog, @NotNull WarningsLog warningsLog){
-		this(memoryBuilder, errorLog, warningsLog);
-		loadParseFile(filepath);
+				  @NotNull ErrorLog errorLog, @NotNull WarningsLog warningsLog) {
+		this( memoryBuilder, errorLog, warningsLog );
+		loadParseFile( filepath );
+	}
+	
+	public static boolean isNullOrBlank (@Nullable String s){ return (s==null || s.isBlank()); }
+	
+	/**
+	 Initializes the setup.Parser with an empty model. Either Load a file {@link #loadFile(String)}, and parse it {@link
+	#loadParseFile(String)} Which will also automatically assemble the models ready for execution.
+	 <p>
+	 Or, single line manually {@link #parseLine(String, int)}(for testing purposes)
+	 <p>
+	 After you have parsed content. And there are no errors, run {@link #assemble()}
+	 
+	 @see #assemble()
+	 @see #loadParseFile(String)
+	 @see #parseLine(String, int)
+	 */
+	public Parser(@NotNull MemoryBuilder memoryBuilder, @NotNull ErrorLog errorLog, @NotNull WarningsLog warningsLog) {
+		this.mb=memoryBuilder;
+		this.errorLog=errorLog;
+		this.warningsLog=warningsLog;
+		this.val=new Validate( errorLog );
+		this.opsVal=new OperandsValidation( errorLog,warningsLog );
 	}
 	
 	/**
@@ -91,47 +103,8 @@ public class Parser{
 	 
 	 @see #assemble()
 	 */
-	public boolean loadParseFile(String filename){
-		return parseFile(loadFile(filename));
-	}
-	
-	/**
-	 Apples file checks on the address given.
-	 <li>File Exists</li>
-	 <li>File is Accessible</li>
-	 
-	 @param filename address of file to load.
-	 
-	 @return File object, if the File is valid
-	 */
-	public File loadFile(@NotNull String filename){
-		if (filename.isBlank()) {
-			warningsLog.append("Filename Not Provided, Using Default File: \""+DEFAULT_FILENAME+"\"");
-			return null;
-		}
-		
-		errorFn = "File: \""+filename+"\", ";
-		File rtn = null;
-		try {
-			File temp = new File(filename);
-			
-			String name = temp.getCanonicalPath();
-			File parent = temp.getParentFile();
-			
-			if (parent!=null)
-				name = name.substring(parent.getCanonicalPath().length()+1);
-			
-			errorFn = "File: \""+name+"\", ";
-			
-			if (!temp.exists()) this.errorLog.append(errorFn+"Does Not Exist!");
-			else if (!temp.isFile()) this.errorLog.append(errorFn+"Is Not a File!");
-			else if (!temp.canRead()) this.errorLog.append(errorFn+"Can Not Be Read!");
-			else rtn=temp;
-		} catch (IOException e) {
-			errorLog.append(errorFn+"Not Valid FileName!");
-			// File is invalid,   rtn is null by default
-		}
-		return rtn;
+	public boolean loadParseFile(String filename) {
+		return parseFile( loadFile( filename ) );
 	}
 	
 	/**
@@ -144,33 +117,72 @@ public class Parser{
 	 @see #loadFile(String)
 	 @see #assemble()
 	 */
-	public boolean parseFile(File file){
-		boolean rtn = true;
+	public boolean parseFile(@Nullable File file) {
+		boolean rtn=true;
 		
-		BufferedReader reader = null;
-		if (file!=null) {
+		BufferedReader reader=null;
+		if ( file!=null ) {
 			try {
-				reader = new BufferedReader(new FileReader(file));
-				int lineNo = 1;
+				reader=new BufferedReader( new FileReader( file ) );
+				int lineNo=1;
 				
-				for(String line = reader.readLine(); line!=null; line=reader.readLine()){
-					if (lineNo>=MAX_LINES){
-						errorLog.append(errorFn+"Has Too Many Lines!, Max Lines = ["+MAX_LINES+"]!");
-						rtn = false;
+				for ( String line=reader.readLine( ); line!=null; line=reader.readLine( ) ) {
+					if ( lineNo>=MAX_LINES ) {
+						errorLog.append( errorFn + "Has Too Many Lines!, Max Lines = [" + MAX_LINES + "]!" );
+						rtn=false;
 						break;
 					}
-					rtn &= parseLine(line, lineNo++);
+					rtn&=parseLine( line, lineNo++ );
 				}
-			} catch (IOException e) {
-				errorLog.append(errorFn+"Not Valid FileName!");
+			} catch ( IOException e ) {
+				errorLog.append( errorFn + "Not Valid FileName!" );
 			} finally {
 				try {
-					if (reader!=null) reader.close(); // Close reader
-				} catch (IOException e) { e.printStackTrace(); }
+					if ( reader!=null ) reader.close( ); // Close reader
+				} catch ( IOException e ) { e.printStackTrace( ); }
 			}
 		} else
 			return false;
 		
+		return rtn;
+	}
+	
+	/**
+	 Apples file checks on the address given.
+	 <li>File Exists</li>
+	 <li>File is Accessible</li>
+	 
+	 @param filename address of file to load.
+	 
+	 @return File object, if the File is valid
+	 */
+	public File loadFile(String filename) {
+		if ( isNullOrBlank( filename ) ) {
+			warningsLog.append( "Filename Not Provided, Using Default File: \"" + DEFAULT_FILENAME + "\"" );
+			return null;
+		}
+		
+		errorFn="File: \"" + filename + "\", ";
+		File rtn=null;
+		try {
+			File temp=new File( filename );
+			
+			String name=temp.getCanonicalPath( );
+			File parent=temp.getParentFile( );
+			
+			if ( parent!=null )
+				name=name.substring( parent.getCanonicalPath( ).length( ) + 1 );
+			
+			errorFn="File: \"" + name + "\", ";
+			
+			if ( !temp.exists( ) ) this.errorLog.append( errorFn + "Does Not Exist!" );
+			else if ( !temp.isFile( ) ) this.errorLog.append( errorFn + "Is Not a File!" );
+			else if ( !temp.canRead( ) ) this.errorLog.append( errorFn + "Can Not Be Read!" );
+			else rtn=temp;
+		} catch ( IOException e ) {
+			errorLog.append( errorFn + "Not Valid FileName!" );
+			// File is invalid,   rtn is null by default
+		}
 		return rtn;
 	}
 	
@@ -184,49 +196,49 @@ public class Parser{
 	 
 	 @see #assemble()
 	 */
-	public boolean parseLine(@NotNull String line, int lineNo){
-		String[] split = splitLine(line);
-		int errLength = errorLog.toString().length();
+	public boolean parseLine(@NotNull String line, int lineNo) {
+		String[] split=splitLine( line );
+		int errLength=errorLog.toString( ).length( );
 		// parse mode -> ignored
 		// validate label
-		String label = this.val.isValidLabel(lineNo, split[0]);
-		if (label!=null)
-			mb.pushLabel(label);
+		String label=this.val.isValidLabel( lineNo, split[ 0 ] );
+		if ( label!=null )
+			mb.pushLabel( label );
 		
-		if (errLength<errorLog.toString().length())	// caused by Invalid Label
-			errorLog.append("_");
+		if ( errLength<errorLog.toString( ).length( ) )    // caused by Invalid Label
+			errorLog.append( "_" );
 		
-		String arg1 = split[1];
-		String arg2 = split[2];
-		if (arg1!=null && !arg1.isBlank()) {
+		String arg1=split[ 1 ];
+		String arg2=split[ 2 ];
+		if ( !isNullOrBlank( arg1 ) ) {
 			// first character is a dot '.'
-			if (arg1.matches("\\..*")) {
+			if ( arg1.matches( "\\..*" ) ) {
 				// validate directive
-				if (this.val.isValidDirective(lineNo, arg1))
-					if (!dataLimit && this.val.isDataType(arg1)) // is DataType
-						if (!mb.addData(arg1, arg2, errorLog)) { // mb.addData
-							if (mb.retrieveData().size()>=DataMemory.MAX_DATA_ITEMS) {
-								warningsLog.append("LineNo: "+lineNo+"\tReached MAX Data Size!, No More Data Will Be Parsed!");
-								warningsLog.append("\t\t\tData Size Limit == ["+DataMemory.MAX_DATA_ITEMS+"]");
-								dataLimit = true;
+				if ( this.val.isValidDirective( lineNo, arg1 ) )
+					if ( !dataLimit && Validate.isDataType( arg1 ) ) // is DataType
+						if ( !mb.addData( arg1, arg2, errorLog ) ) { // mb.addData
+							if ( mb.retrieveData( ).size( )>=DataMemory.MAX_DATA_ITEMS ) {
+								warningsLog.append( "LineNo: " + lineNo + "\tReached MAX Data Size!, No More Data Will Be Parsed!" );
+								warningsLog.append( "\t\t\tData Size Limit == [" + DataMemory.MAX_DATA_ITEMS + "]" );
+								dataLimit=true;
 							}
 						}
-			} else if (!instrLimit) {
+			} else if ( !instrLimit ) {
 				// validate opcode
 				// validate arg2 (operands)
 				// mb.addInstr
-				if (this.val.isValidOpCode(lineNo, arg1)) {
-					Operands operands = this.val.splitValidOperands(lineNo, arg1, arg2, warningsLog);
-					if (operands!=null && !mb.addInstruction(arg1, operands)) {
-						warningsLog.append("LineNo: "+lineNo+"\tReached MAX Instructions!,"
-								+" No More Instructions  Will Be Parsed!");
-						warningsLog.append("\t\t\tInstruction Limit == ["+InstrMemory.MAX_INSTR_COUNT+"]");
-						instrLimit = true;
+				if ( this.opsVal.isValidOpCode( lineNo, arg1 ) ) {
+					Operands operands=this.opsVal.splitValidOperands( lineNo, arg1, arg2 );
+					if ( operands!=null && !mb.addInstruction( arg1, operands ) ) {
+						warningsLog.append( "LineNo: " + lineNo + "\tReached MAX Instructions!,"
+											+ " No More Instructions  Will Be Parsed!" );
+						warningsLog.append( "\t\t\tInstruction Limit == [" + InstrMemory.MAX_INSTR_COUNT + "]" );
+						instrLimit=true;
 					}// TODO Change to report Error
 				}
 			}
 		}
-		return (errLength==errorLog.toString().length());
+		return (errLength==errorLog.toString( ).length( ));
 	}
 	
 	/**
@@ -237,66 +249,66 @@ public class Parser{
 	 <li>[3] - Comments</li>
 	 */
 	@Nullable
-	String[] splitLine(@NotNull String line){
+	String[] splitLine(@NotNull String line) {
 		String comment, label, ARG1, ARG2;
-		comment = label = ARG1 = ARG2 = null;
+		comment=label=ARG1=ARG2=null;
 		String[] split;
 		
 		// Split Comments - reserve capitalization
-		split = splitComment(Convert.removeExtraWhitespace(line));
-		if (split.length==2)
-			comment = split[1];
+		split=splitComment( Convert.removeExtraWhitespace( line ) );
+		if ( split.length==2 )
+			comment=split[ 1 ];
 		//
-		line = split[0].toLowerCase().strip();    // Make the remainder lowercase
+		line=split[ 0 ].toLowerCase( ).strip( );    // Make the remainder lowercase
 		
 		// Split Labels
-		if (line.contains(":")) {
-			if (line.contains(".")) // if line contains '.'
-				split = line.split(":\\s?(?=.*\\.)", 2);    // forward lookup : before .
+		if ( line.contains( ":" ) ) {
+			if ( line.contains( "." ) ) // if line contains '.'
+				split=line.split( ":\\s?(?=.*\\.)", 2 );    // forward lookup : before .
 			else
-				split = line.split(":\\s?", 2);
+				split=line.split( ":\\s?", 2 );
 			
-			if (split.length==2) {
-				label = split[0];
-				line = split[1];
+			if ( split.length==2 ) {
+				label=split[ 0 ];
+				line=split[ 1 ];
 			} else
-				line = split[0];
+				line=split[ 0 ];
 		}
 		
-		if (!line.isBlank()) {    // skip if rest of line is blank
+		if ( !line.isBlank( ) ) {    // skip if rest of line is blank
 			// Split Arg1 (.directive/ .datatype/ opcode)
-			split = line.split("\\s", 2); // split around first white space
-			ARG1 = split[0];
+			split=line.split( "\\s", 2 ); // split around first white space
+			ARG1=split[ 0 ];
 			
-			if (split.length==2 && !split[1].isEmpty())
-				ARG2 = split[1]; // if empty, remain null
+			if ( split.length==2 && !split[ 1 ].isEmpty( ) )
+				ARG2=split[ 1 ]; // if empty, remain null
 		}
 		
-		return new String[]{label, ARG1, ARG2, comment};
+		return new String[] { label, ARG1, ARG2, comment };
 	}
 	
 	/** Return: [0] contains line, if (length==2) [1] contains comment */
-	private String[] splitComment(@NotNull String line){
+	private String[] splitComment(@NotNull String line) {
 		// Split at Comment, # or ;
 		String[] split;
 		
-		split = line.split("#", 2);
-		String comments = "";
-		if (split.length==2)
-			comments = "#"+split[1];
+		split=line.split( "#", 2 );
+		String comments="";
+		if ( split.length==2 )
+			comments="#" + split[ 1 ];
 		
-		line = split[0];
+		line=split[ 0 ];
 		
-		split = line.split(";", 2);
-		if (split.length==2)
-			comments = ";"+split[1]+comments;
+		split=line.split( ";", 2 );
+		if ( split.length==2 )
+			comments=";" + split[ 1 ] + comments;
 		
-		line = split[0];
+		line=split[ 0 ];
 		
-		if (comments.isBlank())
-			return new String[]{line};
+		if ( comments.isBlank( ) )
+			return new String[] { line };
 		else    // contains comments
-			return new String[]{line, comments};
+			return new String[] { line, comments };
 	}
 	
 	/**
@@ -304,11 +316,12 @@ public class Parser{
 	 
 	 @return success of assembly.
 	 */
-	public ArrayList<model.Instruction> assemble(){
-		return mb.assembleInstr(errorLog);
+	public ArrayList<model.Instruction> assemble() {
+		return mb.assembleInstr( errorLog );
 	}
 	
-	public DataMemory getMem(ExecutionLog log){
-		return new DataMemory(mb.retrieveData(), log);
+	public DataMemory getMem(ExecutionLog log) {
+		return new DataMemory( mb.retrieveData( ), log );
 	}
+	
 }

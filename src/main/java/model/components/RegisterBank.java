@@ -154,8 +154,8 @@ public class RegisterBank {
 	
 	/** Depending on the status colorize the output, and add an asterisk if {@link #LAST_WRITTEN} */
 	private String colorReg(int index, String reg) {
-		final String READ_COL=Logger.Color.GREEN_ANSI;
-		final String WRITE_COL=Logger.Color.CYAN_ANSI;
+		final String READ_COL=Logger.Color.RB_READ;
+		final String WRITE_COL=Logger.Color.RB_WRITE;
 		
 		if ( LAST_READ0!=null )
 			if ( index==LAST_READ0 )

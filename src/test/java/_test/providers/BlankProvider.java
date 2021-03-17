@@ -1,6 +1,5 @@
-package test_util.providers;
+package _test_util.providers;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
@@ -15,20 +14,15 @@ public class BlankProvider {
 	}
 	}
 	
-	public static class NwLn implements ArgumentsProvider {
+	public static class Minimal implements ArgumentsProvider {
 		public Stream<Arguments> provideArguments(ExtensionContext context) {
-			return Stream.of( " ", "  ", "    ", "\t", "\n" ).map( Arguments::of );
-		}
-	}
-	public static class Extensive implements ArgumentsProvider {
-		public Stream<Arguments> provideArguments(ExtensionContext context) {
-			return Stream.of( " ", "  ", "    ", "\t" ).map( Arguments::of );
+			return Stream.of( " ", "\t", "\n" ).map( Arguments::of );
 		}
 	}
 	
 	public static class Null implements ArgumentsProvider {
 		public Stream<Arguments> provideArguments(ExtensionContext context) {
-			return Stream.of( null,  "   " ).map( Arguments::of );
+			return Stream.of( "null",  "   " ).map( Arguments::of );
 		}
 	}
 }
