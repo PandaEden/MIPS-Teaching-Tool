@@ -30,33 +30,40 @@ public class AddressValidation {
 			return null;
 		}
 	}
-	
-	/**
-	 Validates the address then converts it to an Index.
+	/** Validates the Data address, then converts it to an Index for the {@link DataMemory}
 	 <p>
-	 If not valid, adds to the {@link ErrorLog}, and returns null.
-	 <p>
-	 Automatically, verifies if it is an instruction address, or data address.
+	If not valid, adds to the {@link ErrorLog}, and returns null.
 	 
-	 @see ErrorLog
-	 @see #isSupportedInstrAddr(int, ErrorLog)
-	 @see #isSupportedDataAddr(int, ErrorLog)
-	 @see Convert#instrAddr2Index(Integer)
-	 @see Convert#dataAddr2Index(Integer)
+	@see #instrAddr2index(int, ErrorLog) 
+	@see ErrorLog
+	@see #isSupportedDataAddr(int, ErrorLog)
+	@see Convert#dataAddr2Index(Integer)
 	 */
 	@Nullable
-	public static Integer addr2index(int address, boolean isInstr, ErrorLog errorLog) {
-		if ( isInstr ) {
-			if ( isSupportedInstrAddr( address, errorLog ) )
-				return Convert.instrAddr2Index( address );
-		} else if ( isSupportedDataAddr( address, errorLog ) )
+	public static Integer dataAddr2index(int address, ErrorLog errorLog) {
+		if ( isSupportedDataAddr( address, errorLog ) )
 			return Convert.dataAddr2Index( address );
 		return null;
 	}
 	
+	/** Validates the address then converts, it to an Index for the {@link InstrMemory}
+	 <p>
+	If not valid, adds to the {@link ErrorLog}, and returns null.
+	 
+	@see #dataAddr2index(int, ErrorLog) 
+	 @see ErrorLog
+	@see #isSupportedInstrAddr(int, ErrorLog)
+	@see Convert#instrAddr2Index(Integer)
+	 */
+	@Nullable
+	public static Integer instrAddr2index(int address,  ErrorLog errorLog) {
+			if ( isSupportedInstrAddr( address, errorLog ) )
+				return Convert.instrAddr2Index( address );
+		return null;
+	}
 	/**
 	 Checks if the address, is a Supported Address for Instructions.
-	 <p>And can be used with {@link InstrMemory}, after using {@link #addr2index(int, boolean, ErrorLog)}.
+	 <p>And can be used with {@link InstrMemory}, after using {@link #instrAddr2index(int, ErrorLog)} (int, ErrorLog)}.
 	 <p>
 	 {@link InstrMemory#BASE_INSTR_ADDRESS} <b>>= address <=</b> {@link InstrMemory#OVER_SUPPORTED_INSTR_ADDRESS}
 	 -{@link InstrMemory#ADDR_SIZE}.
@@ -78,13 +85,13 @@ public class AddressValidation {
 		if ( address<=INSTR_SUPPORTED_MAX )
 			return true;
 		
-		errorLog.append( "Instruction Address: \"" + Convert.uInt2Hex( address ) + "\" Not Supported!" );
+		errorLog.append( "Instruction Address: \"" + Convert.int2Hex( address ) + "\" Not Supported!" );
 		return false;
 	}
 	
 	/**
 	 Checks if the address, is a Supported Address for Data.
-	 <p>And can be used with {@link DataMemory}, after using {@link #addr2index(int, boolean, ErrorLog)}.
+	 <p>And can be used with {@link DataMemory}, after using {@link #dataAddr2index(int, ErrorLog)} (int, ErrorLog)}.
 	 <p>
 	 {@link DataMemory#BASE_DATA_ADDRESS} <b>>= address <=</b>  {@link DataMemory#OVER_SUPPORTED_DATA_ADDRESS}
 	 -{@link DataMemory#DATA_ALIGN}.
@@ -106,7 +113,7 @@ public class AddressValidation {
 		if ( address<=DATA_SUPPORTED_MAX )
 			return true;
 		
-		errorLog.append( "Data Address: \"" + Convert.uInt2Hex( address ) + "\" Not Supported!" );
+		errorLog.append( "Data Address: \"" + Convert.int2Hex( address ) + "\" Not Supported!" );
 		return false;
 	}
 	
@@ -127,7 +134,7 @@ public class AddressValidation {
 		if ( address%SIZE==0 && (address>=INSTR_BASE && address<=INSTR_MAX) )
 			return true;
 		
-		errorLog.append( "Instruction Address: \"" + Convert.uInt2Hex( address ) + "\" Not Valid!" );
+		errorLog.append( "Instruction Address: \"" + Convert.int2Hex( address ) + "\" Not Valid!" );
 		return false;
 	}
 	
@@ -146,11 +153,11 @@ public class AddressValidation {
 		final int DATA_MAX=DataMemory.OVER_DATA_ADDRESS - SIZE;
 		
 		if ( address%SIZE!=0 )
-			errorLog.append( "Data Address: \"" + Convert.uInt2Hex( address ) + "\" Not DoubleWord Aligned!" );
+			errorLog.append( "Data Address: \"" + Convert.int2Hex( address ) + "\" Not DoubleWord Aligned!" );
 		else if ( address>=DATA_BASE && address<=DATA_MAX )
 			return true;
 		
-		errorLog.append( "Data Address: \"" + Convert.uInt2Hex( address ) + "\" Not Valid!" );
+		errorLog.append( "Data Address: \"" + Convert.int2Hex( address ) + "\" Not Valid!" );
 		return false;
 	}
 	

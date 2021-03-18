@@ -11,7 +11,7 @@ import util.validation.Validate;
  Provides common conversions between data types. Input should be checked using appropriate {@link Validate} method
  beforehand to avoid exceptions.
  
- <li>uInt - decimal unsigned 31bit integer// Immediate</li>
+ <li>Int - 31bit integer// Immediate</li>
  <li>HEX -  "0x" sign followed by 8 digit Hexadecimal String (Capitalized)</li>
  <li>ADDRESS - unsigned 32bit decimal representing an address</li>
  <li>INDEX - index position for {@link InstrMemory} or {@link model.components.DataMemory}
@@ -29,15 +29,14 @@ public class Convert {
 	
 	/**
 	 Converts a decimal integer to Hexadecimal String, with "0x" sign prefix.
-	 (Negative numbers can be converted back using {@link Integer#toUnsignedLong(int)}
-	 )
+	 (Negative numbers can be converted back using {@link Integer#toUnsignedLong(int)})
 	 
 	 @param immediate signed 32bit decimal number to convert.
 	 
-	 @return "0x########" (Capitalized)
+	 @return (Capitalized), SignExtended 32bit Hex String
 	 */
 	@NotNull
-	public static String uInt2Hex(@NotNull Integer immediate) {
+	public static String int2Hex (@NotNull Integer immediate) {
 		StringBuilder rtn=new StringBuilder( Integer.toHexString( immediate ).toUpperCase( ) );
 		while ( rtn.length( )<8 ) {
 			rtn.insert( 0, "0" );
@@ -58,7 +57,22 @@ public class Convert {
 		if ( hex.startsWith( "0x" ) )
 			return Integer.parseUnsignedInt( hex.substring( 2 ), 16 );
 		else
-			throw new IllegalArgumentException("Does not match Hex format (expects lowercase and \"0x\" sign)!");
+			throw new IllegalArgumentException("Does not match Hex format (expects \"0x\" sign)!");
+	}
+	
+	
+	/**
+	 Converts an address to an immediate ((unsigned)right shift 2 bits aka divide by 4, ignoring remainder)
+	 
+	 @return address (unsigned)right shifted by 2.
+	 
+	 @throws IllegalArgumentException not valid
+	 */
+	@NotNull
+	public static Integer address2Imm(@NotNull Integer address) {
+		if ( address<0 )
+			throw new IllegalArgumentException( "Address are unsigned!" );
+		return address >>> 2;
 	}
 	
 	/**
@@ -98,11 +112,11 @@ public class Convert {
 	@NotNull
 	private static Integer address2Index(@NotNull Integer address, String type, int base, int over, String size_name, int size) {
 		if ( address<base )
-			throw new IllegalArgumentException( "Address Below " + type + " Address!" );
+			throw new IllegalArgumentException( "Address Below " + type + " Address!" );	// <- COVER
 		else if ( address>=over )
-			throw new IllegalArgumentException( "Address OVER_SUPPORTED " + type + " ADDRESS!" );
+			throw new IllegalArgumentException( "Address OVER_SUPPORTED " + type + " ADDRESS!" );	// <- COVER
 		else if ( address%size!=0 )
-			throw new IllegalArgumentException( "Data Address is not " + size_name + " aligned!" );
+			throw new IllegalArgumentException( "Data Address is not " + size_name + " aligned!" );	// <- COVER
 		else // Valid Data Address
 			return (address2Imm( address - base )); // multiple of 2.
 	}
@@ -114,19 +128,6 @@ public class Convert {
 	public static Integer dataAddr2Index(@NotNull Integer address){
 		return address2Index(  address, "Data", DataMemory.BASE_DATA_ADDRESS,
 							   DataMemory.OVER_SUPPORTED_DATA_ADDRESS, "DoubleWord", 8);
-	}
-	/**
-	 Converts an address to an immediate ((unsigned)right shift 2 bits aka divide by 4, ignoring remainder)
-	 
-	 @return address (unsigned)right shifted by 2.
-	 
-	 @throws IllegalArgumentException not valid
-	 */
-	@NotNull
-	public static Integer address2Imm(@NotNull Integer address) {
-		if ( address<0 )
-			throw new IllegalArgumentException( "Address are unsigned!" );
-		return address >>> 2;
 	}
 	
 	/**
@@ -160,12 +161,12 @@ public class Convert {
 	@NotNull
 	public static String r2Named(@NotNull String r_Register) {
 		if ( !r_Register.matches( "^r\\d{1,2}$" ) )
-			throw new IllegalArgumentException( "Not valid R Register" );
+			throw new IllegalArgumentException( "Not valid R Register" );	// <- COVER
 		
 		try {
 			int index=Integer.parseInt( r_Register.substring( 1 ) );
 			return Convert.namedRegisters[ index ];
-		} catch ( ArrayIndexOutOfBoundsException e ) {
+		} catch ( ArrayIndexOutOfBoundsException e ) {	// <- COVER
 			throw new IllegalArgumentException( "Array Index Out Of Bounds: " + e.getMessage( ) );
 		}
 	}
@@ -184,8 +185,8 @@ public class Convert {
 		
 		int index=Integer.parseInt( r_Register.substring( 1 ) );
 		
-		if ( index>namedRegisters.length ) // Tests if the Register is valid index
-			throw new IllegalArgumentException( "Register Index Out Of Bounds" );
+		if ( index>=namedRegisters.length ) // Tests if the Register is valid index
+			throw new IllegalArgumentException( "Register Index Out Of Bounds" );	// <- COVER
 		
 		return index;
 	}
@@ -213,8 +214,8 @@ public class Convert {
 	 */
 	@NotNull
 	public static String index2R(@NotNull Integer index) {
-		if ( index>Convert.namedRegisters.length ) // Tests if the Register is valid index
-			throw new IllegalArgumentException( "Register Index Out Of Bounds" );
+		if ( index>=Convert.namedRegisters.length || index<0 ) // Tests if the Register is valid index
+			throw new IllegalArgumentException( "Register Index Out Of Bounds" );	// <- COVER
 		
 		return "r" + index;
 	}

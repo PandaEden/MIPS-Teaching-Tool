@@ -7,6 +7,8 @@ public class Tags {
 	public static final String OUT="Output";
 	public static final String STP="Setup";
 	public static final String ADDR="Address";
+	public static final String INT="Integer|Hex";
+	
 	public static final String INSTR="Instructions";
 	public static final String DATA="Data";
 	public static final String I_ADDR="Immediate_Address";

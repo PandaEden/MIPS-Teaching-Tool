@@ -4,11 +4,8 @@ import _test.Tags;
 import _test.Tags.Pkg;
 import _test.TestLogs;
 import _test.TestLogs.FMT_MSG;
-import _test.providers.AddressProvider.Immediate;
-import _test.providers.BlankProvider;
-import _test.providers.InstrProvider;
+import _test.providers.*;
 import _test.providers.InstrProvider.*;
-import _test.providers.SetupProvider;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -55,7 +52,7 @@ public class ValidateInstructionsTest {
 	@AfterEach
 	void clear ( ) { testLogs.after( ); }
 	
-	@Nested
+	@Nested	// Possibly Move to ValidateTest,
 	@DisplayName ( "isValidOpcode : Validate Operands" )
 	class Validate_Opcode {
 		
@@ -66,7 +63,7 @@ public class ValidateInstructionsTest {
 		}
 		
 		@ParameterizedTest ( name="[{index}] Not Valid - Opcode[{0}]" )
-		@ArgumentsSource ( Invalid.class )
+		@ArgumentsSource ( InstrProvider.Invalid.class )
 		@ArgumentsSource ( BlankProvider.class )
 		void isValidOpcode_Not_Valid (String opcode) {
 			assertFalse( opsVal.isValidOpCode( 230, opcode ) );
@@ -411,6 +408,20 @@ public class ValidateInstructionsTest {
 					expect.assertNotNullOperandsEqual_And_ThrowsAssemble( operands, InstrType.I_rt_write, -40, null, 1, 1 );
 				}
 				
+				@ParameterizedTest ( name="{index} - Immediate\"{2}\" Valid 16Bit :: Hex" )
+				@ArgumentsSource ( ImmediateProvider._16Bit.class )
+				void Valid_16Bit_Hex (String addr, Integer address, String hex, Integer imm) {
+					Operands operands = opsVal.splitValidOperands(30,"addi","$2, $2, "+hex);
+					expect.assertNotNullOperandsEqual_And_ThrowsAssemble(operands, InstrType.I_rt_write, imm,null,2,2);
+				}
+				
+				@ParameterizedTest ( name="{index} - Immediate\"{3}\" Valid 16Bit :: Imm" )
+				@ArgumentsSource ( ImmediateProvider._16Bit.class )
+				void Valid_16Bit_Imm (String addr, Integer address, String hex, Integer imm) {
+					Operands operands = opsVal.splitValidOperands(30,"addi","$2, $2, "+imm);
+					expect.assertNotNullOperandsEqual_And_ThrowsAssemble(operands, InstrType.I_rt_write, imm,null,2,2);
+				}
+				
 				@Nested
 				class Invalid_Operands {
 					
@@ -433,6 +444,19 @@ public class ValidateInstructionsTest {
 						testLogs.zeroWarning( 30, "$0" );
 					}
 					
+					@ParameterizedTest ( name="{index} - Immediate\"{2}\" Not Valid 16Bit :: Hex" )
+					@ArgumentsSource ( ImmediateProvider._16Bit.Invalid.class )
+					void Invalid_16Bit_Hex (String addr, Integer address, String hex, Integer imm) {
+						expectedErrs.appendEx(30,FMT_MSG.imm.notSigned16Bit( imm ));
+						expect.operandsForOpcodeNotValid(30,"addi","$2, $2, "+hex);
+					}
+					
+					@ParameterizedTest ( name="{index} - Immediate\"{3}\" Not Valid 16Bit :: Imm" )
+					@ArgumentsSource ( ImmediateProvider._16Bit.Invalid.class )
+					void Invalid_16Bit_Imm (String addr, Integer address, String hex, Integer imm) {
+						expectedErrs.appendEx(30,FMT_MSG.imm.notSigned16Bit( imm ));
+						expect.operandsForOpcodeNotValid(30,"addi","$2, $2, "+imm);
+					}
 				}
 				
 			}
@@ -730,7 +754,7 @@ public class ValidateInstructionsTest {
 			class Invalid_Operands {
 				
 				@ParameterizedTest ( name="IO {index}Jump _Immediate[{0}] - Out of Range" )
-				@ArgumentsSource (  Immediate.ConvertInvalid.OutOfRange.class )
+				@ArgumentsSource (  ImmediateProvider.ConvertInvalid.OutOfRange.class )
 				void testInvalid_OperandsJump_ImmOutOfRange (String hex, int imm) {
 					Operands operands=opsVal.splitValidOperands( 0, "j", "" + imm );
 					assertNull( operands );
@@ -742,8 +766,8 @@ public class ValidateInstructionsTest {
 				
 				// Immediate Values <(0x00100000) & >(0x00140000) Convert To Valid Addresses, but not Valid for Jump
 				@ParameterizedTest ( name="[{index}] Invalid 26BitImm[{2}, {3}] for for Jump Instruction" )
-				@ArgumentsSource ( Immediate.Instr_Imm.Invalid.class )
-				@ArgumentsSource ( Immediate.u_26Bit.class )
+				@ArgumentsSource ( ImmediateProvider.Instr_Imm.Invalid.class )
+				@ArgumentsSource ( ImmediateProvider.u_26Bit.class )
 				@Tag( Tags.MULTIPLE )
 				void testInvalid_OperandsJump_ValImm (String hexAddr, long addr, String hexImm, long imm) {
 					assertEquals(addr, imm*4); // Test Variables Invalid if False
@@ -780,7 +804,7 @@ public class ValidateInstructionsTest {
 			class Instr_Label_Or_Imm {
 				
 				@ParameterizedTest ( name="[{index}] Immediate[{0}], Valid for Jump" )
-				@ArgumentsSource(Immediate.Instr_Imm.class )
+				@ArgumentsSource(ImmediateProvider.Instr_Imm.class )
 				void Jump_LabelAddress (String hexAddr, long addr, String hexImm, long imm) {
 					assertNotNull( opsVal.splitValidOperands( -1, "j", ""+imm ) );
 					assertNotNull( opsVal.splitValidOperands( -1, "j", hexImm ));
@@ -856,15 +880,15 @@ public class ValidateInstructionsTest {
 			expectedErrs.appendEx( -1, FMT_MSG.reg.notInRange( "$50" ) );
 		}
 		
-		@ParameterizedTest ( name="NO_zeroWarning[{index}]  on Read, Reg[{0}]" )
-		@ArgumentsSource ( Registers.ZERO.class )
+		@ParameterizedTest ( name="NO_zeroWarning[{index}] on Read, Reg[{0}]" )
+		@ArgumentsSource ( RegisterProvider.ZERO.class )
 		void zeroWarning_Read (String regName) {
 			//isValidLoadRegister
 			assertNotNull( opsVal.convertRegister( regName, DataType.NORMAL ) );
 		}
 		
 		@ParameterizedTest ( name="zeroWarning[{index}] on Write, Reg[{0}]" )
-		@ArgumentsSource ( Registers.ZERO.class )
+		@ArgumentsSource ( RegisterProvider.ZERO.class )
 		void zeroWarning_Write (String regName) {
 			opsVal.setLineNo( -1 );
 			assertNotNull( opsVal.convertWriteRegister( regName, DataType.NORMAL ) );

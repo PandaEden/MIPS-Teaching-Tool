@@ -1,6 +1,6 @@
 package util.validation;
 
-import _test.providers.AddressProvider;
+import _test.providers.ImmediateProvider;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
@@ -12,6 +12,8 @@ import _test.providers.AddressProvider.InstrAddr;
 import _test.providers.AddressProvider.DataAddr;
 import _test.providers.BlankProvider;
 import _test.providers.SetupProvider;
+
+import model.components.DataMemory;
 
 import util.logs.ErrorLog;
 import static org.junit.jupiter.api.Assertions.*;
@@ -54,7 +56,7 @@ class ValidateTest {
 			@ArgumentsSource (InstrAddr.Supported.class)
 			void addrValTestSupported(@SuppressWarnings ("unused") String hexAddr, long address) {
 				assertTrue( isSupportedInstrAddr( (int) address, errLog ) );
-				assertEquals( instrAddr2Index( (int) address ), addr2index( (int) address, true, errLog ) );
+				assertEquals( (((int) address - 4194304)/4), instrAddr2index( (int) address, errLog ) );
 			}
 			
 			@ParameterizedTest (name="Not_Supported[{index}] - Address: \"{arguments}\"")
@@ -62,7 +64,7 @@ class ValidateTest {
 			void addrValTestValid_NotSupported(String hexAddr, long address) {
 				assertFalse( isSupportedInstrAddr( (int) address, errLog ) );
 				expectedErrs.appendEx( instrAddressNot( hexAddr, "Supported" ));
-				assertNull( addr2index( (int) address, true, errLog ) );
+				assertNull( instrAddr2index( (int) address, errLog ) );
 				expectedErrs.appendEx( instrAddressNot( hexAddr, "Supported" ));
 			}
 			
@@ -71,7 +73,7 @@ class ValidateTest {
 			void notValid(String hexAddr, long address) {
 				assertFalse( isSupportedInstrAddr( (int) address, errLog ) );
 				expectedErrs.appendEx( instrAddressNot( hexAddr, "Valid" ));
-				assertNull( addr2index( (int) address, true, errLog ) );
+				assertNull( instrAddr2index( (int) address, errLog ) );
 				expectedErrs.appendEx( instrAddressNot( hexAddr, "Valid" ));
 			}
 			
@@ -87,7 +89,7 @@ class ValidateTest {
 			@ArgumentsSource (DataAddr.Supported.class)
 			void addrValTestSupported(@SuppressWarnings ("unused") String hexAddr, long address) {
 				assertTrue( isSupportedDataAddr( (int) address, errLog ) );
-				assertEquals( dataAddr2Index( (int) address ), addr2index( (int) address, false, errLog ) );
+				assertEquals( (((int) address - 268500992)/4), dataAddr2index( (int) address, errLog ) );
 			}
 			
 			@ParameterizedTest (name="Not_Supported[{index}] - Address: \"{arguments}\"")
@@ -95,7 +97,7 @@ class ValidateTest {
 			void addrValTestValid_NotSupported(String hexAddr, long address) {
 				assertFalse( isSupportedDataAddr( (int) address, errLog ) );
 				expectedErrs.appendEx( dataAddressNot( hexAddr, "Supported" ));
-				assertNull( addr2index( (int) address, false, errLog ) );
+				assertNull( dataAddr2index( (int) address, errLog ) );
 				expectedErrs.appendEx( dataAddressNot( hexAddr, "Supported" ));
 			}
 			
@@ -112,7 +114,7 @@ class ValidateTest {
 				
 				assertFalse( isSupportedDataAddr( (int) address, errLog ) );
 				assertNotValidNotAligned( hexAddr, aligned );
-				assertNull( addr2index( (int) address, false, errLog ) );
+				assertNull( dataAddr2index( (int) address, errLog ) );
 				assertNotValidNotAligned( hexAddr, aligned );
 			}
 			
@@ -123,12 +125,12 @@ class ValidateTest {
 		class Immediate {
 			
 			@ParameterizedTest (name="{index}Valid imm2Address[{arguments}]")
-			@ArgumentsSource (AddressProvider.Immediate.All.class)
+			@ArgumentsSource ( ImmediateProvider.All.class)
 			void valid(String hexAddr, int address, String hexImm, int imm) {
 				assertEquals(address, convertValidImm2Addr( 150, imm, errLog));
 			}
 			@ParameterizedTest (name="Not_Valid imm2Address[{index}] - Immediate: \"{arguments}\"")
-			@ArgumentsSource (AddressProvider.Immediate.ConvertInvalid.Boundary.class)
+			@ArgumentsSource ( ImmediateProvider.ConvertInvalid.Boundary.class)
 			void invalid(String hexAddr, int address, String hexImm, int imm) {
 				assertNull(convertValidImm2Addr( 150, imm, errLog));
 				expectedErrs.appendEx( 150, "Immediate Value: \""+imm+"\", Cannot Be Converted To A Valid Address");
