@@ -22,7 +22,7 @@ import static util.validation.AddressValidation.*;
 
 @Tag(Pkg.UTIL)
 @Tag(Pkg.VALID)
-@DisplayName (Pkg.UTIL+" : "+Pkg.VALID+" - Validate Test")
+@DisplayName (Pkg.UTIL+" : "+Pkg.VALID+" : Validate Test")
 class ValidateTest {
 	private static final TestLogs testLogs=new TestLogs( );
 	private static ErrorLog errLog;
@@ -131,7 +131,7 @@ class ValidateTest {
 			}
 			@ParameterizedTest (name="Not_Valid imm2Address[{index}] - Immediate: \"{arguments}\"")
 			@ArgumentsSource ( ImmediateProvider.ConvertInvalid.Boundary.class)
-			void invalid(String hexAddr, int address, String hexImm, int imm) {
+			void invalid(String hexImm, int imm) {
 				assertNull(convertValidImm2Addr( 150, imm, errLog));
 				expectedErrs.appendEx( 150, "Immediate Value: \""+imm+"\", Cannot Be Converted To A Valid Address");
 			}

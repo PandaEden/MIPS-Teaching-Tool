@@ -98,6 +98,18 @@ public class AddressProvider {
 		public static class Supported implements ArgumentsProvider {
 			public Stream<Arguments> provideArguments (ExtensionContext context) { return SupportedInstrAddr.stream( );}
 			
+			public static class Not_Supported_Boundaries implements ArgumentsProvider {
+				public Stream<Arguments> provideArguments (ExtensionContext context) {
+					return flatMap( List.of( NotValid_Under.get( 3 ), first( ValidDataAddr ) ) );
+				}
+				
+			}
+			public static class Not_Aligned implements ArgumentsProvider {
+				public Stream<Arguments> provideArguments (ExtensionContext context) {
+					return flatMap( List.of( NotAligned.get( 2 ) ) );
+				}
+				
+			}
 		}
 		
 		public static class Valid implements ArgumentsProvider {
@@ -109,7 +121,6 @@ public class AddressProvider {
 			public Stream<Arguments> provideArguments (ExtensionContext context) {
 				return flatMap( NotValid, NotAligned, List.of( first( SupportedDataAddr ), first( ValidDataAddr ) ) );
 			}
-			
 		}
 		
 	}

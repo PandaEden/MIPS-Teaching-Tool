@@ -245,18 +245,19 @@ public class OperandsValidation {
 			} else if ( immRs.contains( ")" ) )    // unmatched Bracket
 				errorLog.appendEx( lineNo, "\tMissing Opening Bracket: \"(\" " );
 			else
-				return Imm_LabelOrInt( rt, immRs );    // Return Label/Imm
+				return Mem_LabelOrInt( rt, immRs );    // Return Label/Imm
 		} else
 			errorLog.appendEx( lineNo, "\t\tNo Imm(RS) found" );
 		return null;
 	}
 	@Nullable
 	@VisibleForTesting
-	protected Operands Imm_LabelOrInt (@NotNull Integer rt, @NotNull String addr) {
+	protected Operands Mem_LabelOrInt (@NotNull Integer rt, @NotNull String addr) {
 		if ( !Parser.isNullOrBlank( addr ) ) {
 			Integer imm;
 			if ( isDec( addr ) || isHex( addr ) ){
 				if ( (imm=is16Bit( convertInteger( addr ) ))!=null ) {
+					//TODO - This check is skipped with empty brackets Imm(),  Needs to be consistent !
 					Integer address=AddressValidation.convertValidImm2Addr( lineNo, imm, errorLog );
 					if ( address!=null && AddressValidation.isSupportedDataAddr( address, errorLog ) )
 						throw new IllegalStateException(
@@ -282,10 +283,10 @@ public class OperandsValidation {
 				if ( (imm=isU26Bit( convertInteger( addr ) ))!=null ) {
 					Integer address=AddressValidation.convertValidImm2Addr( lineNo, imm, errorLog );
 					if ( address!=null && AddressValidation.isSupportedInstrAddr( address, errorLog ) )
-						return new Operands( opcode, imm );
+						return new Operands( imm );
 				}
 			} else if ( isValidLabel( addr ) )
-					return new Operands( opcode, addr );
+					return new Operands( addr );
 		}
 		return null;
 	}

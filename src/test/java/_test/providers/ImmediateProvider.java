@@ -81,7 +81,7 @@ public class ImmediateProvider {
 	public static class ConvertInvalid {
 		private static final List<Arguments> OutOfRange=List.of(
 				Arguments.of( "0xFFFF7FFF", -32769 ),    // (-2^15) -1
-				Arguments.of( "0x04000000", 67108864 ),   // Max_Instr +1
+				Arguments.of( "0x1FFFFFFF", 536870911 ),   // Integer.MAX_VALUE/4)-1
 				AddressProvider.INT_MIN, AddressProvider.INT_MAX );
 		
 		public static class OutOfRange implements ArgumentsProvider {
@@ -91,7 +91,7 @@ public class ImmediateProvider {
 		
 		public static class Boundary implements ArgumentsProvider {
 			public Stream<Arguments> provideArguments (ExtensionContext context) {
-				return flatMap( subList_First( Invalid_16bit ), subList_Second( Invalid_26bit ) );
+				return flatMap(OutOfRange.subList( 0,2 ));
 			}
 			
 		}

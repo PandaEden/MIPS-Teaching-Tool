@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tag ( Pkg.UTIL )
 @Tag ( Pkg.VALID )
 @Tag ( Tags.INSTR )
-@DisplayName ( Pkg.UTIL + " : " + Pkg.VALID + " - " + Tags.INSTR + " Test" )
+@DisplayName ( Pkg.UTIL + " : " + Pkg.VALID + " : " + Tags.INSTR + " Test" )
 public class ValidateInstructionsTest {
 	
 	private static final TestLogs testLogs=new TestLogs( );
@@ -163,10 +163,10 @@ public class ValidateInstructionsTest {
 					int addr=LABELS_MAP.get( label );
 					if ( ops.getInstrType( )==Operands.InstrType.J ) {
 						AddressValidation.isSupportedInstrAddr( addr, expectedErrs );
-						expectedErrs.appendEx( FMT_MSG.label.points2Invalid( label, "Instruction" ) );
+						expectedErrs.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Instruction" ) );
 					} else {
 						AddressValidation.isSupportedDataAddr( addr, expectedErrs );
-						expectedErrs.appendEx( FMT_MSG.label.points2Invalid( label, "Data" ) );
+						expectedErrs.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Data" ) );
 					}
 				} else {
 					expectedErrs.appendEx( FMT_MSG.label.labelNotFound( label ) );
@@ -174,13 +174,24 @@ public class ValidateInstructionsTest {
 			}
 			
 			/**
-			 Tests Operands Values Match Given. Then, Assembling will cause an Error to be Thrown. {@link Operands#setImmediate(ErrorLog,
-					HashMap)}
-			 */
-			private void assertNotNullOperandsEqual_And_ThrowsAssemble (Operands ops, InstrType type, Integer imm, Integer rd, Integer rs, Integer rt) {
+			 Tests Operands Values Match Given. Then, Assembling will cause an Error to be Thrown.
+			 {@link Operands#setImmediate(ErrorLog,HashMap)} */
+			private <T extends Throwable> void assertNotNullOperandsEqual_And_Throws (Class<T> exception, Operands ops, InstrType type,
+																					  Integer imm, Integer rd, Integer rs, Integer rt) {
 				assertNotNullOperandsEqual( ops, type, null, imm, rd, rs, rt );
-				assertThrows( IllegalArgumentException.class, ( ) -> ops.setImmediate( errLog, LABELS_MAP ) );
+				assertThrows( exception, ( ) -> ops.setImmediate( errLog, LABELS_MAP ) );
 			}
+			/** {@link IllegalArgumentException} */
+			private void assertNotNullOperandsEqual_And_Throws_IAE (Operands ops, InstrType type,
+																					  Integer imm, Integer rd, Integer rs, Integer rt) {
+				assertNotNullOperandsEqual_And_Throws(IllegalArgumentException.class, ops,type,imm,rd,rs,rt);
+			}
+			/** {@link IllegalStateException} */
+			private void assertNotNullOperandsEqual_And_Throws_ISE (Operands ops, InstrType type,
+																	Integer imm, Integer rd, Integer rs, Integer rt) {
+				assertNotNullOperandsEqual_And_Throws(IllegalStateException.class, ops,type,imm,rd,rs,rt);
+			}
+			
 			private void assertNotNullOperandsEqual (Operands ops, Operands.InstrType type, String label, Integer imm, Integer rd, Integer rs, Integer rt) {
 				assertNotNull( ops );
 				assertEquals( type, ops.getInstrType( ) );
@@ -304,7 +315,7 @@ public class ValidateInstructionsTest {
 				@Test
 				void SingleTabs_Valid ( ) {
 					Operands operands=opsVal.splitValidOperands( 12, "sub", "s8,\tr3,\t$8" );
-					expect.assertNotNullOperandsEqual_And_ThrowsAssemble( operands, Operands.InstrType.R,
+					expect.assertNotNullOperandsEqual_And_Throws_ISE( operands, Operands.InstrType.R,
 																		  null, 30, 3, 8 );
 				}
 				@Test
@@ -330,7 +341,7 @@ public class ValidateInstructionsTest {
 			@ArgumentsSource ( NO_OPS.class )
 			void assemble_ValidOperands (String opcode) {
 				Operands operands=opsVal.splitValidOperands( 12, opcode, " " );
-				expect.assertNotNullOperandsEqual_And_ThrowsAssemble( operands, InstrType.R, null, null, null, null );
+				expect.assertNotNullOperandsEqual_And_Throws_ISE( operands, InstrType.R, null, null, null, null );
 			}
 			
 			@Test
@@ -341,12 +352,12 @@ public class ValidateInstructionsTest {
 			
 			@Test
 			void operands_EdgeCase (){
-				assertThrows( IllegalArgumentException.class, ()-> new Operands("panda"," "));
+				assertThrows( IllegalArgumentException.class, ()-> new Operands(" "));
 				assertThrows( IllegalArgumentException.class, ()-> new Operands("lw", 20,""));
 				assertThrows( IllegalArgumentException.class, ()-> new Operands("panda", 20,20,20));
 				
 				Operands temp = new Operands("lw", 2,null,null);
-				expect.assertNotNullOperandsEqual_And_ThrowsAssemble(temp,expect.type( "lw" ),null,null,2,null  );
+				expect.assertNotNullOperandsEqual_And_Throws_IAE(temp,expect.type( "lw" ),null,null,2,null  );
 				
 				assertEquals("Operands{ instrType= R, immediateSet= false, "+
 							 "rs= null, rt= null, rd= null, immediate= null, label= 'null' }",
@@ -362,13 +373,13 @@ public class ValidateInstructionsTest {
 			@ArgumentsSource ( RD_RS_RT.class )
 			void assemble_ValidOperands (String opcode) {
 				Operands operands=opsVal.splitValidOperands( 12, opcode, RD_RS_RT.OPS );
-				expect.assertNotNullOperandsEqual_And_ThrowsAssemble( operands, InstrType.R, null, 1, 1, 1 );
+				expect.assertNotNullOperandsEqual_And_Throws_ISE( operands, InstrType.R, null, 1, 1, 1 );
 			}
 			@ParameterizedTest ( name="Valid {index} - opcode\"{0}\" -  Different Register Names" + TA )
 			@ArgumentsSource ( RD_RS_RT.class )
 			void testOperands_Add_Sub ( ) {
 				Operands operands=opsVal.splitValidOperands( 12, "add", "$8,r31, $s2" );
-				expect.assertNotNullOperandsEqual_And_ThrowsAssemble( operands, Operands.InstrType.R,
+				expect.assertNotNullOperandsEqual_And_Throws_ISE( operands, Operands.InstrType.R,
 																	  null, 8, 31, 18 );
 			}
 			
@@ -376,7 +387,7 @@ public class ValidateInstructionsTest {
 			@ValueSource ( strings={ "$24 , $s4, $s0", "t8,r20,\t$16" } )
 			void testOperands_R_Type_Spacing (String ops) {
 				Operands operands=opsVal.splitValidOperands( 12, "sub", ops );
-				expect.assertNotNullOperandsEqual_And_ThrowsAssemble( operands, Operands.InstrType.R,
+				expect.assertNotNullOperandsEqual_And_Throws_ISE( operands, Operands.InstrType.R,
 																	  null, 24, 20, 16 );
 			}
 			
@@ -405,21 +416,21 @@ public class ValidateInstructionsTest {
 				@ArgumentsSource ( I.RT_RS_IMM.class )
 				void assemble_ValidOperands (String opcode) {
 					Operands operands=opsVal.splitValidOperands( 12, opcode, I.RT_RS_IMM.OPS );
-					expect.assertNotNullOperandsEqual_And_ThrowsAssemble( operands, InstrType.I_rt_write, -40, null, 1, 1 );
+					expect.assertNotNullOperandsEqual_And_Throws_IAE( operands, InstrType.I_rt_write, -40, null, 1, 1 );
 				}
 				
 				@ParameterizedTest ( name="{index} - Immediate\"{2}\" Valid 16Bit :: Hex" )
 				@ArgumentsSource ( ImmediateProvider._16Bit.class )
 				void Valid_16Bit_Hex (String addr, Integer address, String hex, Integer imm) {
 					Operands operands = opsVal.splitValidOperands(30,"addi","$2, $2, "+hex);
-					expect.assertNotNullOperandsEqual_And_ThrowsAssemble(operands, InstrType.I_rt_write, imm,null,2,2);
+					expect.assertNotNullOperandsEqual_And_Throws_IAE(operands, InstrType.I_rt_write, imm,null,2,2);
 				}
 				
 				@ParameterizedTest ( name="{index} - Immediate\"{3}\" Valid 16Bit :: Imm" )
 				@ArgumentsSource ( ImmediateProvider._16Bit.class )
 				void Valid_16Bit_Imm (String addr, Integer address, String hex, Integer imm) {
 					Operands operands = opsVal.splitValidOperands(30,"addi","$2, $2, "+imm);
-					expect.assertNotNullOperandsEqual_And_ThrowsAssemble(operands, InstrType.I_rt_write, imm,null,2,2);
+					expect.assertNotNullOperandsEqual_And_Throws_IAE(operands, InstrType.I_rt_write, imm,null,2,2);
 				}
 				
 				@Nested
@@ -486,11 +497,11 @@ public class ValidateInstructionsTest {
 					void assemble_ValidOperands_Label (String opcode) {
 						Operands operands=opsVal.splitValidOperands( 12, opcode, "$9, data" );
 						expect.assertNotNullOperandsEqual( operands, opcode , "data", 9 );
-						expect.assertAssembles_Label_Successfully( operands, 0x10010000/4 );
+						expect.assertAssembles_Label_Successfully( operands, 0x10010000 );
 						//MAX
 						Operands operands2=opsVal.splitValidOperands( 12, opcode, "r2, data_top" );
 						expect.assertNotNullOperandsEqual( operands2, opcode , "data_top", 2 );
-						expect.assertAssembles_Label_Successfully( operands2, 0x100107F8/4 );
+						expect.assertAssembles_Label_Successfully( operands2, 0x100107F8 );
 					}
 					
 					
@@ -501,7 +512,7 @@ public class ValidateInstructionsTest {
 						@ArgumentsSource ( I.RT_MEM.class )
 						void assemble_ValidOperands (String opcode) {
 							Operands operands=opsVal.splitValidOperands( 12, opcode, I.RT_MEM.OPS_IMM_RS );
-							expect.assertNotNullOperandsEqual_And_ThrowsAssemble( operands, expect.type( opcode ),
+							expect.assertNotNullOperandsEqual_And_Throws_IAE( operands, expect.type( opcode ),
 																				  -8, null, 1, 1 );
 						}
 						
@@ -512,10 +523,10 @@ public class ValidateInstructionsTest {
 						void assemble_ValidOperands_BaseOffset_NoImm (String opcode) {
 							// No Imm
 							Operands operands=opsVal.splitValidOperands( 0, opcode, "$6, ($1)" );
-							expect.assertNotNullOperandsEqual_And_ThrowsAssemble( operands, expect.type( opcode ), 0, null, 1, 6 );
+							expect.assertNotNullOperandsEqual_And_Throws_IAE( operands, expect.type( opcode ), 0, null, 1, 6 );
 							// No Imm or RS
 							Operands operands1=opsVal.splitValidOperands( 0, opcode, "$8,  ()" );
-							expect.assertNotNullOperandsEqual_And_ThrowsAssemble( operands1, expect.type( opcode ), 0, null, 0, 8 );
+							expect.assertNotNullOperandsEqual_And_Throws_IAE( operands1, expect.type( opcode ), 0, null, 0, 8 );
 						}
 						
 						@ParameterizedTest ( name="Valid {index} - opcode\"{0}\" Base+Offset :: Int" + TA )
@@ -524,10 +535,10 @@ public class ValidateInstructionsTest {
 						@DisplayName ( "Test Operands, Base+Offset" )
 						void assemble_ValidOperands_BaseOffset_INT (String opcode) {
 							Operands operands=opsVal.splitValidOperands( 0, opcode, "$5, 20 ($1)" );
-							expect.assertNotNullOperandsEqual_And_ThrowsAssemble( operands, expect.type( opcode ), 20, null, 1, 5 );
+							expect.assertNotNullOperandsEqual_And_Throws_IAE( operands, expect.type( opcode ), 20, null, 1, 5 );
 							// No RS
 							Operands operands1=opsVal.splitValidOperands( 0, opcode, "$7, -800 ()" );
-							expect.assertNotNullOperandsEqual_And_ThrowsAssemble( operands1, expect.type( opcode ), -800, null, 0,
+							expect.assertNotNullOperandsEqual_And_Throws_IAE( operands1, expect.type( opcode ), -800, null, 0,
 																				  7 );
 						}
 						
@@ -538,10 +549,10 @@ public class ValidateInstructionsTest {
 						@DisplayName ( "Test Operands, Base+Offset" )
 						void assemble_ValidOperands_BaseOffset_Hex (String opcode) {
 							Operands operands=opsVal.splitValidOperands( 0, opcode, "$5, 0x290($8)" );
-							expect.assertNotNullOperandsEqual_And_ThrowsAssemble( operands, expect.type( opcode ), 656, null, 8, 5 );
+							expect.assertNotNullOperandsEqual_And_Throws_IAE( operands, expect.type( opcode ), 656, null, 8, 5 );
 							// No RS
 							Operands operands1=opsVal.splitValidOperands( 0, opcode, "$7, 0xFFFF8000 ()" );
-							expect.assertNotNullOperandsEqual_And_ThrowsAssemble( operands1, expect.type( opcode ), -32768, null, 0,
+							expect.assertNotNullOperandsEqual_And_Throws_IAE( operands1, expect.type( opcode ), -32768, null, 0,
 																				  7 );
 						}
 						
@@ -727,22 +738,22 @@ public class ValidateInstructionsTest {
 					@ArgumentsSource ( J.class )
 					void assemble_ValidOperands_Imm (String opcode) {
 						Operands operands=opsVal.splitValidOperands( 0, opcode, "1048576" );
-						expect.assertNotNullOperandsEqual_And_ThrowsAssemble(operands, expect.type(opcode),
+						expect.assertNotNullOperandsEqual_And_Throws_IAE(operands, expect.type(opcode),
 																			 1048576,null,null,null);
 						//MAX
 						Operands operands2=opsVal.splitValidOperands( 0, opcode, "1310720" );
-						expect.assertNotNullOperandsEqual_And_ThrowsAssemble(operands2, expect.type(opcode),
+						expect.assertNotNullOperandsEqual_And_Throws_IAE(operands2, expect.type(opcode),
 																			 1310720,null,null,null);
 					}
 					@ParameterizedTest ( name="Valid {index} - opcode\"{0}\", Jump_Type :: Hex" + TA )
 					@ArgumentsSource ( J.class )
 					void assemble_ValidOperands_Hex (String opcode) {
 						Operands operands=opsVal.splitValidOperands( 0, opcode, "0x00100000" );
-						expect.assertNotNullOperandsEqual_And_ThrowsAssemble(operands, expect.type(opcode),
+						expect.assertNotNullOperandsEqual_And_Throws_IAE(operands, expect.type(opcode),
 																			 1048576,null,null,null);
 						//MAX
 						Operands operands2=opsVal.splitValidOperands( 0, opcode, "0x00140000" );
-						expect.assertNotNullOperandsEqual_And_ThrowsAssemble(operands2, expect.type(opcode),
+						expect.assertNotNullOperandsEqual_And_Throws_IAE(operands2, expect.type(opcode),
 																			 1310720,null,null,null);
 					}
 					

@@ -132,7 +132,8 @@ public class Logger {
 		
 		@NotNull
 		public static String fmtColored (@NotNull String ansi, @NotNull String string) {
-			return (Color.colorSupport) ? (ansi + string + ANSI_RESET) : string;
+			return string.isBlank()? string:
+				   ((Color.colorSupport) ? (ansi + string + ANSI_RESET) : string);
 		}
 		
 	}

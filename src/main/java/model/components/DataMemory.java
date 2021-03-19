@@ -18,8 +18,7 @@ import java.util.HashMap;
  <p>
  Describes actions being performed in the DataLog
  <p>
- use {@link <b><i>AddressValidation#isValidDataAddr(int, ErrorLog)</i></b>} and
- {@link AddressValidation#dataAddr2index(int, ErrorLog)}
+ use {@link <b><i>AddressValidation#isValidDataAddr(int, ErrorLog)</i></b>}
  
  @see AddressValidation#dataAddr2index(int, ErrorLog)
  @see #BASE_DATA_ADDRESS
@@ -34,7 +33,7 @@ public class DataMemory {
 	private final HashMap<Integer, Double> data;
 	private final ExecutionLog executionLog;
 	
-	public DataMemory(@NotNull HashMap<Integer, Double> data, @NotNull ExecutionLog executionLog) {
+	public DataMemory(@NotNull HashMap<Integer, Double> data, @NotNull ExecutionLog executionLog) throws IllegalArgumentException{
 		if ( data.size( )>MAX_DATA_ITEMS )
 			throw new IllegalArgumentException( "Data Memory cannot have move than " + MAX_DATA_ITEMS + " indexes" );
 		
@@ -52,7 +51,7 @@ public class DataMemory {
 	 @see #BASE_DATA_ADDRESS
 	 @see #OVER_SUPPORTED_DATA_ADDRESS
 	 */
-	public int readData(@Nullable Integer address) {
+	public int readData(@Nullable Integer address) throws IndexOutOfBoundsException, IllegalArgumentException {
 		int val=0;
 		if ( address==null ) {
 			noAction( );
@@ -72,15 +71,16 @@ public class DataMemory {
 		this.executionLog.append( NAME + ":\t" + "No Action!" );
 	}
 	
-	private boolean inRange(int address) {
+	private boolean inRange(int address) throws IndexOutOfBoundsException{
 		if ( address>=BASE_DATA_ADDRESS && address<=(OVER_SUPPORTED_DATA_ADDRESS - DATA_ALIGN) )
 			return true;
 		else
-			throw new IndexOutOfBoundsException( "Data Address must be >=" + Convert.int2Hex( BASE_DATA_ADDRESS )
-												 + " and <=" + Convert.int2Hex( OVER_SUPPORTED_DATA_ADDRESS - DATA_ALIGN ) + "!" );
+			throw new IndexOutOfBoundsException( "Data Address \"["+Convert.int2Hex(address)+", "+address+"]\" must be >="
+												 + Convert.int2Hex( BASE_DATA_ADDRESS ) + " and <="
+												 + Convert.int2Hex( OVER_SUPPORTED_DATA_ADDRESS - DATA_ALIGN ) + "!" );
 	}
 	
-	private int toIndex(int address) {
+	private int toIndex(int address) throws IllegalArgumentException{
 		if ( address%DATA_ALIGN!=0 && inRange( address ) )
 			throw new IllegalArgumentException( "Address must be Double Word Aligned" );
 		
@@ -108,7 +108,7 @@ public class DataMemory {
 	 @see #BASE_DATA_ADDRESS
 	 @see #OVER_SUPPORTED_DATA_ADDRESS
 	 */
-	public boolean writeData(@Nullable Integer address, @Nullable Integer data) {
+	public boolean writeData(@Nullable Integer address, @Nullable Integer data) throws IndexOutOfBoundsException, IllegalArgumentException {
 		if ( address==null || data==null ) {
 			noAction( );
 			return false;

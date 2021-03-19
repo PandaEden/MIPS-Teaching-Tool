@@ -1,5 +1,6 @@
 package model.components;
 
+import _test.Tags;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -12,8 +13,9 @@ import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@Tag ("Component")
-@DisplayName ("Component - RegisterBank Test")
+@Tag( _test.Tags.Pkg.MOD )
+@Tag( _test.Tags.Pkg.COM )
+@DisplayName ( _test.Tags.Pkg.MOD + " : " + Tags.Pkg.COM + " :  RegisterBank Test")
 class RegisterBankTest {
 	private static final String PREFIX="Execution:\n\tRegisterBank:\t";
 	private static final String NO_ACTION=PREFIX + "No Action!\n";

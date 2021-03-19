@@ -20,8 +20,9 @@ import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@Tag (Pkg.UTIL)
-@DisplayName (Pkg.UTIL+" - Logger Test")
+@Tag ( Pkg.UTIL )
+@Tag ( Tags.OUT )
+@DisplayName ( Pkg.UTIL+" : Logger Test" )
 class LoggerTest {
 	private Logger logger;
 	private ArrayList<String> logs;
@@ -87,7 +88,6 @@ class LoggerTest {
 		}
 		
 		@Test
-		@Tag( Tags.OUT)
 		void append_Prefix_LineNo() {
 			assertNull(logger.setPrefix( "Pre:" ));
 			logger.append( "No LineNo" );
@@ -132,7 +132,6 @@ class LoggerTest {
 	}
 	
 	@Test
-	@Tag (Tags.OUT)
 	@Tag ("Accessing")
 	void System_Print() {
 		// Setup - redirecting Standard Output
@@ -184,7 +183,6 @@ class LoggerTest {
 	}
 	
 	@Nested
-	@Tag (Tags.OUT)
 	@Tag( "Color" )
 	class Color_Support {
 		boolean preset;

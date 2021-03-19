@@ -53,7 +53,7 @@ public class Convert {
 	 
 	 @throws IllegalArgumentException if hex is invalid format.
 	 */
-	public static int hex2uInt(@NotNull String hex) {
+	public static int hex2uInt(@NotNull String hex)  throws IllegalArgumentException{
 		if ( hex.startsWith( "0x" ) )
 			return Integer.parseUnsignedInt( hex.substring( 2 ), 16 );
 		else
@@ -86,12 +86,12 @@ public class Convert {
 	 @see DataMemory#BASE_DATA_ADDRESS
 	 */
 	@NotNull
-	public static Integer imm2Address(@NotNull Integer immediate) {
+	public static Integer imm2Address(@NotNull Integer immediate) throws IllegalArgumentException{
 		final int MIN_IMM=-32768; // (-2^15)
-		final int MAX_IMM=(67108863); // (2^26-1)
+		final int MAX_IMM=(Integer.MAX_VALUE/4)-1; // (536870911)	// Needs to Include Data Memory Space
 		
 		if ( immediate<MIN_IMM || immediate>MAX_IMM )
-			throw new IllegalArgumentException( "Immediate Value is invalid" );
+			throw new IllegalArgumentException( "Immediate Value \""+immediate+"\" is invalid" );
 		return immediate<<2;
 	}
 	
@@ -110,7 +110,7 @@ public class Convert {
 	 @see DataMemory#OVER_SUPPORTED_DATA_ADDRESS
 	 */
 	@NotNull
-	private static Integer address2Index(@NotNull Integer address, String type, int base, int over, String size_name, int size) {
+	private static Integer address2Index(@NotNull Integer address, String type, int base, int over, String size_name, int size)  throws IllegalArgumentException{
 		if ( address<base )
 			throw new IllegalArgumentException( "Address Below " + type + " Address!" );	// <- COVER
 		else if ( address>=over )
@@ -198,7 +198,7 @@ public class Convert {
 	 @throws IllegalArgumentException Not valid Register Name
 	 */
 	@NotNull
-	public static String named2R(@NotNull String named) {
+	public static String named2R(@NotNull String named) throws IllegalArgumentException{
 		for ( int i=0; i<Convert.namedRegisters.length; i++ ) {
 			if ( Convert.namedRegisters[ i ].equals( named ) ) {
 				return "r" + i;

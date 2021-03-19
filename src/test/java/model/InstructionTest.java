@@ -1,347 +1,443 @@
 package model;
 
+import _test.Tags;
+import _test.TestLogs;
+import _test.TestLogs.FMT_MSG;
+import _test.providers.InstrProvider;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.provider.ValueSource;
+
 import model.components.DataMemory;
 import model.components.InstrMemory;
-import model.components.RegisterBank;
 import model.instr.Operands;
-import org.junit.jupiter.api.*;
+
 import util.Convert;
 import util.logs.ErrorLog;
-import util.logs.ExecutionLog;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class InstructionTest{
-	private static final Integer PC = 0x4000C8; // set PC to instr index #51
-	private static final ExecutionLog log = new ExecutionLog(new ArrayList<>());
-	private static final ErrorLog errors = new ErrorLog(new ArrayList<>());
-	private static final HashMap<Integer, Double> data = new HashMap<>();
-	private static final HashMap<String, Integer> labelMap = new HashMap<>();
-	private static int[] values;
-	private RegisterBank rb;
-	private DataMemory dm;
-	
+@Tag ( Tags.Pkg.MOD )
+@Tag ( Tags.INSTR )
+@Tag ( Tags.EX )
+@Tag ( Tags.OUT )
+@DisplayName ( Tags.Pkg.MOD + " : " +Tags.INSTR + " : " + Tags.EX + " Test " )
+class InstructionTest {
+	private static final Integer PC=0x004000C8; // set PC to instr index #51
+	private static final HashMap<Integer, Double> data=new HashMap<>( );
+	private static final HashMap<String, Integer> labelMap=InstrProvider.labelsMap;
+	private static final String _PC=Convert.int2Hex( PC );
+	private static final String _R="REGISTER";
+	private static final String _I="IMMEDIATE";
+	private static final String _J="JUMP";
+	private static final int[] values=new int[ 32 ];
+	private static TestLogs testLogs;
+	private static FMT_MSG._Execution testLogs_ex;
+	private static ErrorLog errors;
 	@BeforeAll
-	static void beforeAll(){
-		labelMap.put("instr", InstrMemory.BASE_INSTR_ADDRESS); //Valid INSTR address
-		labelMap.put("data", DataMemory.BASE_DATA_ADDRESS); //Valid DATA address  -- index 0
-		labelMap.put("inv_instr", InstrMemory.OVER_INSTR_ADDRESS); //Invalid INSTR address
-		labelMap.put("inv_data", DataMemory.OVER_DATA_ADDRESS); //Invalid DATA address
-	}
-	
-	@BeforeEach
-	void setUp(){
-		values = new int[32];
-		rb = new RegisterBank(values, log);
-		dm = new DataMemory(data, log);
-		data.put(Convert.address2Index(labelMap.get("data")), 20.0); // expect value 20, when reading from the valid data address
+	static void beforeAll ( ) {
+		testLogs=new TestLogs( );
+		errors=testLogs.actualErrors;
+		
+		data.clear( );
+		
+		testLogs_ex=new FMT_MSG._Execution( values, data, testLogs.actualExecution, testLogs.expectedExecution );
+		labelMap.put( "instr", InstrMemory.BASE_INSTR_ADDRESS ); //Valid INSTR address
+		labelMap.put( "data", DataMemory.BASE_DATA_ADDRESS ); //Valid DATA address  -- index 0
+		labelMap.put( "inv_instr", InstrMemory.OVER_INSTR_ADDRESS ); //Invalid INSTR address
+		labelMap.put( "inv_data", DataMemory.OVER_DATA_ADDRESS ); //Invalid DATA address
 	}
 	
 	@AfterEach
-	void tearDown(){
-		data.clear();
-		log.clear();
-		errors.clear();
+	void tearDown ( ) {
+		testLogs.after( );
 	}
 	
-	// Test Add
-	@Test    // Valid Execution
-	@DisplayName ("Test Instruction_ADD")
-	void testInstructionAdd(){
-		values[6] = 25;
-		values[7] = 35;
-		assertEquals(0, values[5]); // check initial value is 0
-		// Expect after addition, Register # 5 will have the value 60 = (25+35)
+	@ParameterizedTest ( name="[{index}] EXIT_Execution : {0}" )
+	@ArgumentsSource(InstrProvider.NO_OPS.class)
+	@DisplayName ( "EXIT_Execution" )
+	void Exit_Execution (String opcode) {
+		// Build
+		Instruction ins=Instruction.buildInstruction( opcode, Operands.getExit() );
+		// Execute
+		Instr.assembleAndExecute_newPC(null, ins );
+		// Output
+		testLogs_ex.decode( _PC, opcode, "EXIT" );
+		testLogs_ex.rb_noAct();
+		testLogs_ex.dm_noAct();
 		
-		Instruction ins = Instruction.buildInstruction("add", new Operands(6, 7, 5));
-		assertNotNull(ins);
-		assertTrue(ins.assemble(errors, labelMap));
-		Integer newPC = ins.execute(PC, dm, rb, log);
-		assertEquals(PC+4, newPC);    //NPC = PC+4
-		
-		assertEquals("Execution:\n"+
-						"\t\n\t ---- 0x004000C8 ---- REGISTER Type Instruction >> \"add\":\n"+
-						"\tRegisterBank:\tReading Value[25]\tFrom Register Index[R6]!\n"+
-						"\tRegisterBank:\tReading Value[35]\tFrom Register Index[R7]!\n"+
-						"\tCalculating Result:\n"+
-						"\tRD = RS+RT = 25+35 = 60\n"+
-						"\tDataMemory:\tNo Action!\n"+
-						"\tRegisterBank:\tWriting Value[60]\tTo Register Index[*R5]!\n",
-				log.toString());
-		assertEquals(60, rb.read(5));
 	}
-	
+	@Nested
+	class ADD {
+		@Test
+		void ADD_Execution ( ) {
+			//Setup
+			values[ 6 ]=25;
+			values[ 7 ]=35;
+			values[ 5 ]=0;
+			// - Expect after addition, Register # 5 will have the value 60 = (25+35)
+			// Build
+			Instruction ins=Instruction.buildInstruction( "add", new Operands( 6, 7, 5 ) );
+			assertTrue( ins instanceof R_Type );
+			//Execute
+			Instr.assembleAndExecute_incPC( ins );
+			// Result
+			assertEquals( 60, values[ 5 ] );
+			// Output
+			testLogs_ex.decode( _PC, "add", _R );
+			testLogs_ex.rb_read( 25, 6 );
+			testLogs_ex.rb_read( 35, 7 );
+			testLogs_ex.cal_result( "RD = RS+RT = 25+35 ==> 60" );
+			testLogs_ex.dm_noAct( );
+			testLogs_ex.rb_write( 60, 5 );
+		}
+	}
 	@Test
-	@DisplayName ("Test Invalid Operands Instruction_ADD")
-	void testInvalidOperands_InstructionAdd(){
+	void SUB_Execution ( ) {
+		// Setup
+		values[ 20 ]=250;
+		values[ 24 ]=5000;
+		assertEquals( 0, values[ 16 ] ); // check initial value is 0
+		// - Expect after subtraction, Register #16 will have the value -4750 = (5000-78)
+		// Build
+		Instruction ins=Instruction.buildInstruction( "sub", new Operands( 20, 24, 16 ) );
+		assertTrue( ins instanceof R_Type );
+		// Execute
+		Instr.assembleAndExecute_incPC( ins );
+		// Result
+		assertEquals( -4750, values[ 16 ] );
+		// Output
+		testLogs_ex.decode( _PC, "sub", _R );
+		testLogs_ex.rb_read( 250, 20 );
+		testLogs_ex.rb_read( 5000, 24 );
+		testLogs_ex.cal_result( "RD = RS-RT = 250-5000 ==> -4750" );
+		testLogs_ex.dm_noAct( );
+		testLogs_ex.rb_write( -4750, 16 );
+	}
+	@Test
+	void Invalid_ADD_Execution_With_Invalid_Operands ( ) {
 		// Expect after addition, Register # 5 will have the value 60 = (25+35)
-		Instruction ins = Instruction.buildInstruction("add", new Operands("x", "data"));
+		Instruction ins=Instruction.buildInstruction( "add", new Operands("instr" ) );
 		// Operands for "lw" given to "add"
-		
-		assertNotNull(ins);
-		assertFalse(ins.assemble(errors, labelMap));
-		assertThrows(IllegalStateException.class, () -> ins.execute(PC, dm, rb, log));
+		assertNotNull( ins );
+		assertTrue( ins instanceof R_Type );
+		Instr.failAssemble_andExecuteThrows( ins );
+		//TODO - Add a check to Instr.Assemble - to only attempt .setImm if the Operands match the Opcode...  not sure
 	}
-	
-	// Test Sub
 	@Test
-	@DisplayName ("Test Instruction_SUB")
-	void testInstructionSub(){
-		values[20] = 250;
-		values[24] = 5000;
-		assertEquals(0, values[16]); // check initial value is 0
-		// Expect after subtraction, Register #16 will have the value -4750 = (5000-78)
-		
-		Instruction ins = Instruction.buildInstruction("sub", new Operands(20, 24, 16));
-		assertNotNull(ins);
-		assertTrue(ins.assemble(errors, labelMap));
-		Integer newPC = ins.execute(PC, dm, rb, log);
-		assertEquals(PC+4, newPC);    //NPC = PC+4
-		
-		assertEquals("Execution:\n"+
-						"\t\n\t ---- 0x004000C8 ---- REGISTER Type Instruction >> \"sub\":\n"+
-						"\tRegisterBank:\tReading Value[250]\tFrom Register Index[R20]!\n"+
-						"\tRegisterBank:\tReading Value[5000]\tFrom Register Index[R24]!\n"+
-						"\tCalculating Result:\n"+
-						"\tRD = RS-RT = 250-5000 = -4750\n"+
-						"\tDataMemory:\tNo Action!\n"+
-						"\tRegisterBank:\tWriting Value[-4750]\tTo Register Index[*R16]!\n",
-				log.toString());
-		assertEquals(-4750, rb.read(16));
+	void ADDI_Execution ( ) {
+		// Setup
+		values[ 30 ]=250;
+		values[ 16 ]=0;
+		// - Expect after addition, Register #1 will have the value -150 = (250+-400)
+		// Build
+		Instruction ins=Instruction.buildInstruction( "addi", new Operands( "addi", 30, 1, -400 ) );
+		assertNotNull( ins );
+		assertTrue( ins instanceof I_Type );
+		// Execute
+		Instr.assembleAndExecute_incPC( ins );
+		// Result
+		assertEquals( -150, values[ 1 ] );
+		// Output
+		testLogs_ex.decode( _PC, "addi", _I );
+		testLogs_ex.rb_read( 250, 30 );
+		testLogs_ex.IMM( -400 );
+		testLogs_ex.cal_result( "RT = RS+IMMEDIATE = 250+-400 ==> -150" );
+		testLogs_ex.dm_noAct( );
+		testLogs_ex.rb_write( -150, 1 );
 	}
-	
-	// Test Addi
 	@Test
-	@DisplayName ("Test Instruction_ADDI")
-	void testInstructionAddI(){
-		values[30] = 250;
-		values[24] = 5000; // redundant - not used
-		assertEquals(0, values[16]); // check initial value is 0
-		// Expect after addition, Register #1 will have the value -150 = (250+-400)
-		
-		Instruction ins = Instruction.buildInstruction("addi", new Operands("addi", 30, 1, -400));
-		assertNotNull(ins);
-		assertTrue(ins.assemble(errors, labelMap));
-		Integer newPC = ins.execute(PC, dm, rb, log);
-		assertEquals(PC+4, newPC);    //NPC = PC+4
-		
-		assertEquals("Execution:\n"+
-						"\t\n\t ---- 0x004000C8 ---- IMMEDIATE Type Instruction >> \"addi\":\n"+
-						"\tRegisterBank:\tReading Value[250]\tFrom Register Index[R30]!\n"+
-						"\t[IMMEDIATE: -400]\n"+
-						"\tCalculating Result:\n"+
-						"\tRT = RS+IMMEDIATE = 250+-400 = -150\n"+
-						"\tDataMemory:\tNo Action!\n"+
-						"\tRegisterBank:\tWriting Value[-150]\tTo Register Index[*R1]!\n",
-				log.toString());
-		assertEquals(-150, rb.read(1));
+	void LW_Execution ( ) {
+		// Setup
+		int addr=labelMap.get( "data" );
+		values[ 1 ]=0;
+		data.put( Convert.dataAddr2Index( labelMap.get( "data" ) ), 20.0 );
+		// - Expect after load, Register #1 will have the value 20
+		// Build
+		Operands operands=new Operands( "lw", 1, "data" );
+		Instruction ins=Instruction.buildInstruction( "lw", operands );
+		assertNotNull( ins );
+		assertTrue( ins instanceof I_Type );
+		// Execute
+		Instr.assembleAndExecute_incPC( ins );
+		// Result
+		assertEquals( 20, values[ 1 ] );
+		// Output
+		testLogs_ex.decode( _PC, "lw", _I );
+		testLogs_ex.rb_read( 0, 0 );
+		testLogs_ex.imm_cal_addr( addr, 0, addr );
+		testLogs_ex.dm_read( 20, addr );
+		testLogs_ex.rb_write( 20, 1 );
 	}
-	
-	// Test LW
 	@Test
-	@DisplayName ("Test Instruction_LW")
-	void testInstructionLW(){
-		assertEquals(20, data.get(0)); // check value 20 is at expected location
-		assertEquals(0, values[1]); // check initial value is 0
-		assertEquals(0x10010000, labelMap.get("data"));
-		// Expect after load, Register #1 will have the value 20
-		Operands operands = new Operands("lw", 1, "data");
-		Instruction ins = Instruction.buildInstruction("lw", operands);
-		assertNotNull(ins);
-		assertTrue(ins.assemble(errors, labelMap));
-		Integer newPC = ins.execute(PC, dm, rb, log);
-		assertEquals(PC+4, newPC);    //NPC = PC+4
-		
-		assertEquals("Execution:\n"+
-						"\t\n\t ---- 0x004000C8 ---- IMMEDIATE Type Instruction >> \"lw\":\n"+
-						"\tRegisterBank:\tReading Value[0]\tFrom Register Index[R0]!\n"+
-						"\t[IMMEDIATE: 268500992 === 0x10010000]\n"+
-						"\tCalculating Address:\n"+
-						"\tADDRESS = RS+IMMEDIATE = 0 + 268500992 = 268500992 === 0x10010000\n"+
-						"\tDataMemory:\tReading Value[20]\tFrom Memory Address[0x10010000]!\n"+
-						"\tRegisterBank:\tWriting Value[20]\tTo Register Index[*R1]!\n",
-				log.toString());
-		assertEquals(20, rb.read(1));
-	}
-	
-	@Test
-	@DisplayName ("Test Instruction LW - BASE+OFFSET")
-	void testInstructionLW_BassOffset(){
-		values[30] = (DataMemory.BASE_DATA_ADDRESS-40);
-		assertEquals(20, data.get(0)); // check value 20 is at expected location
-		assertEquals(0, values[1]); // check initial value is 0
-		// Expect after load, Register #1 will have the value 20
-		
-		Instruction ins = Instruction.buildInstruction("lw", new Operands("lw", 30, 1, 40));
+	void LW_Execution_BassOffset ( ) {
+		// Setup
+		int imm=40;
+		int addr=DataMemory.BASE_DATA_ADDRESS;
+		values[ 30 ]=(addr - imm);
+		values[ 1 ]=0;
+		data.put( 0, 200.0 );
+		// - Expect after load, Register #1 will have the value 200
+		// Build
+		Instruction ins=Instruction.buildInstruction( "lw", new Operands( "lw", 30, 1, imm ) );
 		// RS_val + Imm should give the correct address.
-		assertNotNull(ins);
-		assertTrue(ins.assemble(errors, labelMap));
-		Integer newPC = ins.execute(PC, dm, rb, log);
-		assertEquals(PC+4, newPC);    //NPC = PC+4
-		
-		assertEquals("Execution:\n"+
-						"\t\n\t ---- 0x004000C8 ---- IMMEDIATE Type Instruction >> \"lw\":\n"+
-						"\tRegisterBank:\tReading Value[268500952]\tFrom Register Index[R30]!\n"+
-						"\t[IMMEDIATE: 40 === 0x00000028]\n"+
-						"\tCalculating Address:\n"+
-						"\tADDRESS = RS+IMMEDIATE = 268500952 + 40 = 268500992 === 0x10010000\n"+
-						"\tDataMemory:\tReading Value[20]\tFrom Memory Address[0x10010000]!\n"+
-						"\tRegisterBank:\tWriting Value[20]\tTo Register Index[*R1]!\n",
-				log.toString());
-		assertEquals(20, rb.read(1));
+		assertNotNull( ins );
+		assertTrue( ins instanceof I_Type );
+		// Execute
+		Instr.assembleAndExecute_incPC( ins );
+		// Result
+		assertEquals( 200, values[ 1 ] );
+		// Output
+		testLogs_ex.decode( _PC, "lw", _I );
+		testLogs_ex.rb_read( values[ 30 ], 30 );
+		testLogs_ex.imm_cal_addr( imm, values[ 30 ], addr );
+		testLogs_ex.dm_read( 200, addr );
+		testLogs_ex.rb_write( 200, 1 );
+	}
+	@Test
+	void SW_Execution ( ) {
+		// Setup
+		int addr=labelMap.get( "data" );
+		values[ 30 ]=250;
+		data.put( 0, 20.0 );
+		// - Expect after store, Memory #0 will have the value 250
+		// Build
+		Instruction ins=Instruction.buildInstruction( "sw", new Operands( "sw", 30, "data" ) );
+		assertNotNull( ins );
+		assertTrue( ins instanceof I_Type );
+		// Execute
+		Instr.assembleAndExecute_incPC( ins );
+		// Results
+		assertEquals( 250, data.get( 0 ) ); // value at address has changed to expected value
+		// Output
+		testLogs_ex.decode( _PC, "sw", _I );
+		testLogs_ex.rb_read( 0, 0 );
+		testLogs_ex.rb_read( 250, 30 );
+		testLogs_ex.imm_cal_addr( addr, 0, addr );
+		testLogs_ex.dm_write( 250, addr );
+		testLogs_ex.rb_noAct( );
+	}
+	@Test
+	void Invalid_LW_Execution_DataOver () {
+		// Setup
+		String label="not_data";
+		String addr=Convert.int2Hex( labelMap.get( label ) );
+		// Build
+		Instruction ins=Instruction.buildInstruction( "lw", new Operands( "lw", 1, label ) );
+		assertNotNull( ins );
+		assertTrue( ins instanceof I_Type );
+		// Execute -> Errors
+		Instr.failAssemble_andExecuteThrows( ins );
+		// Output
+		testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Data", addr, "Supported" ) );
+		testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Data" ) );
+	}
+	@ParameterizedTest ( name="[{index}] LW_Execution with Instr-Label" )
+	@ValueSource ( strings={ "instr", "instr_top" } )
+	void Invalid_LW_Execution (String label) {
+		// Setup
+		String addr=Convert.int2Hex( labelMap.get( label ) );
+		// Build
+		Instruction ins=Instruction.buildInstruction( "lw", new Operands( "lw", 1, label ) );
+		assertNotNull( ins );
+		assertTrue( ins instanceof I_Type );
+		// Execute -> Errors
+		Instr.failAssemble_andExecuteThrows( ins );
+		// Output
+		testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Data", addr, "Valid" ) );
+		testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Data" ) );
+	}
+	@Test
+	void InvalidLW_Execution_BassOffset_OutOfBounds ( ) {
+		// Setup
+		int imm=40;
+		int addr=DataMemory.BASE_DATA_ADDRESS-4;
+		values[ 30 ]=(addr - imm);
+		values[ 1 ]=0;
+		data.put( 0, 200.0 );
+		// - Expect after load, Register #1 will have the value 200
+		// Build
+		Instruction ins=Instruction.buildInstruction( "lw", new Operands( "lw", 30, 1, imm ) );
+		// RS_val + Imm should give the correct address.
+		assertNotNull( ins );
+		assertTrue( ins instanceof I_Type );
+		// Execute
+		Instr.assembleAndExecute_Throws(IndexOutOfBoundsException.class, ins);
+		// Result
+		assertEquals( 0, values[ 1 ] );	// Not Modified
+		// Output
+		testLogs_ex.decode( _PC, "lw", _I );
+		testLogs_ex.rb_read( values[ 30 ], 30 );
+		testLogs_ex.imm_cal_addr( imm, values[ 30 ], addr );
+		// Output cut off by exception
+	}
+	@Test
+	void InvalidLW_Execution_BassOffset_NotAligned ( ) {
+		// Setup
+		int imm=40;
+		int addr=DataMemory.BASE_DATA_ADDRESS+3;
+		values[ 30 ]=(addr - imm);
+		values[ 1 ]=0;
+		data.put( 0, 200.0 );
+		// - Expect after load, Register #1 will have the value 200
+		// Build
+		Instruction ins=Instruction.buildInstruction( "lw", new Operands( "lw", 30, 1, imm ) );
+		// RS_val + Imm should give the correct address.
+		assertNotNull( ins );
+		assertTrue( ins instanceof I_Type );
+		// Execute
+		Instr.assembleAndExecute_Throws(IllegalArgumentException.class, ins);
+		// Result
+		assertEquals( 0, values[ 1 ] );	// Not Modified
+		// Output
+		testLogs_ex.decode( _PC, "lw", _I );
+		testLogs_ex.rb_read( values[ 30 ], 30 );
+		testLogs_ex.imm_cal_addr( imm, values[ 30 ], addr );
+		// Output cut off by exception
+	}
+	@Test
+	void Jump_Execution_Label ( ) {
+		// Setup
+		int addr=labelMap.get( "instr" );
+		// Build
+		Instruction ins=Instruction.buildInstruction( "j", new Operands("instr" ) );
+		assertNotNull( ins );
+		assertTrue( ins instanceof J_Type );
+		// Execute & Result
+		Instr.assembleAndExecute_newPC( addr, ins );
+		// Output
+		testLogs_ex.decode( _PC, "j", _J );
+		testLogs_ex.rb_noAct( );
+		testLogs_ex.shift_imm( addr/4, addr );
+		testLogs_ex.dm_noAct( );
+		testLogs_ex.rtn_addr( addr );
+	}
+	@Test
+	void Jump_Execution_IMM ( ) {
+		// Setup
+		int addr=0x00400014; // index 21
+		Instruction ins=Instruction.buildInstruction( "j", new Operands(addr/4 ) );
+		assertNotNull( ins );
+		assertTrue( ins instanceof J_Type );
+		// Execute & Result
+		Instr.assembleAndExecute_newPC( addr, ins );
+		// Output
+		testLogs_ex.decode( _PC, "j", _J );
+		testLogs_ex.rb_noAct( );
+		testLogs_ex.shift_imm( addr/4, addr );
+		testLogs_ex.dm_noAct( );
+		testLogs_ex.rtn_addr( addr );
+	}
+	@Test
+	@DisplayName ( "Instruction JumpAndLink" )
+	void instructionTestJumpAndLink ( ) {
+		// Setup
+		String label="instr";
+		int addr=labelMap.get( label );
+		// Build
+		Instruction ins=Instruction.buildInstruction( "jal", new Operands( label ) );
+		assertNotNull( ins );
+		assertTrue( ins instanceof J_Type );
+		// Execute & Result
+		Instr.assembleAndExecute_newPC( addr, ins );
+		// Output
+		testLogs_ex.decode( _PC, "jal", _J );
+		testLogs_ex.storeNPC( PC + 4 );
+		testLogs_ex.rb_write( PC + 4, 31 );
+		testLogs_ex.shift_imm( addr/4, addr );
+		testLogs_ex.dm_noAct( );
+		testLogs_ex.rtn_addr( addr );
+	}
+	@Test
+	void Invalid_Jump_Execution_InstrOver ( ) {
+		// Setup
+		String label="not_instr";
+		String addr=Convert.int2Hex( labelMap.get( label ) );
+		// Build
+		Instruction ins=Instruction.buildInstruction( "j", new Operands( label ) );
+		assertNotNull( ins );
+		assertTrue( ins instanceof J_Type );
+		// Execute -> Errors
+		Instr.failAssemble_andExecuteThrows( ins );
+		// Output
+		testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Instruction", addr, "Supported" ) );
+		testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Instruction" ) );
+	}
+	@ParameterizedTest ( name="[{index}] Jump_Execution with Data-Label" )
+	@ValueSource ( strings={ "data", "data_top" } )
+	void Invalid_Jump_Execution (String label) {
+		// Setup
+		String addr=Convert.int2Hex( labelMap.get( label ) );
+		// Build
+		Instruction ins=Instruction.buildInstruction( "j", new Operands( label ) );
+		assertNotNull( ins );
+		assertTrue( ins instanceof J_Type );
+		// Execute -> Errors
+		Instr.failAssemble_andExecuteThrows( ins );
+		// Output
+		testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Instruction", addr, "Valid" ) );
+		testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Instruction" ) );
 	}
 	
 	@Test
-	@DisplayName ("Test Instruction LW - Invalid to instr")
-	void testInstructionLW_Invalid_Instr(){
-		Operands operands = new Operands("lw", 1, "instr");
-		Instruction ins = Instruction.buildInstruction("lw", operands);
-		assertNotNull(ins);
-		assertFalse(ins.assemble(errors, labelMap)); // assemble should catch the label points to a instr not data
-		
-		assertEquals("Errors:\n"+
-						"\tData Address: \"0x00400000\" Not Valid!\n"+
-						"\tLabel: \"instr\" points to Invalid Data Address!\n",
-				errors.toString());
-		
-		assertThrows(IllegalStateException.class, () -> ins.execute(PC, dm, rb, log));
+	void InvalidJUMP_Execution_IMM_OutOfBounds ( ) {    // Not possible to have misaligned address due ot imm->addr conversion
+		// Setup
+		int addr=5242884;
+		// Build
+		Instruction ins=Instruction.buildInstruction( "jal", new Operands( addr/4 ) );
+		assertNotNull( ins );
+		assertTrue( ins instanceof J_Type );
+		// Execute & Result
+		Instr.assembleAndExecute_newPC( addr, ins );	// NPC = Addr
+		// Output
+		testLogs_ex.decode( _PC, "jal", _J );
+		testLogs_ex.storeNPC( PC + 4 );
+		testLogs_ex.rb_write( PC + 4, 31 );
+		testLogs_ex.shift_imm( addr/4, addr );
+		testLogs_ex.dm_noAct( );
+		testLogs_ex.rtn_addr( addr );
+		// Exception is thrown when trying to retrieve the address from the InstrMemory
+		InstrMemory instrMemory = new InstrMemory( new ArrayList<>(), testLogs.actualExecution);
+		assertThrows(IndexOutOfBoundsException.class, ()->instrMemory.InstructionFetch(addr) );
 	}
 	
-	@Test
-	@DisplayName ("Test Instruction LW - Invalid to DataOver")
-	void testInstructionLW_Invalid_DataOver(){
-		Operands operands = new Operands("lw", 1, "inv_data");
-		Instruction ins = Instruction.buildInstruction("lw", operands);
-		assertNotNull(ins);
-		assertFalse(ins.assemble(errors, labelMap)); // assemble should catch the label points to a instr not data
-		
-		assertEquals("Errors:\n"+
-						"\tData Address: \"0x10040000\" Not Valid!\n"+
-						"\tLabel: \"inv_data\" points to Invalid Data Address!\n",
-				errors.toString());
-		
-		assertThrows(IllegalStateException.class, () -> ins.execute(PC, dm, rb, log));
+	private static class Instr {
+		/**
+		 For a given instruction, Tests: It assembles -> Then Executes without errors.
+		 <p> and the returned PC, matches the PC+4
+		 */
+		private static void assembleAndExecute_incPC (Instruction ins) {
+			assembleAndExecute_newPC( PC + 4, ins );    //NPC = PC+4
+		}
+		/**
+		 For a given instruction, Tests: It assembles -> Then Executes without errors.
+		 <p> and the returned PC, matches the given newPC
+		 */
+		private static void assembleAndExecute_newPC (Integer newPC, Instruction ins) {
+			assertTrue( ins.assemble( errors, labelMap ) );
+			assertEquals( newPC, testLogs_ex.execute( PC, ins ) );
+		}
+		/**
+		 For a given instruction, Tests: It Fails assembly ->
+		 Then attempting to execute makes it throw an exception
+		 */
+		private static void failAssemble_andExecuteThrows (Instruction ins) {
+			assertFalse( ins.assemble( errors, labelMap ) );
+			assertThrows( IllegalStateException.class, ( ) -> testLogs_ex.execute( PC, ins ) );
+		}
+		/**
+		 For a given instruction, Tests: It assembles ->
+		 Then attempting to execute makes it throw an exception
+		 <p>For Address based instructions -> pointed to the wrong address
+		 */
+		private static <T extends Throwable> void assembleAndExecute_Throws (Class<T> exception, Instruction ins) {
+			assertTrue( ins.assemble( errors, labelMap ) );
+			assertThrows( exception, ( ) -> testLogs_ex.execute( PC, ins ) );
+		}
 	}
 	
-	// Test SW
-	@Test
-	@DisplayName ("Test Instruction_SW")
-	void testInstructionSW(){
-		assertEquals(20, data.get(0)); // check value 20 is at expected location
-		values[30] = 250;
-		
-		Instruction ins = Instruction.buildInstruction("sw", new Operands("sw", 30, "data"));
-		assertNotNull(ins);
-		assertTrue(ins.assemble(errors, labelMap));
-		Integer newPC = ins.execute(PC, dm, rb, log);
-		assertEquals(PC+4, newPC);    //NPC = PC+4
-		
-		assertEquals("Execution:\n"+
-						"\t\n\t ---- 0x004000C8 ---- IMMEDIATE Type Instruction >> \"sw\":\n"+
-						"\tRegisterBank:\tReading Value[0]\tFrom Register Index[R0]!\n"+
-						"\tRegisterBank:\tReading Value[250]\tFrom Register Index[R30]!\n"+
-						"\t[IMMEDIATE: 268500992 === 0x10010000]\n"+
-						"\tCalculating Address:\n"+
-						"\tADDRESS = RS+IMMEDIATE = 0 + 268500992 = 268500992 === 0x10010000\n"+
-						"\tDataMemory:\tWriting Value[250]\tTo Memory Address[0x10010000]!\n"+
-						"\tRegisterBank:\tNo Action!\n",
-				log.toString());
-		assertEquals(250, data.get(0)); // value at address has changed to expected value
-	}
-	
-	// Test J
-	@Test
-	@DisplayName ("Test Instruction Jump")
-	void testInstructionJump(){
-		String label = "instr";
-		int address = labelMap.get(label);
-		Instruction ins = Instruction.buildInstruction("j", new Operands("j", label));
-		assertNotNull(ins);
-		assertTrue(ins.assemble(errors, labelMap));
-		Integer newPC = ins.execute(PC, dm, rb, log);
-		assertEquals(address, newPC);    //NPC = address
-		
-		assertEquals("Execution:\n"+
-						"\t\n\t ---- 0x004000C8 ---- JUMP Type Instruction >> \"j\":\n"+
-						"\tRegisterBank:\tNo Action!\n"+
-						"\tDataMemory:\tNo Action!\n"+
-						"\tReturning Jump Address: 0x00400000!\n",
-				log.toString());
-	}
-	
-	@Test
-	@DisplayName ("Test Instruction Jump - Direct")
-	void testInstructionJump_Direct(){
-		int address = 0x00400014; // index 21
-		Instruction ins = Instruction.buildInstruction("j", new Operands("j", address/4));
-		assertNotNull(ins);
-		assertTrue(ins.assemble(errors, labelMap));
-		Integer newPC = ins.execute(PC, dm, rb, log);
-		assertEquals(address, newPC);    //NPC = address
-		
-		assertEquals("Execution:\n"+
-						"\t\n\t ---- 0x004000C8 ---- JUMP Type Instruction >> \"j\":\n"+
-						"\tRegisterBank:\tNo Action!\n"+
-						"\tDataMemory:\tNo Action!\n"+
-						"\tReturning Jump Address: 0x00400014!\n",
-				log.toString());
-	}
-	
-	@Test
-	@DisplayName ("Test Instruction Jump - Invalid to instrOver")
-	void testInstructionJump_Invalid(){
-		String label = "inv_instr";
-		Instruction ins = Instruction.buildInstruction("j", new Operands("j", label));
-		assertNotNull(ins);
-		
-		assertFalse(ins.assemble(errors, labelMap));
-		
-		assertEquals("Errors:\n"+
-						"\tInstruction Address: \"0x10000000\" Not Valid!\n"+
-						"\tLabel: \"inv_instr\" points to Invalid Instruction Address!\n",
-				errors.toString());
-		assertThrows(IllegalStateException.class, () -> ins.execute(PC, dm, rb, log));
-		
-	}
-	
-	@Test
-	@DisplayName ("Test Instruction Jump  - Invalid to Data")
-	void testInstructionJump_Invalid_Data(){
-		String label = "data";
-		Instruction ins = Instruction.buildInstruction("j", new Operands("j", label));
-		assertNotNull(ins);
-		
-		assertFalse(ins.assemble(errors, labelMap));
-		
-		assertEquals("Errors:\n"+
-						"\tInstruction Address: \"0x10010000\" Not Valid!\n"+
-						"\tLabel: \"data\" points to Invalid Instruction Address!\n",
-				errors.toString());
-		
-		assertThrows(IllegalStateException.class, () -> ins.execute(PC, dm, rb, log));
-	}
-	
-	// Test JAL
-	@Test
-	@DisplayName ("Test Instruction JumpAndLink")
-	void testInstructionJumpAndLink(){
-		String label = "instr";
-		int address = labelMap.get(label);
-		Instruction ins = Instruction.buildInstruction("jal", new Operands("jal", label));
-		assertNotNull(ins);
-		assertTrue(ins.assemble(errors, labelMap));
-		Integer newPC = ins.execute(PC, dm, rb, log);
-		assertEquals(address, newPC);    //NPC = address
-		
-		assertEquals("Execution:\n"+
-						"\t\n\t ---- 0x004000C8 ---- JUMP Type Instruction >> \"jal\":\n"+
-						"\tStoring Next Program Counter! : 0x004000CC\n"+
-						"\tRegisterBank:\tWriting Value[4194508]\tTo Register Index[*R31]!\n"+
-						"\tDataMemory:\tNo Action!\n"+
-						"\tReturning Jump Address: 0x00400000!\n",
-				log.toString());
-	}
 }

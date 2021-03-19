@@ -2,6 +2,7 @@ package model.components;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import util.Convert;
 import util.logs.ExecutionLog;
@@ -24,7 +25,7 @@ public class RegisterBank {
 	
 	//TODO Add Named versions of Read/Write, so the Opperand Name [RD/RS/RT] can be printed to the log with the action.
 	
-	public RegisterBank(int[] registers, ExecutionLog executionLog) {
+	public RegisterBank(int[] registers, @NotNull ExecutionLog executionLog) {
 		if ( registers.length!=32 )
 			throw new IllegalArgumentException( "Register Bank Must be 32 indexes!" );
 		if ( registers[ 0 ]!=0 )
@@ -40,7 +41,7 @@ public class RegisterBank {
 	 
 	 @throws IndexOutOfBoundsException if register index out of bounds.
 	 */
-	public int read(@Nullable Integer index) {
+	public int read(@Nullable Integer index) throws IndexOutOfBoundsException {
 		LAST_READ1=null;
 		int val=0;
 		
@@ -70,7 +71,7 @@ public class RegisterBank {
 	 @see Convert#r2Named(String)
 	 @see Convert#namedRegisters
 	 */
-	public int[] read(@Nullable Integer index0, @Nullable Integer index1) {
+	public int[] read(@Nullable Integer index0, @Nullable Integer index1) throws IndexOutOfBoundsException {
 		int data0=0, data1=0;
 		
 		if ( index0==null && index1==null ) {
@@ -117,7 +118,7 @@ public class RegisterBank {
 	 @see Convert#namedRegisters
 	 */
 	@SuppressWarnings ("UnusedReturnValue")
-	public boolean write(@Nullable Integer index, @Nullable Integer data) {
+	public boolean write(@Nullable Integer index, @Nullable Integer data) throws IndexOutOfBoundsException {
 		if ( index==null || data==null || index==0 ) {
 			LAST_WRITTEN=null;
 			noAction( );
@@ -136,7 +137,7 @@ public class RegisterBank {
 		this.executionLog.append( NAME + ":\t" + "No Action!" );
 	}
 	
-	public boolean inRange(int index) {
+	public boolean inRange(int index) throws IndexOutOfBoundsException {
 		int MIN_INDEX=0;
 		int MAX_INDEX=31;
 		if ( index>=MIN_INDEX && index<=MAX_INDEX )
@@ -230,5 +231,4 @@ public class RegisterBank {
 		$R, // $R0 ..$R31
 		$Named //$ZERO.$S0.$T0.$RA
 	}
-	
 }

@@ -1,68 +1,72 @@
 package model;
 
+import org.jetbrains.annotations.NotNull;
+
 import model.components.DataMemory;
 import model.components.RegisterBank;
 import model.instr.Operands;
-import org.jetbrains.annotations.NotNull;
+
 import util.Convert;
 import util.logs.ExecutionLog;
 
-public class I_Type extends Instruction{
+public class I_Type extends Instruction {
 	
-	I_Type(String ins, Operands operands){
-		super(ins, operands);
+	I_Type(String ins, Operands operands) {
+		super( ins, operands );
 	}
 	
 	@Override
 	protected void action(@NotNull DataMemory dataMem, @NotNull RegisterBank regBank,
-						  @NotNull ExecutionLog executionLog){
-		switch (ins) {
+						  @NotNull ExecutionLog executionLog) throws IndexOutOfBoundsException, IllegalArgumentException{
+		switch ( ins ) {
 			case "addi":
-				addi(dataMem, regBank, executionLog);
+				addi( dataMem, regBank, executionLog );
 				break;
 			case "lw":
-				lw(dataMem, regBank, executionLog);
+				lw( dataMem, regBank, executionLog );
 				break;
 			case "sw":
-				sw(dataMem, regBank, executionLog);
+				sw( dataMem, regBank, executionLog );
 				break;
 		}
 	}
 	
-	private void addi(DataMemory dataMem, RegisterBank regBank, ExecutionLog executionLog){
-		int rsVal = regBank.read(RS);
+	private void addi(DataMemory dataMem, RegisterBank regBank, ExecutionLog executionLog) {
+		int rsVal=regBank.read( RS );
 		
-		executionLog.append("[IMMEDIATE: "+IMM+"]");
-		executionLog.append("Calculating Result:");
-		int rtVal = rsVal+IMM;
-		executionLog.append("RT = RS+IMMEDIATE = "+rsVal+"+"+IMM+" = "+rtVal);
-		dataMem.noAction();
-		regBank.write(RT, rtVal);
+		executionLog.append( "[IMMEDIATE: " + IMM + "]" );
+		executionLog.append( "Calculating Result:" );
+		int rtVal=rsVal + IMM;
+		executionLog.append( "RT = RS+IMMEDIATE = " + rsVal + "+" + IMM + " ==> " + rtVal );
+		dataMem.noAction( );
+		regBank.write( RT, rtVal );
 	}
 	
-	private void lw(DataMemory dataMem, RegisterBank regBank, ExecutionLog executionLog){
-		int rsVal = regBank.read(RS);
-		
-		int ADDRESS = calculateDataAddress(executionLog, rsVal);
-		int data = dataMem.readData(ADDRESS);
-		regBank.write(RT, data);
+	private void lw(DataMemory dataMem, RegisterBank regBank, ExecutionLog executionLog) throws IndexOutOfBoundsException, IllegalArgumentException{
+		int rsVal=regBank.read( RS );
+		int ADDRESS=calculateDataAddress( executionLog, rsVal );
+		int data=dataMem.readData( ADDRESS );
+		regBank.write( RT, data );
 	}
 	
-	private void sw(DataMemory dataMem, RegisterBank regBank, ExecutionLog executionLog){
-		int rsVal = regBank.read(RS);
-		int data = regBank.read(RT);
-		int ADDRESS = calculateDataAddress(executionLog, rsVal);
-		dataMem.writeData(ADDRESS, data);
-		regBank.noAction();
+	private void sw(DataMemory dataMem, RegisterBank regBank, ExecutionLog executionLog) throws IndexOutOfBoundsException, IllegalArgumentException{
+		int rsVal=regBank.read( RS );
+		int data=regBank.read( RT );
+		int ADDRESS=calculateDataAddress( executionLog, rsVal );
+		dataMem.writeData( ADDRESS, data );
+		regBank.noAction( );
 	}
 	
-	private Integer calculateDataAddress(ExecutionLog executionLog, int rsVal){
-		executionLog.append("[IMMEDIATE: "+IMM+" === "+Convert.uInt2Hex(IMM)+"]");
-		executionLog.append("Calculating Address:");
-		int ADDRESS = IMM+rsVal;    // Presumed the Immediate, or rsVal are already the full Address
-		executionLog.append("ADDRESS = RS+IMMEDIATE = "+rsVal+" + "+IMM+" = "+ADDRESS+" === "+Convert.uInt2Hex(ADDRESS));
-		
-		//TODO - before adding LA - load address, need to add a check here that IMM+RS is a valid address
+	private Integer calculateDataAddress(ExecutionLog executionLog, int rsVal) {
+		executionLog.append( "[IMMEDIATE: " + IMM + " === " + Convert.int2Hex( IMM ) + "]" );
+		executionLog.append( "Calculating Address:" );
+		int ADDRESS = rsVal + IMM;    // Presumed the Immediate, or rsVal are already the full Address
+		executionLog.append( "ADDRESS = RS+IMMEDIATE = " + rsVal + " + " + IMM + " = " + ADDRESS + " ==> " + Convert.int2Hex( ADDRESS ) );
+		//TODO
+		// - Result MUST BE ADDRESS ALIGNED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		// - Add to Err Log -> Throw IllegalStateException.
+		// Change ExecutionLog input - to a general LOGS SuperType ??
 		return ADDRESS;
 	}
+	
 }

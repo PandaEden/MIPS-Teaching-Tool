@@ -1,5 +1,7 @@
 package model.components;
 
+import org.jetbrains.annotations.NotNull;
+
 import model.Instruction;
 import model.instr.Operands;
 
@@ -16,11 +18,9 @@ import java.util.ArrayList;
  <p>
  Index's are word-aligned (multiple of 4).
  <p>
- use {@link AddressValidation#isSupportedInstrAddr(int, ErrorLog)} and
- {@link AddressValidation#addr2index(int, boolean, ErrorLog)}
+ use {@link AddressValidation#isSupportedInstrAddr(int, ErrorLog)}
  
- @see AddressValidation#isSupportedInstrAddr(int, util.logs.ErrorLog)
- @see AddressValidation#addr2index(int, boolean, ErrorLog) */
+ @see AddressValidation#isSupportedInstrAddr(int, util.logs.ErrorLog) */
 public class InstrMemory {
 	public static final int ADDR_SIZE=4;
 	public static final int BASE_INSTR_ADDRESS=0x00400000;
@@ -31,9 +31,10 @@ public class InstrMemory {
 	private final ArrayList<Instruction> instructions;
 	private final ExecutionLog executionLog;
 	
-	// contain a reference autoExit instruction with lineNo (-1)
+	// reference autoExit instruction TODO with lineNo (-1)
+	private static final Instruction autoExit = Instruction.buildInstruction( "exit", Operands.getExit() );
 	
-	public InstrMemory(ArrayList<Instruction> instructions, ExecutionLog executionLog) {
+	public InstrMemory(@NotNull ArrayList<Instruction> instructions, @NotNull ExecutionLog executionLog) {
 		this.instructions=instructions;
 		this.executionLog=executionLog;
 	}
@@ -47,7 +48,7 @@ public class InstrMemory {
 	 @throws IllegalArgumentException  for Non-Word Aligned Address
 	 @see AddressValidation#isSupportedInstrAddr(int, ErrorLog)
 	 */
-	public Instruction InstructionFetch(int PC_Address) {
+	public Instruction InstructionFetch(int PC_Address) throws IndexOutOfBoundsException, IllegalArgumentException{
 		String hex_addr=Convert.int2Hex( PC_Address );
 		//Supported Instr Address
 		if ( (PC_Address<BASE_INSTR_ADDRESS || PC_Address>=OVER_SUPPORTED_INSTR_ADDRESS) )
@@ -57,13 +58,12 @@ public class InstrMemory {
 		
 		int index=Convert.instrAddr2Index( PC_Address );
 		
+		executionLog.append( "Fetching Instruction At Address [" + hex_addr + "]" );
 		if ( index<instructions.size( ) ) {
-			executionLog.append( "Fetching Instruction At Address [" + hex_addr + "]" );
 			return instructions.get( index );
 		} else { // index >256
-			return Instruction.buildInstruction( "exit", Operands.getExit( ) );
+			executionLog.appendEx( "\tRun Over Provided Instructions" );
+			return autoExit;
 		}
 	}
-	
-	//TODO move process output into here & test
 }

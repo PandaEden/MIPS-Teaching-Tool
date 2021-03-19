@@ -45,7 +45,7 @@ public class Operands {
 	 
 	 @throws IllegalArgumentException if label is blank
 	 */
-	public Operands(String opcode, @Nullable Integer rt, @NotNull String label) {
+	public Operands(String opcode, @Nullable Integer rt, @NotNull String label) throws IllegalArgumentException{
 		this( opcode, null, rt, null ); // rs is set to 0 at assembly
 		this.label=label;
 		if ( label.isBlank( ) )
@@ -57,7 +57,7 @@ public class Operands {
 	 
 	 @throws IllegalArgumentException opcode out of range
 	 */
-	public Operands(String opcode, @Nullable Integer rs, @Nullable Integer rt, @Nullable Integer immediate) { // Immediate
+	public Operands(String opcode, @Nullable Integer rs, @Nullable Integer rt, @Nullable Integer immediate) throws IllegalArgumentException{ // Immediate
 		this( rs, rt, null );
 		this.immediate=immediate;
 		
@@ -99,16 +99,16 @@ public class Operands {
 	}
 	
 	/** Jump */
-	public Operands(@NotNull String opcode, @NotNull String label) {
+	public Operands(@NotNull String label) throws IllegalArgumentException {
 		this( );
 		this.label=label;
 		if ( label.isBlank( ) )
-			throw new IllegalArgumentException( "Operands cannot be set with blank Label! : " + opcode );
+			throw new IllegalArgumentException( "Operands cannot be set with blank Label! : \"" + label +"\"");
 		this.instrType=InstrType.J;
 	}
 	
 	/** Jump */
-	public Operands(@NotNull String opcode, @NotNull Integer address) {
+	public Operands(@NotNull Integer address) {
 		this( );
 		this.immediate=address;
 		this.instrType=InstrType.J;
@@ -131,9 +131,9 @@ public class Operands {
 	 
 	 @throws IllegalArgumentException if used with null label in Operands.
 	 */
-	public boolean setImmediate(@NotNull ErrorLog errorLog, @NotNull HashMap<String, Integer> labelMap) {
+	public boolean setImmediate(@NotNull ErrorLog errorLog, @NotNull HashMap<String, Integer> labelMap) throws IllegalArgumentException, IllegalStateException {
 		if ( this.instrType==InstrType.R )
-			throw new IllegalArgumentException( "Cannot setImmediate for Register type!" );
+			throw new IllegalStateException( "Cannot setImmediate for Register type!" );
 		
 		if ( this.label==null || this.label.isBlank( ) )
 			throw new IllegalArgumentException( "Cannot setImmediate with Blank/Null internal Label!" );
@@ -162,7 +162,9 @@ public class Operands {
 			case I_rt_read:
 			case I_rt_write:
 				if ( AddressValidation.isSupportedDataAddr( address, errorLog ) ) {
-					this.immediate=Convert.address2Imm( address );
+					//TODO, really it should be creating a pseudo instruction LUI before this.
+					//	Split ADDR.toHexString in half, top half is loaded by LUI, bottom half is set to the IMM
+					this.immediate=( address );
 					this.rs=0;
 				} else
 					errorLog.appendEx( invalidDataAddr );
@@ -214,8 +216,8 @@ public class Operands {
 	@NotNull
 	public enum InstrType {
 		R,
-		I_rt_read,
-		I_rt_write,
+		I_rt_read,	// TODO merge, there is no difference in rt_read and rt_write are treated
+		I_rt_write,	// - ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 		J
 	}
 	

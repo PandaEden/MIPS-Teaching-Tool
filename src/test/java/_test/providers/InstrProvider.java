@@ -97,13 +97,14 @@ public class InstrProvider implements ArgumentsProvider {
 	public static class RD_RS_RT implements ArgumentsProvider {
 		public Stream<Arguments> provideArguments(ExtensionContext context) { return toArgs( op_RD_RS_RT ); }
 		public static final String OPS = "$1 , r1, $at";
-		
+		public static Operands operands = new Operands(1,1,2);
 	}
 	
 	public static class I {
 		public static class RT_RS_IMM implements ArgumentsProvider {
 			public Stream<Arguments> provideArguments(ExtensionContext context) { return toArgs( op_RT_RS_IMM ); }
 			public static final String OPS = "$1 , r1, -40";
+			public static Operands operands = new Operands("addi",1,1,-40);
 		}
 		
 		public static class RT_MEM implements ArgumentsProvider {

@@ -4,11 +4,14 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import model.Instruction;
 import model.components.DataMemory;
 import model.components.InstrMemory;
+import model.components.RegisterBank;
 
 import setup.Parser;
 
+import util.Convert;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
 import util.logs.Logger;
@@ -16,6 +19,7 @@ import util.logs.WarningsLog;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -178,13 +182,74 @@ public class TestLogs {
 			public static String notSupp(String label) {
 				return "Label: \""+label+"\" Not Supported";
 			}
-			public static String points2Invalid(String label, String type) {
+			public static String points2Invalid_Address (String label, String type) {
 				return "Label: \"" + label + "\" points to Invalid " + type + " Address";
 			}
 			public static String labelNotFound(String label) {
 				return "Label \"" + label + "\" Not Found";
 			}
 			
+		}
+		
+		public static class _Execution {
+			private final RegisterBank actualRegisterBank;
+			private final DataMemory actualDataMemory;
+			private ExecutionLog actualExLog;
+			private final ExecutionLog expectedExLog;
+			public _Execution (int[] values, HashMap<Integer, Double> data, ExecutionLog actual, ExecutionLog expected) {
+				this.actualRegisterBank=new RegisterBank( values,actual );
+				this.actualDataMemory=new DataMemory( data, actual );
+				this.actualExLog=actual;
+				this.expectedExLog=expected;
+			}
+			
+			public Integer execute(Integer PC, Instruction instruction){
+				return instruction.execute( PC, actualDataMemory, actualRegisterBank, actualExLog );
+			}
+			public static String _fetch (int pc){
+				return "Fetching Instruction At Address [" + Convert.int2Hex(pc) + "]";
+			}
+			public void rb_noAct (){ expectedExLog.appendEx( "RegisterBank:\tNo Action"); }
+			public void dm_noAct(){ expectedExLog.appendEx( "DataMemory:\tNo Action"); }
+			public void decode (String hexPC, String opcode, String type){
+				expectedExLog.append( "\n\t ---- " + hexPC + " ---- " + type + " Type Instruction >> \"" + opcode + "\":");
+			}
+			public void storeNPC(int npc){
+				expectedExLog.append( "Storing Next Program Counter! : "+Convert.int2Hex(npc) );
+			}
+			
+			public void rb_read(int val, int reg){
+				expectedExLog.appendEx( "RegisterBank:\tReading Value[" + val + "]\tFrom Register Index[R" + reg + "]");
+			}
+			public void rb_write(int val, int reg){
+				expectedExLog.appendEx( "RegisterBank:\tWriting Value[" + val + "]\tTo Register Index[*R" + reg + "]");
+			}
+			public void IMM(int imm){ expectedExLog.append( "[IMMEDIATE: " + imm + "]"); }
+			public void cal_result(String aluAction){
+				expectedExLog.append( "Calculating Result:" );
+				expectedExLog.append( aluAction );
+			}
+			
+			public void imm_cal_addr (int imm, int rs_val, int addr){
+				expectedExLog.append( "[IMMEDIATE: " + imm + " === " + Convert.int2Hex(imm) + "]");
+				expectedExLog.append( "Calculating Address:" );
+				expectedExLog.append( "ADDRESS = RS+IMMEDIATE = "+rs_val+" + "+imm+" = "+addr+" ==> "+Convert.int2Hex(addr) );
+			}
+			public void shift_imm(int imm, int addr){
+				expectedExLog.append( "Left Shifting IMMEDIATE By 2 = "+Convert.int2Hex(imm)
+										+" << 2 ==> ["+addr+" === "+Convert.int2Hex(addr)+"]");
+			}
+			public void dm_read(int val, int addr){
+				expectedExLog.appendEx( "DataMemory:\tReading Value[" + val + "]\tFrom Memory Address["
+										+Convert.int2Hex(addr) +"]");
+			}
+			public void dm_write(int val, int addr){
+				expectedExLog.appendEx( "DataMemory:\tWriting Value[" + val + "]\tTo Memory Address["
+										+Convert.int2Hex(addr) +"]");
+			}
+			public void rtn_addr(int addr){
+				expectedExLog.appendEx( "Returning Jump Address: "+ Convert.int2Hex(addr) );
+			}
 		}
 		
 	}
