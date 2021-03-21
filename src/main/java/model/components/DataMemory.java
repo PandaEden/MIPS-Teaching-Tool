@@ -75,15 +75,15 @@ public class DataMemory {
 		if ( address>=BASE_DATA_ADDRESS && address<=(OVER_SUPPORTED_DATA_ADDRESS - DATA_ALIGN) )
 			return true;
 		else
-			throw new IndexOutOfBoundsException( "Data Address \"["+Convert.int2Hex(address)+", "+address+"]\" must be >="
+			throw new IndexOutOfBoundsException( "Data Address ["+Convert.int2Hex(address)+", "+address+"] must be >="
 												 + Convert.int2Hex( BASE_DATA_ADDRESS ) + " and <="
 												 + Convert.int2Hex( OVER_SUPPORTED_DATA_ADDRESS - DATA_ALIGN ) + "!" );
 	}
 	
 	private int toIndex(int address) throws IllegalArgumentException{
 		if ( address%DATA_ALIGN!=0 && inRange( address ) )
-			throw new IllegalArgumentException( "Address must be Double Word Aligned" );
-		
+			throw new IllegalArgumentException( "Data Address ["+Convert.int2Hex(address)
+												+", "+address+"] Must Be DoubleWord Aligned!" );
 		return Convert.dataAddr2Index( address )/2;
 	}
 	

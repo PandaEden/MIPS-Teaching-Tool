@@ -6,38 +6,51 @@ import model.components.InstrMemory;
 import model.components.RegisterBank;
 
 import util.logs.ExecutionLog;
+import util.logs.Logger;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Execute {
-	ExecutionLog exLog;
-	DataMemory dataMem;
-	RegisterBank regBank;
-	InstrMemory instrMemory;
-	
-	public Execute(ExecutionLog exLog, DataMemory dataMem, RegisterBank regBank, InstrMemory instrMemory) {
+	private final ExecutionLog exLog;
+	private final DataMemory dataMem;
+	private final RegisterBank regBank;
+	public Execute(ExecutionLog exLog, HashMap<Integer, Double> data, int[] values) {
 		this.exLog=exLog;
-		this.dataMem=dataMem;
-		this.regBank=regBank;
-		this.instrMemory=instrMemory;
+		this.dataMem=new DataMemory( data, exLog );
+		this.regBank=new RegisterBank( values, exLog );
 	}
 	
-	private void execute(ArrayList<Instruction> instructions) {
-		execute( dataMem, regBank, instrMemory, exLog );
-		exLog.println( );
+	/** Instanced Version of {@link #execute(DataMemory, RegisterBank, InstrMemory, ExecutionLog, StringBuilder)} */
+	public void execute(ArrayList<Instruction> instructions, StringBuilder output) {
+		execute( dataMem, regBank, new InstrMemory( instructions, exLog ), exLog, output );
 	}
 	
-	public static void execute(DataMemory dataMem, RegisterBank regBank, InstrMemory instrMemory, ExecutionLog exLog) {
-		//
+	/**Loops though the given instructions, executing them until reading an instruction that returns a null address (Exit)
+	 Output is appended to the StringBuilder.@return
+	 */
+	public static String execute(DataMemory dataMem, RegisterBank regBank,
+								 InstrMemory instrMemory, ExecutionLog exLog,
+								 StringBuilder output)
+			throws IndexOutOfBoundsException, IllegalArgumentException {
 		Instruction ins;
-		for ( Integer PC=InstrMemory.BASE_INSTR_ADDRESS;
-			  PC!=null;
-			  PC=ins.execute( PC, dataMem, regBank, exLog ) ) {
-			exLog.println( );
-			exLog.clear( ); // print ExecutionLog
-			System.out.print( regBank.format( ) ); // print RegisterBank status
-			ins=instrMemory.InstructionFetch( PC );
+		try {
+			for ( Integer PC=InstrMemory.BASE_INSTR_ADDRESS;
+				  PC!=null;
+			) {
+				output.append( regBank.format( ) ); // Register Bank
+				ins=instrMemory.InstructionFetch( PC );
+				PC=ins.execute( PC, dataMem, regBank, exLog );
+				output.append( exLog.toString( ) ); //  ExecutionLog
+				exLog.clear();
+			}
+		}catch ( IndexOutOfBoundsException | IllegalArgumentException e ){
+			// catch Exception -> Calling method should print the ErrLog/ WarningLog
+			// after Execution Finishes to see what went wrong
+			output.append( exLog.toString( ) );
+			output.append( Logger.Color.fmtColored( Logger.Color.ERR_LOG, "ERROR: "+e.getMessage() ) );
 		}
+		return output.toString();
 	}
 	
 }

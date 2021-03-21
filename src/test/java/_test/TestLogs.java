@@ -87,6 +87,7 @@ public class TestLogs {
 	}
 	
 	private static class TestMethods {
+		/**Used to prevent repeated calls failing. */
 		private static String capture2StringThenClear(Logger log) {
 			String actualString=log.toString( );
 			log.clear( );    // Just In case it was not empty. Make it Empty so further tests do not also fail.
@@ -120,12 +121,7 @@ public class TestLogs {
 		System.out.print(Logger.Color.fmtColored(Logger.Color.next(), txt));
 		Logger.Color.colorSupport=false;
 	}
-	@Test
-	void col(){
-		for ( int i=0; i<10; i++ ) {
-			TestLogs.tempPrint( "\tCol "+i );
-		}
-	}
+	
 	// Methods starting with an underscore have the !, so use append for those, for the rest, use appendEx
 	public static class FMT_MSG {
 		public static String xAddressNot (String X, String hexAddress, String thing) { return X+" Address: \"" + hexAddress + "\" Not " + thing; }
@@ -194,7 +190,7 @@ public class TestLogs {
 		public static class _Execution {
 			private final RegisterBank actualRegisterBank;
 			private final DataMemory actualDataMemory;
-			private ExecutionLog actualExLog;
+			private final ExecutionLog actualExLog;
 			private final ExecutionLog expectedExLog;
 			public _Execution (int[] values, HashMap<Integer, Double> data, ExecutionLog actual, ExecutionLog expected) {
 				this.actualRegisterBank=new RegisterBank( values,actual );
@@ -209,23 +205,23 @@ public class TestLogs {
 			public static String _fetch (int pc){
 				return "Fetching Instruction At Address [" + Convert.int2Hex(pc) + "]";
 			}
-			public void rb_noAct (){ expectedExLog.appendEx( "RegisterBank:\tNo Action"); }
-			public void dm_noAct(){ expectedExLog.appendEx( "DataMemory:\tNo Action"); }
+			private void rb_noAct (){ expectedExLog.appendEx( "RegisterBank:\tNo Action"); }
+			private void dm_noAct(){ expectedExLog.appendEx( "DataMemory:\tNo Action"); }
 			public void decode (String hexPC, String opcode, String type){
 				expectedExLog.append( "\n\t ---- " + hexPC + " ---- " + type + " Type Instruction >> \"" + opcode + "\":");
 			}
-			public void storeNPC(int npc){
+			private void storeNPC(int npc){
 				expectedExLog.append( "Storing Next Program Counter! : "+Convert.int2Hex(npc) );
 			}
 			
 			public void rb_read(int val, int reg){
 				expectedExLog.appendEx( "RegisterBank:\tReading Value[" + val + "]\tFrom Register Index[R" + reg + "]");
 			}
-			public void rb_write(int val, int reg){
+			private void rb_write(int val, int reg){
 				expectedExLog.appendEx( "RegisterBank:\tWriting Value[" + val + "]\tTo Register Index[*R" + reg + "]");
 			}
-			public void IMM(int imm){ expectedExLog.append( "[IMMEDIATE: " + imm + "]"); }
-			public void cal_result(String aluAction){
+			private void IMM(int imm){ expectedExLog.append( "[IMMEDIATE: " + imm + "]"); }
+			private void cal_result(String aluAction){
 				expectedExLog.append( "Calculating Result:" );
 				expectedExLog.append( aluAction );
 			}
@@ -235,20 +231,88 @@ public class TestLogs {
 				expectedExLog.append( "Calculating Address:" );
 				expectedExLog.append( "ADDRESS = RS+IMMEDIATE = "+rs_val+" + "+imm+" = "+addr+" ==> "+Convert.int2Hex(addr) );
 			}
-			public void shift_imm(int imm, int addr){
+			private void shift_imm(int imm, int addr){
 				expectedExLog.append( "Left Shifting IMMEDIATE By 2 = "+Convert.int2Hex(imm)
 										+" << 2 ==> ["+addr+" === "+Convert.int2Hex(addr)+"]");
 			}
-			public void dm_read(int val, int addr){
+			private void dm_read(int val, int addr){
 				expectedExLog.appendEx( "DataMemory:\tReading Value[" + val + "]\tFrom Memory Address["
 										+Convert.int2Hex(addr) +"]");
 			}
-			public void dm_write(int val, int addr){
+			private void dm_write(int val, int addr){
 				expectedExLog.appendEx( "DataMemory:\tWriting Value[" + val + "]\tTo Memory Address["
 										+Convert.int2Hex(addr) +"]");
 			}
-			public void rtn_addr(int addr){
+			private void rtn_addr(int addr){
 				expectedExLog.appendEx( "Returning Jump Address: "+ Convert.int2Hex(addr) );
+			}
+			
+			public void exit_output (String hexPc, String opcode){
+				decode( hexPc, opcode, "EXIT" );
+				rb_noAct();
+				dm_noAct();
+			}
+			
+			public void R_output(String hexPC, String opcode, int RS, int rs_val, int RT, int rt_val, int RD, int rd_val){
+				String sign="   ";
+				switch ( opcode ){
+					case "add": sign = "+"; break;
+					case "sub": sign = "-"; break;
+				}
+				decode( hexPC, opcode, "REGISTER" );
+				rb_read( rs_val, RS );
+				rb_read( rt_val, RT);
+				cal_result( "RD = RS"+sign+"RT = "+rs_val+sign+rt_val+" ==> "+rd_val );
+				dm_noAct( );
+				rb_write( rd_val, RD );
+			}
+			public void I_output(String hexPC, String opcode, int RS, int rs_val,int IMM, int RT, int rt_val){
+				String sign="   ";
+				switch ( opcode ){
+					case "addi": sign = "+"; break;
+				}
+				decode( hexPC, opcode, "IMMEDIATE" );
+				rb_read( rs_val, RS );
+				IMM( IMM );
+				cal_result( "RT = RS"+sign+"IMMEDIATE = "+rs_val+sign+IMM+" ==> "+rt_val );
+				dm_noAct( );
+				rb_write( rt_val, RT );
+			}
+			
+			public void load_output(String hexPC, int RS, int rs_val, int IMM, int RT, int rt_val){
+				decode( hexPC, "lw", "IMMEDIATE" );
+				rb_read( rs_val, RS );
+				imm_cal_addr( IMM, rs_val, IMM+rs_val );
+				dm_read( rt_val, IMM+rs_val );
+				rb_write( rt_val, RT );
+			}
+			public void store_output(String hexPC, int RS, int rs_val, int IMM, int RT, int rt_val){
+				decode( hexPC, "sw", "IMMEDIATE" );
+				rb_read( rs_val, RS );
+				rb_read( rt_val, RT );
+				imm_cal_addr( IMM, rs_val, IMM+rs_val );
+				dm_write( rt_val, IMM+rs_val );
+				rb_noAct( );
+			}
+			public void J_output (String hexPC, int imm){
+				decode( hexPC, "j", "JUMP" );
+				rb_noAct( );
+				shift_imm( imm, imm*4 );
+				dm_noAct( );
+				rtn_addr( imm*4 );
+			}
+			
+			public void jal_output(String hexPC, int imm){
+				int npc = Convert.hex2uInt(hexPC)+4;
+				decode( hexPC, "jal", "JUMP" );
+				storeNPC( npc );
+				rb_write( npc, 31 );
+				shift_imm( imm, imm*4 );
+				dm_noAct( );
+				rtn_addr( imm*4 );
+			}
+			public void run_over(){
+				expectedExLog.append( "\tRun Over Provided Instructions!" );
 			}
 		}
 		

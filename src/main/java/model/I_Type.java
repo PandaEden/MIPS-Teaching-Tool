@@ -17,7 +17,8 @@ public class I_Type extends Instruction {
 	
 	@Override
 	protected void action(@NotNull DataMemory dataMem, @NotNull RegisterBank regBank,
-						  @NotNull ExecutionLog executionLog) throws IndexOutOfBoundsException, IllegalArgumentException{
+						  @NotNull ExecutionLog executionLog)
+			throws IndexOutOfBoundsException, IllegalArgumentException{
 		switch ( ins ) {
 			case "addi":
 				addi( dataMem, regBank, executionLog );
@@ -42,14 +43,16 @@ public class I_Type extends Instruction {
 		regBank.write( RT, rtVal );
 	}
 	
-	private void lw(DataMemory dataMem, RegisterBank regBank, ExecutionLog executionLog) throws IndexOutOfBoundsException, IllegalArgumentException{
+	private void lw(DataMemory dataMem, RegisterBank regBank, ExecutionLog executionLog)
+			throws IndexOutOfBoundsException, IllegalArgumentException{
 		int rsVal=regBank.read( RS );
 		int ADDRESS=calculateDataAddress( executionLog, rsVal );
 		int data=dataMem.readData( ADDRESS );
 		regBank.write( RT, data );
 	}
 	
-	private void sw(DataMemory dataMem, RegisterBank regBank, ExecutionLog executionLog) throws IndexOutOfBoundsException, IllegalArgumentException{
+	private void sw(DataMemory dataMem, RegisterBank regBank, ExecutionLog executionLog)
+			throws IndexOutOfBoundsException, IllegalArgumentException{
 		int rsVal=regBank.read( RS );
 		int data=regBank.read( RT );
 		int ADDRESS=calculateDataAddress( executionLog, rsVal );
@@ -61,7 +64,8 @@ public class I_Type extends Instruction {
 		executionLog.append( "[IMMEDIATE: " + IMM + " === " + Convert.int2Hex( IMM ) + "]" );
 		executionLog.append( "Calculating Address:" );
 		int ADDRESS = rsVal + IMM;    // Presumed the Immediate, or rsVal are already the full Address
-		executionLog.append( "ADDRESS = RS+IMMEDIATE = " + rsVal + " + " + IMM + " = " + ADDRESS + " ==> " + Convert.int2Hex( ADDRESS ) );
+		executionLog.append( "ADDRESS = RS+IMMEDIATE = " + rsVal + " + " + IMM + " = "
+							 + ADDRESS + " ==> " + Convert.int2Hex( ADDRESS ) );
 		//TODO
 		// - Result MUST BE ADDRESS ALIGNED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		// - Add to Err Log -> Throw IllegalStateException.

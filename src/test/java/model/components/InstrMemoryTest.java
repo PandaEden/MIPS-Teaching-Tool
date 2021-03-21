@@ -34,12 +34,7 @@ class InstrMemoryTest {
 	
 	@BeforeEach
 	void setUp ( ) {
-		 testLogs = new TestLogs();
-		
-		instr_list.add( Instruction.buildInstruction( "add", InstrProvider.RD_RS_RT.operands ));
-		instr_list.add( Instruction.buildInstruction( "sub", InstrProvider.RD_RS_RT.operands ));
-		instr_list.add( Instruction.buildInstruction( "addi", InstrProvider.I.RT_RS_IMM.operands ));
-		instr_list.add( Instruction.buildInstruction( "exit", Operands.getExit() ) );
+		testLogs = new TestLogs();
 		instrMemory = new InstrMemory( instr_list, testLogs.actualExecution);
 	}
 	
@@ -53,13 +48,18 @@ class InstrMemoryTest {
 		Integer PC = 0x00400000;
 		Instruction ins;
 		
+		instr_list.add( Instruction.buildInstruction( "add", InstrProvider.RD_RS_RT.operands ));
+		instr_list.add( Instruction.buildInstruction( "sub", InstrProvider.RD_RS_RT.operands ));
+		instr_list.add( Instruction.buildInstruction( "addi", InstrProvider.I.RT_RS_IMM.operands ));
+		instr_list.add( Instruction.buildInstruction( "exit", Operands.getExit( ) ) );
+		
 		for ( Instruction i: instr_list ){
-			i.assemble(testLogs.actualErrors, new HashMap<>() );
+			i.assemble(testLogs.actualErrors, new HashMap<>( ) );
 			
 			ins = instrMemory.InstructionFetch(PC);
-			testLogs.expectedExecution.append(TestLogs.FMT_MSG._Execution._fetch(PC));
-			assertEquals(i, ins);
-			PC = ins.execute(PC, dm, rm, lg);
+			testLogs.expectedExecution.append( TestLogs.FMT_MSG._Execution._fetch(PC) );
+			assertEquals( i, ins );
+			PC = ins.execute( PC, dm, rm, lg );
 		}
 		assertNull(PC);
 	}
@@ -68,27 +68,27 @@ class InstrMemoryTest {
 	@Tag( Tags.OUT )
 	void InstructionFetch_Supported_OverBounds() {
 		// Actual
-		Instruction ins = instrMemory.InstructionFetch(0x00500000);
-		ins.assemble(testLogs.actualErrors, new HashMap<>());
+		Instruction ins = instrMemory.InstructionFetch(0x00500000 );
+		// Pre-Assembled
 		ins.execute(0x00500000, dm, rm, testLogs.actualExecution );
 		
-		// Expected
-		Instruction expected = Instruction.buildInstruction("exit", Operands.getExit());
-		expected.assemble(testLogs.expectedErrors, new HashMap<>());
-		testLogs.expectedExecution.append(TestLogs.FMT_MSG._Execution._fetch(0x00500000));
+		// Expected Pre Assembled Exit Instruction
+		Instruction expected = Instruction.buildInstruction("exit", Operands.getExit( ) );
+		expected.assemble( testLogs.expectedErrors, new HashMap<>() );
+		testLogs.expectedExecution.append( TestLogs.FMT_MSG._Execution._fetch(0x00500000 ) );
 		testLogs.expectedExecution.appendEx( "\tRun Over Provided Instructions" );
-		expected.execute(0x00500000, dm, rm, testLogs.expectedExecution);
+		expected.execute(0x00500000, dm, rm, testLogs.expectedExecution );
 	}
 	
 	@ParameterizedTest
 	@ArgumentsSource( AddressProvider.InstrAddr.Supported.Not_Supported_Boundaries.class )
-	void Invalid_InstructionFetch_NotSupported_OverBounds(String hexAddr, Integer address) {
-		assertThrows(IndexOutOfBoundsException.class, ()->instrMemory.InstructionFetch(address));
+	void Invalid_InstructionFetch_NotSupported_OverBounds( String hexAddr, Integer address ) {
+		assertThrows( IndexOutOfBoundsException.class, ()-> instrMemory.InstructionFetch( address ) );
 	}
 	
 	@ParameterizedTest
 	@ArgumentsSource( AddressProvider.InstrAddr.Supported.Not_Aligned.class )
-	void Invalid_InstructionFetch_NotAligned (String hexAddr, Integer address) {
-		assertThrows(IllegalArgumentException.class, ()->instrMemory.InstructionFetch(address));
+	void Invalid_InstructionFetch_NotAligned ( String hexAddr, Integer address ) {
+		assertThrows( IllegalArgumentException.class, ()-> instrMemory.InstructionFetch( address ) );
 	}
 }

@@ -2,8 +2,6 @@ package model.components;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.VisibleForTesting;
-
 import util.Convert;
 import util.logs.ExecutionLog;
 import util.logs.Logger;
@@ -132,8 +130,11 @@ public class RegisterBank {
 		return true;
 	}
 	
-	/** Explicit instruction to do nothing. */
+	/** Explicit instruction to do nothing. And Clears the LAST_WRITTEN/READ */
 	public void noAction() {
+		LAST_WRITTEN=null;
+		LAST_READ1=null;
+		LAST_READ0=null;
 		this.executionLog.append( NAME + ":\t" + "No Action!" );
 	}
 	
@@ -205,17 +206,22 @@ public class RegisterBank {
 	 */
 	@NotNull
 	public String format() {
-		StringBuilder rtn=new StringBuilder( "-----------REGISTER-BANK-------------\n" );
-		int I1=0, I2=8, I3=16, I4=24;
+		StringBuilder rtn=new StringBuilder( "-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n" );
+		int I1=0, I2=4, I3=8, I4=12, I5=16, I6=20, I7=24, I8=28;
 		
-		for ( int i=0; i<8; i++ ) {
-			rtn.append( "|" ).append( fmtRegWithData( I1++ ) )
+		for ( int i=0; i<4; i++ ) {
+			rtn.append( "|" )
+			   .append( fmtRegWithData( I1++ ) )
 			   .append( "\t\t" ).append( fmtRegWithData( I2++ ) )
 			   .append( "\t" ).append( fmtRegWithData( I3++ ) )
 			   .append( "\t" ).append( fmtRegWithData( I4++ ) )
-			   .append( "|\n" );
+			   .append( "\t\t\t" ).append( fmtRegWithData( I5++ ) )
+			   .append( "\t" ).append( fmtRegWithData( I6++ ) )
+			   .append( "\t" ).append( fmtRegWithData( I7++ ) )
+			   .append( "\t" ).append( fmtRegWithData( I8++ ) )
+			.append( "|\n" );
 		}
-		rtn.append( "-------------------------------------\n" );
+		rtn.append( "-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n" );
 		return rtn.toString( );
 	}
 	

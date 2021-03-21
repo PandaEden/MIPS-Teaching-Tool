@@ -47,6 +47,7 @@ public class Logger {
 					((prefix!=null) ? prefix + "\t" : "")
 					+ msg );
 	}
+	
 	/** Adds the message to the log, null/empty will be ignored, Prefixes LineNo, Suffix '!' */
 	public void appendEx (int lineNo, @Nullable String msg) {
 		setLineNoPrefix( lineNo );

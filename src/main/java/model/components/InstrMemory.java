@@ -5,12 +5,14 @@ import org.jetbrains.annotations.NotNull;
 import model.Instruction;
 import model.instr.Operands;
 
+import util.logs.Logger;
 import util.validation.AddressValidation;
 import util.Convert;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  Wrapper for Instruction[] instructions. Provides protection for runtime errors where an address calculated during
@@ -37,6 +39,7 @@ public class InstrMemory {
 	public InstrMemory(@NotNull ArrayList<Instruction> instructions, @NotNull ExecutionLog executionLog) {
 		this.instructions=instructions;
 		this.executionLog=executionLog;
+		autoExit.assemble(new ErrorLog( new ArrayList<>() ),new HashMap<>());// Pre-Assemble AutoExit
 	}
 	
 	/**
@@ -51,10 +54,12 @@ public class InstrMemory {
 	public Instruction InstructionFetch(int PC_Address) throws IndexOutOfBoundsException, IllegalArgumentException{
 		String hex_addr=Convert.int2Hex( PC_Address );
 		//Supported Instr Address
-		if ( (PC_Address<BASE_INSTR_ADDRESS || PC_Address>=OVER_SUPPORTED_INSTR_ADDRESS) )
-			throw new IndexOutOfBoundsException( "Address " + hex_addr + " Not In Range!" );
+		if ( ( PC_Address<BASE_INSTR_ADDRESS || PC_Address>=OVER_SUPPORTED_INSTR_ADDRESS ) )
+			throw new IndexOutOfBoundsException( "Instruction Address ["+Convert.int2Hex(PC_Address)
+												 +", "+PC_Address+"]  " + hex_addr + " Not In Range!" );
 		if ( PC_Address%ADDR_SIZE!=0 )
-			throw new IllegalArgumentException( "Address " + hex_addr + " Not Word Aligned!" );
+			throw new IllegalArgumentException( "Instruction Address ["+Convert.int2Hex(PC_Address)
+												 +", "+PC_Address+"] " + hex_addr + " Not Word Aligned!" );
 		
 		int index=Convert.instrAddr2Index( PC_Address );
 		
@@ -62,7 +67,10 @@ public class InstrMemory {
 		if ( index<instructions.size( ) ) {
 			return instructions.get( index );
 		} else { // index >256
-			executionLog.appendEx( "\tRun Over Provided Instructions" );
+			executionLog.appendEx(
+					Logger.Color.fmtColored( Logger.Color.WARN_LOG,
+											 "\tRun Over Provided Instructions"  )
+			);
 			return autoExit;
 		}
 	}
