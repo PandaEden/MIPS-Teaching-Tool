@@ -20,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tag( Tags.Pkg.MOD )
 @Tag( Tags.Pkg.COM )
 @Tag( Tags.INSTR )
+@Tag( Tags.MEM )
 @Tag( Tags.ACC )
 @DisplayName ( Tags.Pkg.MOD + " : " + Tags.Pkg.COM + " : "+Tags.INSTR+Tags.MEM+" Test" )
 class InstrMemoryTest {

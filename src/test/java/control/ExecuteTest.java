@@ -8,11 +8,8 @@ import org.junit.jupiter.api.*;
 import model.Instruction;
 import model.instr.Operands;
 
-import util.logs.ExecutionLog;
-
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Random;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -22,9 +19,8 @@ class ExecuteTest {
 	private static TestLogs.FMT_MSG._Execution testLogs_ex;
 	private static Execute execute;
 	private static final HashMap<Integer, Double> data=new HashMap<>( );
-	private static final HashMap<String, Integer> labelMap=new HashMap<>();;
 	ArrayList<Instruction> instr_list= new ArrayList<>();
-	private static final int[] values=new int[ 32 ];
+	private static int[] values=new int[ 32 ];
 	
 	
 	@BeforeAll
@@ -38,6 +34,7 @@ class ExecuteTest {
 	void tearDown ( ) {
 		logs.after();
 		instr_list.clear();
+		for ( int i=1; i<32; i++ ) values[i]=0; /*reset values*/
 	}
 	
 	/**Takes the Output from the expectedExecutionLog

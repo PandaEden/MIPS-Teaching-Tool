@@ -11,7 +11,7 @@ public class Tags {
 	
 	public static final String INSTR="Instruction";
 	public static final String DATA="Data";
-	public static final String MEM="Memor";
+	public static final String MEM="Memory";
 	public static final String I_ADDR="Immediate_Address";
 	public static final String MULTIPLE="MULTIPLE_TESTS";
 	public static final String EX="Execution";

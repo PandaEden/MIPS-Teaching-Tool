@@ -27,7 +27,7 @@ public class DataMemory {
 	public static final int DATA_ALIGN=8;
 	public static final int MAX_DATA_ITEMS=256;
 	public static final int BASE_DATA_ADDRESS=0x10010000;
-	public static final int OVER_SUPPORTED_DATA_ADDRESS=BASE_DATA_ADDRESS + MAX_DATA_ITEMS*DATA_ALIGN;
+	public static final int OVER_SUPPORTED_DATA_ADDRESS=BASE_DATA_ADDRESS + (MAX_DATA_ITEMS)*DATA_ALIGN;
 	public static final int OVER_DATA_ADDRESS=0x10040000;
 	private final String NAME="DataMemory";
 	private final HashMap<Integer, Double> data;
