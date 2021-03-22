@@ -13,16 +13,14 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 @Tag ( Tags.Pkg.UTIL )
 @Tag ( "Convert" )
 @DisplayName ( Tags.Pkg.UTIL + " : Convert Test" )
 class ConvertTest {
 	@Test
-	@DisplayName ( "Test Split CSV" )
-	void testSplitCSV ( ) {
+	void SplitCSV ( ) {
 		String csv="    Lots Of    Empty,    Spaces    , csv should     trim  ";
 		String[] result_csv=Convert.splitCSV( csv );
 		assertEquals( 3, result_csv.length );
@@ -36,6 +34,17 @@ class ConvertTest {
 		String[] result=Convert.splitCSV( s );
 		assertEquals( 1, result.length );
 		assertEquals( "one word", result[ 0 ] );
+	}
+	
+	@Test
+	void SplitCSV_WithTrailingEmptySegments ( ) {
+		String[] result_csv=Convert.splitCSV( "val1, ," );
+		assertEquals( 3, result_csv.length );
+		Assertions.assertAll(
+				( ) -> assertEquals( "val1", result_csv[ 0 ] ),
+				( ) -> assertEquals( "", result_csv[ 1 ] ),
+				( ) -> assertEquals( "", result_csv[ 2 ] )
+		);
 	}
 	
 	@Nested

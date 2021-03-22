@@ -115,6 +115,9 @@ class ExecuteTest {
 		actualOutput.append(logs.actualErrors);
 		actualOutput.append(logs.actualWarnings);
 		assertEquals(expectedOutput.toString(), actualOutput.toString());
+		
+		//Print Output
+		TestLogs.tempPrint(actualOutput.toString());
 	}
 	
 	@Test

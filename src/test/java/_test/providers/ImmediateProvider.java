@@ -98,5 +98,39 @@ public class ImmediateProvider {
 		
 	}
 	
+	private static final List<Arguments> _32Bit_Positive= List.of(
+			AddressProvider.ZERO, // 0
+			Arguments.of( "0x3FFFFFFF", 1073741823 ), // Midpoint (2^30-1)
+			AddressProvider.INT_MAX ); // Max (2^31-1)
+	private static final List<Arguments> _32Bit_Negative= List.of(
+			AddressProvider.MINUS_1,
+			Arguments.of( "0xC0000000", -1073741824 ), // Midpoint -(2^30)
+			AddressProvider.INT_MIN ); // Max -(2^31)
+	private static final List<Arguments> Invalid_32Bit = List.of(
+			Arguments.of( "0xFFFFFFFF7FFFFFFF", -2147483649L ),	// (Int.Min)-1
+			Arguments.of( "0x0000000080000000", 2147483648L ) ); // (Int.Max)+1
 	
+	/** Format ( String hexImm, Integer imm ) */
+	public static class _32Bit implements ArgumentsProvider{
+		public Stream<Arguments> provideArguments (ExtensionContext context) {
+			return flatMap( _32Bit_Positive, _32Bit_Negative );
+		}
+		
+		public static class Positive implements ArgumentsProvider {
+			public Stream<Arguments> provideArguments (ExtensionContext context) { return _32Bit_Positive.stream( ); }
+			public static class Invalid_Over implements ArgumentsProvider {
+				public Stream<Arguments> provideArguments (ExtensionContext context) { return Invalid_32Bit.subList( 1 , 2).stream( ); }
+				
+			}
+			
+		}
+		public static class Negative implements ArgumentsProvider {
+			public Stream<Arguments> provideArguments (ExtensionContext context) { return _32Bit_Negative.stream( ); }
+			
+		}
+		public static class Invalid implements ArgumentsProvider {
+			public Stream<Arguments> provideArguments (ExtensionContext context) { return Invalid_32Bit.stream( ); }
+			
+		}
+	}
 }

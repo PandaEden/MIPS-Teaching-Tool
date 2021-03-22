@@ -8,6 +8,7 @@ import model.Instruction;
 import model.components.DataMemory;
 import model.components.InstrMemory;
 import model.components.RegisterBank;
+import model.instr.Operands;
 
 import setup.Parser;
 
@@ -187,6 +188,25 @@ public class TestLogs {
 			
 		}
 		
+		public static class data {
+			public static String NotValSignedInt(String value){
+				return "Data Value: [" + value + "], Not Valid Signed Integer";
+			}
+			public static String NotValSignedInt(String value, int index){
+				return "Data Value: [" + value + "], Index: \""+index+"\", Not Valid Signed Integer";
+			}
+			public static String N_MustBePosInt(int N){
+				return  "<Int_N>: [" + N + "], Must Be A Positive Integer!\tFormat: \"<Int_Val> : <Int_N>\"";
+			}
+			
+			public static String NotValFor_WordType (String data){
+				return "Data: [" + data + "], Not Valid For DataType: \".word\"";
+			}
+			public static String NoDataGiven_Word = "No Data Given! For DataType: \".word\"";
+		}
+		
+		public static final String FailedAssemble = "Failed To Assemble Instructions";
+		
 		public static class _Execution {
 			private final RegisterBank actualRegisterBank;
 			private final DataMemory actualDataMemory;
@@ -221,7 +241,7 @@ public class TestLogs {
 				expectedExLog.appendEx( "RegisterBank:\tWriting Value[" + val + "]\tTo Register Index[*R" + reg + "]");
 			}
 			private void IMM(int imm){ expectedExLog.append( "[IMMEDIATE: " + imm + "]"); }
-			private void cal_result(String aluAction){
+			public void cal_result(String aluAction){
 				expectedExLog.append( "Calculating Result:" );
 				expectedExLog.append( aluAction );
 			}

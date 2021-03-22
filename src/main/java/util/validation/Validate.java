@@ -3,16 +3,11 @@ package util.validation;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import model.instr.Operands;
-
 import util.Convert;
 import util.logs.ErrorLog;
 import util.logs.WarningsLog;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  Provides validation for data types. And wrappers of {@link Convert}'s methods with validation performed.

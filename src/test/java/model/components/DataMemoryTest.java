@@ -86,18 +86,10 @@ class DataMemoryTest {
 	@Test
 	@Tag( Tags.MULTIPLE )
 	void Test_Exceptions_Thrown() {
-		
-		// Provided data HashMap with too many items	// Should really be checking that the provided hashMap is empty perhaps
-		for ( int i=0; i<DataMemory.MAX_DATA_ITEMS+1; i++ ) {
-			data.put(DataMemory.BASE_DATA_ADDRESS+i*DataMemory.DATA_ALIGN, 5.0 );
-		}
 		assertAll(
 				//writeData null value	-> NoAction
 				() -> assertFalse( dataMemory.writeData( (int) 0x10000000L, null ) ),
 				() -> assertEquals( "Execution:\n\tDataMemory:\tNo Action!\n", log.toString( ) ),
-				
-				// Initalizing DataMemory with too many indexes
-				() -> assertThrows( IllegalArgumentException.class, () -> new DataMemory(data,log)),
 				
 				// Invalid Address Range
 				//Below valid data address, writeData
@@ -115,6 +107,22 @@ class DataMemoryTest {
 				//Not Word Aligned, readData
 				() -> assertThrows( IllegalArgumentException.class, () -> dataMemory.readData( (int) 0x10010004L ) )
 		);
+	}
+	
+	@Test
+	void InvalidConstruction_TooManyDataIndexes ( ) {
+		// Provided data HashMap with too many items	// Should really be requiring the hashMap is empty perhaps
+		for ( int i=0; i<DataMemory.MAX_DATA_ITEMS+1; i++ ) {
+			data.put(DataMemory.BASE_DATA_ADDRESS+i*DataMemory.DATA_ALIGN, 5.0 );
+		}
+		
+		// Initializing DataMemory with too many indexes
+		assertThrows( IllegalArgumentException.class, () -> new DataMemory(data,log));
+	}
+	@Test
+	void InvalidConstruction_Key_OutOfRange ( ) {
+		data.put( DataMemory.MAX_DATA_ITEMS,50.0);
+		assertThrows( IllegalArgumentException.class, () -> new DataMemory(data,log));
 	}
 	
 	@Test

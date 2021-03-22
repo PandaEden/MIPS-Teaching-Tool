@@ -44,8 +44,7 @@ public class Logger {
 	public void append (@Nullable String msg) {
 		if ( msg!=null && !msg.isBlank( ) )
 			this.logs.add(
-					((prefix!=null) ? prefix + "\t" : "")
-					+ msg );
+					((prefix!=null) ? prefix + "\t" : "") + msg );
 	}
 	
 	/** Adds the message to the log, null/empty will be ignored, Prefixes LineNo, Suffix '!' */
@@ -105,7 +104,7 @@ public class Logger {
 		return name;
 	}
 	
-	public static class Color {
+	public static class Color {	// Static Class Constructor preventing 100% Coverage
 		public static final String ANSI_RESET="\u001B[0m";
 		public static final String BLACK_ANSI="\u001B[30m";
 		public static final String RED_ANSI="\u001B[31m";    //Reserve for Error Log

@@ -30,6 +30,8 @@ public class AddressProvider {
 	// to convert the String form to int.
 	static final Arguments INT_MIN=Arguments.of( "0x80000000", Integer.MIN_VALUE );
 	static final Arguments INT_MAX=Arguments.of( "0x7FFFFFFF", Integer.MAX_VALUE );
+	static final Arguments ZERO=Arguments.of( "0x00000000", 0);
+	static final Arguments MINUS_1=Arguments.of( "0xFFFFFFFF", -1);
 	
 	private static final List<Arguments> NotValid_Negative=List.of(
 			INT_MIN,
@@ -37,7 +39,7 @@ public class AddressProvider {
 			Arguments.of( "0xFFFFFFF8", -8 ),
 			Arguments.of( "0xFFFFFFFC", -4 ) );
 	private static final List<Arguments> NotValid_Under=List.of(
-			Arguments.of( "0x00000000", 0 ),    // Under Valid Instr
+			ZERO,    // Under Valid Instr
 			Arguments.of( "0x00000004", 4 ),    // +1
 			Arguments.of( "0x003FFFF8", 4194296 ),    // Max-1
 			Arguments.of( "0x003FFFFC", 4194300 ) );  // Max
@@ -82,7 +84,7 @@ public class AddressProvider {
 			Arguments.of( "0x7FFFFFFC", 2147483644 ) );  // Max Integer Addr
 	
 	private static final List<Arguments> NotAligned=List.of(
-			Arguments.of( "0xFFFFFFFF", -1 ),    // Negative
+			MINUS_1,    // Negative
 			Arguments.of( "0x00000001", 1 ),    // Positive
 			Arguments.of( "0x00480002", 0x00480002 ),    // Instr Midpoint+2
 			Arguments.of( "0x10010402", 0x10010402 ),    // Data Midpoint+2

@@ -33,8 +33,8 @@ public class AddressValidation {
 	/** Validates the Data address, then converts it to an Index for the {@link DataMemory}
 	 <p>
 	If not valid, adds to the {@link ErrorLog}, and returns null.
-	 
-	@see #instrAddr2index(int, ErrorLog) 
+	
+	@see #instrAddr2index(int, ErrorLog)
 	@see ErrorLog
 	@see #isSupportedDataAddr(int, ErrorLog)
 	@see Convert#dataAddr2Index(Integer)
@@ -49,8 +49,8 @@ public class AddressValidation {
 	/** Validates the address then converts, it to an Index for the {@link InstrMemory}
 	 <p>
 	If not valid, adds to the {@link ErrorLog}, and returns null.
-	 
-	@see #dataAddr2index(int, ErrorLog) 
+	
+	@see #dataAddr2index(int, ErrorLog)
 	 @see ErrorLog
 	@see #isSupportedInstrAddr(int, ErrorLog)
 	@see Convert#instrAddr2Index(Integer)
@@ -126,7 +126,7 @@ public class AddressValidation {
 	 @see InstrMemory#BASE_INSTR_ADDRESS
 	 @see InstrMemory#OVER_INSTR_ADDRESS
 	 */
-	static boolean isValidInstrAddr(int address, ErrorLog errorLog) {
+	private static boolean isValidInstrAddr(int address, ErrorLog errorLog) {
 		final int INSTR_BASE=InstrMemory.BASE_INSTR_ADDRESS;
 		final int SIZE=InstrMemory.ADDR_SIZE;
 		final int INSTR_MAX=InstrMemory.OVER_INSTR_ADDRESS - SIZE;
@@ -147,7 +147,7 @@ public class AddressValidation {
 	 @see DataMemory#BASE_DATA_ADDRESS
 	 @see DataMemory#OVER_DATA_ADDRESS
 	 */
-	static boolean isValidDataAddr(int address, ErrorLog errorLog) {
+	private static boolean isValidDataAddr(int address, ErrorLog errorLog) {
 		final int DATA_BASE=DataMemory.BASE_DATA_ADDRESS;
 		final int SIZE=DataMemory.DATA_ALIGN;
 		final int DATA_MAX=DataMemory.OVER_DATA_ADDRESS - SIZE;

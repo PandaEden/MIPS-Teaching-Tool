@@ -139,7 +139,7 @@ public class Convert {
 	 */
 	@NotNull
 	public static String[] splitCSV(@NotNull String CSV) {
-		return Convert.removeExtraWhitespace( CSV ).split( "\\s*,\\s*" );
+		return Convert.removeExtraWhitespace( CSV ).split( "\\s*,\\s*", -1 );
 	}
 	
 	/**

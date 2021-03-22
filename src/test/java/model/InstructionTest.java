@@ -60,6 +60,17 @@ class InstructionTest {
 		// Output
 		testLogs_ex.exit_output( _PC, opcode );
 	}
+	
+	@Test
+	void Undefined_Instruction_ThrowsException_At_Runtime ( ) {
+		Instruction i = new R_Type("panda",InstrProvider.RD_RS_RT.operands );
+		Instr.assembleAndExecute_Throws( IllegalArgumentException.class, i );
+		testLogs_ex.decode( _PC, "panda", "EXIT" );
+		testLogs_ex.rb_read( 0, 1 );
+		testLogs_ex.rb_read( 0, 1);
+		testLogs_ex.cal_result( "" );
+	}
+	
 	@Nested
 	class ARITHMETIC {
 		@Test

@@ -1,5 +1,7 @@
 package control;
 
+import org.jetbrains.annotations.VisibleForTesting;
+
 import model.Instruction;
 import model.components.DataMemory;
 import model.components.InstrMemory;
@@ -29,6 +31,7 @@ public class Execute {
 	/**Loops though the given instructions, executing them until reading an instruction that returns a null address (Exit)
 	 Output is appended to the StringBuilder.@return
 	 */
+	@VisibleForTesting
 	public static String execute(DataMemory dataMem, RegisterBank regBank,
 								 InstrMemory instrMemory, ExecutionLog exLog,
 								 StringBuilder output)
