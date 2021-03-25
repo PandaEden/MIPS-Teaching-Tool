@@ -49,7 +49,7 @@ class MemoryBuilderTest {
 	@AfterEach
 	void tearDown ( ) {
 		testLogs.after( );
-		mb=new MemoryBuilder( );
+		mb.clear();
 	}
 	
 	@Nested

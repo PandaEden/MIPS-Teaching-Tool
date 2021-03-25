@@ -2,6 +2,7 @@ package setup;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import model.MemoryBuilder;
 import model.components.DataMemory;
@@ -47,8 +48,8 @@ public class Parser {
 	private final Validate val;
 	private final OperandsValidation opsVal;
 	
-	private String errorFn=" NOT SET !"; // This should not be returned!, Error Messages should be meaningful!
-	private boolean dataLimit=false, instrLimit=false;
+	private String errorFn; // This should not be returned!, Error Messages should be meaningful!
+	private boolean dataLimit, instrLimit;
 	
 	/**
 	 Same as {@link #Parser(MemoryBuilder, ErrorLog, WarningsLog)}, But, it will automatically run {@link
@@ -91,6 +92,17 @@ public class Parser {
 		this.opsVal=new OperandsValidation( errorLog,warningsLog );
 	}
 	
+	/** Resets Internal State, Use before re-running modified file */
+	@VisibleForTesting
+	void clear(){
+		this.errorLog.clear();
+		this.warningsLog.clear();
+		this.mb.clear();
+		this.dataLimit=false;
+		this.instrLimit=false;
+		this.errorFn=" NOT SET !";
+	}
+	
 	/**
 	 Automatically runs {@link #loadFile(String)} on parameter.
 	 <p>Then, parses the file for correct MIPS Syntax,
@@ -122,27 +134,29 @@ public class Parser {
 		
 		BufferedReader reader=null;
 		if ( file!=null ) {
+			errorFn="File: \"" + file.getName() + "\", ";
 			try {
 				reader=new BufferedReader( new FileReader( file ) );
 				int lineNo=1;
 				
 				for ( String line=reader.readLine( ); line!=null; line=reader.readLine( ) ) {
 					if ( lineNo>=MAX_LINES ) {
-						errorLog.append( errorFn + "Has Too Many Lines!, Max Lines = [" + MAX_LINES + "]!" );
+						errorLog.appendEx( errorFn + "Has Too Many Lines!, Max Lines = [" + MAX_LINES + "]" );
 						rtn=false;
 						break;
 					}
 					rtn&=parseLine( line, lineNo++ );
 				}
 			} catch ( IOException e ) {
-				errorLog.append( errorFn + "Not Valid FileName!" );
+				errorLog.appendEx( errorFn + "Not Valid FileName - Parsed" );
+				rtn=false;
 			} finally {
 				try {
 					if ( reader!=null ) reader.close( ); // Close reader
-				} catch ( IOException e ) { e.printStackTrace( ); }
+				} catch ( IOException e ) { e.printStackTrace( );}
 			}
 		} else
-			return false;
+			rtn=false;
 		
 		return rtn;
 	}
@@ -151,15 +165,19 @@ public class Parser {
 	 Apples file checks on the address given.
 	 <li>File Exists</li>
 	 <li>File is Accessible</li>
+	 <p><b>Also clears any internal state!
+	 - {@link #parseLine(String, int)} does not do this!</b>
 	 
 	 @param filename address of file to load.
 	 
 	 @return File object, if the File is valid
 	 */
 	public File loadFile(String filename) {
+		clear(); // Reset State
+		// Check fileName
 		if ( isNullOrBlank( filename ) ) {
 			warningsLog.append( "Filename Not Provided, Using Default File: \"" + DEFAULT_FILENAME + "\"" );
-			return null;
+			filename=DEFAULT_FILENAME;
 		}
 		
 		errorFn="File: \"" + filename + "\", ";
@@ -175,12 +193,12 @@ public class Parser {
 			
 			errorFn="File: \"" + name + "\", ";
 			
-			if ( !temp.exists( ) ) this.errorLog.append( errorFn + "Does Not Exist!" );
-			else if ( !temp.isFile( ) ) this.errorLog.append( errorFn + "Is Not a File!" );
-			else if ( !temp.canRead( ) ) this.errorLog.append( errorFn + "Can Not Be Read!" );
+			if ( !temp.exists( ) ) this.errorLog.appendEx( errorFn + "Does Not Exist" );
+			else if ( !temp.isFile( ) ) this.errorLog.appendEx( errorFn + "Is Not a File" );
+			else if ( !temp.canRead( ) ) this.errorLog.appendEx( errorFn + "Can Not Be Read" );
 			else rtn=temp;
 		} catch ( IOException e ) {
-			errorLog.append( errorFn + "Not Valid FileName!" );
+			errorLog.appendEx( errorFn + "Not Valid FileName" );
 			// File is invalid,   rtn is null by default
 		}
 		return rtn;
@@ -204,9 +222,9 @@ public class Parser {
 		String label=this.val.isValidLabel( lineNo, split[ 0 ] );
 		if ( label!=null )
 			mb.pushLabel( label );
-		
-		if ( errLength<errorLog.toString( ).length( ) )    // caused by Invalid Label
-			errorLog.append( "_" );
+//
+//		if ( errLength<errorLog.toString( ).length( ) )    // caused by Invalid Label
+//			errorLog.append( "_" );
 		
 		String arg1=split[ 1 ];
 		String arg2=split[ 2 ];
@@ -218,8 +236,8 @@ public class Parser {
 					if ( !dataLimit && Validate.isDataType( arg1 ) ) // is DataType
 						if ( !mb.addData( arg1, arg2, errorLog ) ) { // mb.addData
 							if ( mb.retrieveData( ).size( )>=DataMemory.MAX_DATA_ITEMS ) {
-								warningsLog.append( "LineNo: " + lineNo + "\tReached MAX Data Size!, No More Data Will Be Parsed!" );
-								warningsLog.append( "\t\t\tData Size Limit == [" + DataMemory.MAX_DATA_ITEMS + "]" );
+								warningsLog.appendEx( lineNo,"Reached MAX Data Size!, No More Data Will Be Parsed" );
+								warningsLog.append( "\t\t\tData Limit == [" + DataMemory.MAX_DATA_ITEMS + "]" );
 								dataLimit=true;
 							}
 						}
@@ -230,8 +248,7 @@ public class Parser {
 				if ( this.opsVal.isValidOpCode( lineNo, arg1 ) ) {
 					Operands operands=this.opsVal.splitValidOperands( lineNo, arg1, arg2 );
 					if ( operands!=null && !mb.addInstruction( arg1, operands ) ) {
-						warningsLog.append( "LineNo: " + lineNo + "\tReached MAX Instructions!,"
-											+ " No More Instructions  Will Be Parsed!" );
+						warningsLog.appendEx( lineNo,"Reached MAX Instructions!, Further Instructions Will Not Be Parsed" );
 						warningsLog.append( "\t\t\tInstruction Limit == [" + InstrMemory.MAX_INSTR_COUNT + "]" );
 						instrLimit=true;
 					}// TODO Change to report Error
@@ -261,18 +278,19 @@ public class Parser {
 		//
 		line=split[ 0 ].toLowerCase( ).strip( );    // Make the remainder lowercase
 		
+		boolean directive = line.matches( "^\\s?\\..*" ); // first non-whitespace is a period
+		
 		// Split Labels
-		if ( line.contains( ":" ) ) {
-			if ( line.contains( "." ) ) // if line contains '.'
+		int colonIndex = line.indexOf( ":" );
+		if ( !directive&&colonIndex!=-1 ) {
+			int periodIndex = line.indexOf( "." );
+			if ( periodIndex>colonIndex ) // if line contains '.' after colon ':'
 				split=line.split( ":\\s?(?=.*\\.)", 2 );    // forward lookup : before .
 			else
 				split=line.split( ":\\s?", 2 );
 			
-			if ( split.length==2 ) {
-				label=split[ 0 ];
-				line=split[ 1 ];
-			} else
-				line=split[ 0 ];
+			label=split[ 0 ];
+			line=split[ 1 ];
 		}
 		
 		if ( !line.isBlank( ) ) {    // skip if rest of line is blank

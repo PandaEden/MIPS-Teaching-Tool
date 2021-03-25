@@ -44,78 +44,37 @@ public class TestLogs {
 	 Then Checks all Actual Logs are empty.
 	 */
 	public void after(){
-		after(expectedErrors,	actualErrors );
-		after(expectedWarnings, actualWarnings);
-		after(expectedExecution, actualExecution);
+		String errors=captureAndPrint(actualErrors);
+		String warnings=captureAndPrint(actualWarnings);
+		String execution=captureAndPrint(actualExecution);
+		
+		assertAll(
+				()->assertEquals(capture2StringThenClear(expectedErrors), errors),
+				()->assertEquals(capture2StringThenClear(expectedWarnings), warnings),
+				()->assertEquals(capture2StringThenClear(expectedExecution), execution)
+		);
+		
 		testNo++;
 	}
 	
-	private static void after(Logger expected, Logger actual) {
-		if ( actual.hasEntries( ) )
-			TestMethods.logsMatch( expected, actual );
-		else
-			TestMethods.noEntries( expected );
-	}
-	
-	public void expectErrors (int lineNo, String... list) {
+	public void appendErrors (int lineNo, String... list) {
 		String pre=expectedErrors.setLineNoPrefix( lineNo );
 		Arrays.stream( list ).forEach( expectedErrors :: append );
 		expectedErrors.setPrefix( pre );// reset
 	}
+	
 	public void zeroWarning(int lineNo, String regName) {
 		expectedWarnings.appendEx( lineNo, FMT_MSG.ZER0_WARN( regName ) );
 	}
-	
-	@Test
-	@DisplayName ("static variables are correct")
-	void staticVars() {
-		Assertions.assertAll(    // Alt+F7 : Find Usages
-								 //Data
-								 () -> assertEquals( 512, Parser.MAX_LINES ),
-		
-								 () -> assertEquals( 256, DataMemory.MAX_DATA_ITEMS ),
-								 () -> assertEquals( 8, DataMemory.DATA_ALIGN ),
-								 () -> assertEquals( 268500992, DataMemory.BASE_DATA_ADDRESS ),
-								 () -> assertEquals( 268503040, DataMemory.OVER_SUPPORTED_DATA_ADDRESS ),
-								 () -> assertEquals( 268697600, DataMemory.OVER_DATA_ADDRESS ),
-		
-								 () -> assertEquals( 256, InstrMemory.MAX_INSTR_COUNT ),
-								 () -> assertEquals( 4, InstrMemory.ADDR_SIZE ),
-								 () -> assertEquals( 4194304, InstrMemory.BASE_INSTR_ADDRESS ),
-								 () -> assertEquals( 5242880, InstrMemory.OVER_SUPPORTED_INSTR_ADDRESS ),
-								 () -> assertEquals( 268435456, InstrMemory.OVER_INSTR_ADDRESS )
-		);
+	private static String captureAndPrint (Logger log){
+		if (log.hasEntries()) tempPrint("\n"+testNo+" "+log.getName()+" - Content: " + log.toString( ) );
+		//else tempPrint("\n"+testNo+" Log : " + log.getName()+" Has No Entries!");
+		return capture2StringThenClear(log);
 	}
-	
-	private static class TestMethods {
-		/**Used to prevent repeated calls failing. */
-		private static String capture2StringThenClear(Logger log) {
-			String actualString=log.toString( );
-			log.clear( );    // Just In case it was not empty. Make it Empty so further tests do not also fail.
-			return actualString;
-		}
-		private static String capturePrintRtn (Logger log){
-			if (log.hasEntries()) tempPrint("\n"+testNo+" Log - Content: " + log.toString( ) );
-			//else tempPrint("\n"+testNo+" Log : " + log.getName()+" Has No Entries!");
-			return capture2StringThenClear(log);
-		}
-		
-		/**
-		 Checks the msg against the contents of Log.
-		 <p>Automatically appends "{logMame}\n\t" Prefix, and "\n" Suffix</p>
-		 <b>After the test, the Logger is Cleared!</b>
-		 */
-		public static void logsMatch(Logger expected, Logger actual) {
-			Assertions.assertAll(
-					() -> assertEquals( capture2StringThenClear( expected ), capturePrintRtn( actual ) )
-			);
-		}
-		
-		/**
-		 Checks that Logger Contains No Entries. -> If it does, It prints them.
-		 <b>After the test, the Logger is Cleared!</b>
-		 */
-		public static void noEntries(Logger log) {assertEquals( "", capturePrintRtn( log )); }
+	private static String capture2StringThenClear(Logger log) {
+		String actualString=log.toString( );
+		log.clear( );    // Just In case it was not empty. Make it Empty so further tests do not also fail.
+		return actualString;
 	}
 	public static void tempPrint(String txt){
 		Logger.Color.colorSupport=true;
@@ -125,6 +84,7 @@ public class TestLogs {
 	
 	// Methods starting with an underscore have the !, so use append for those, for the rest, use appendEx
 	public static class FMT_MSG {
+		
 		public static String xAddressNot (String X, String hexAddress, String thing) { return X+" Address: \"" + hexAddress + "\" Not " + thing; }
 		
 		public static String ZER0_WARN(String regName) {
@@ -136,7 +96,9 @@ public class TestLogs {
 		public static String Opcode_NotSupported(String opcode) {
 			return "Opcode: \"" + opcode + "\" Not Supported";
 		}
-		/** used with .append  - non EX */
+		public static String DirectiveNotSupported(String directive){
+			return "Directive: \"" + directive + "\" Not Supported";
+		}
 		public static String _opsForOpcodeNotValid (String opcode, String operands) {
 			return "Operands: [" + operands + "] for Opcode: \"" + opcode + "\" Not Valid !";
 		}
@@ -171,8 +133,9 @@ public class TestLogs {
 			public static String notUnsigned26Bit(int imm) {
 				return "\tImmediate Value: \"" + imm + "\" Not In (Unsigned 26Bit) Range";
 			}
-			
-			
+			public static String cantConvert (int imm){
+				return "Immediate Value: \""+imm+"\", Cannot Be Converted To A Valid Address";
+			}
 		}
 		
 		public static class label {

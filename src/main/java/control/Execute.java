@@ -23,9 +23,10 @@ public class Execute {
 		this.regBank=new RegisterBank( values, exLog );
 	}
 	
-	/** Instanced Version of {@link #execute(DataMemory, RegisterBank, InstrMemory, ExecutionLog, StringBuilder)} */
+	/** Instanced Version of {@link #execute(DataMemory, RegisterBank, ArrayList, ExecutionLog, StringBuilder)} */
+	@VisibleForTesting
 	public void execute(ArrayList<Instruction> instructions, StringBuilder output) {
-		execute( dataMem, regBank, new InstrMemory( instructions, exLog ), exLog, output );
+		execute( dataMem, regBank, instructions, exLog, output );
 	}
 	
 	/**Loops though the given instructions, executing them until reading an instruction that returns a null address (Exit)
@@ -33,15 +34,17 @@ public class Execute {
 	 */
 	@VisibleForTesting
 	public static String execute(DataMemory dataMem, RegisterBank regBank,
-								 InstrMemory instrMemory, ExecutionLog exLog,
+								 ArrayList<Instruction> instructions, ExecutionLog exLog,
 								 StringBuilder output)
 			throws IndexOutOfBoundsException, IllegalArgumentException {
 		Instruction ins;
+		InstrMemory instrMemory = new InstrMemory( instructions, exLog );
 		try {
 			for ( Integer PC=InstrMemory.BASE_INSTR_ADDRESS;
 				  PC!=null;
 			) {
 				output.append( regBank.format( ) ); // Register Bank
+				output.append( "\n" );
 				ins=instrMemory.InstructionFetch( PC );
 				PC=ins.execute( PC, dataMem, regBank, exLog );
 				output.append( exLog.toString( ) ); //  ExecutionLog

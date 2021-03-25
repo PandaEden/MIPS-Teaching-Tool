@@ -72,8 +72,12 @@ public class MemoryBuilder {
 	private final LinkedList<String> labels=new LinkedList<>( );
 	
 	private final ArrayList<Instruction> instructions=new ArrayList<>( );
-	private int ProgramCounter=INS_ADDR_BASE;
-	private int MEM_PTR=DATA_ADDR_BASE; //decimal representation of address
+	private int ProgramCounter;
+	private int MEM_PTR;
+	
+	public MemoryBuilder ( ) {
+		clear(); // Sets PC and MemPtr
+	}
 	
 	// TODO - Move addData / addCSVArray / addRange .  to setup.Parser
 	
@@ -347,8 +351,18 @@ public class MemoryBuilder {
 		return labels;
 	}
 	@VisibleForTesting
-	public HashMap<String, Integer> getLabelMap ( ) {
+	HashMap<String, Integer> getLabelMap ( ) {
 		return labelMap;
+	}
+	
+	/**Resets the Memory Builder to initial state*/
+	public void clear ( ) {
+		this.dataArr.clear();
+		this.labelMap.clear();
+		this.labels.clear();
+		this.instructions.clear();
+		this.ProgramCounter=INS_ADDR_BASE;
+		this.MEM_PTR=DATA_ADDR_BASE;
 	}
 	
 }

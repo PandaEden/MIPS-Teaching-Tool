@@ -116,13 +116,13 @@ public class Logger {
 		public static final String WHITE_ANSI="\u001B[37m";
 		//----
 		public static final String ERR_LOG=RED_ANSI;
-		public static final String WARN_LOG=RED_ANSI;
+		public static final String WARN_LOG=YELLOW_ANSI;
 		public static final String RB_READ=GREEN_ANSI;
 		public static final String RB_WRITE=CYAN_ANSI;
 		public static final String DATA_READ=PURPLE_ANSI;
 		public static final String DATA_WRITE=BLUE_ANSI;
 		
-		public static boolean colorSupport=false;
+		public static boolean colorSupport=true;
 		private static int nextColCounter=0;
 		@VisibleForTesting
 		public static String next ( ) {    // Excluding Purple & Black

@@ -8,6 +8,8 @@ import org.junit.jupiter.api.*;
 import model.Instruction;
 import model.instr.Operands;
 
+import util.logs.Logger;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -19,12 +21,12 @@ class ExecuteTest {
 	private static TestLogs.FMT_MSG._Execution testLogs_ex;
 	private static Execute execute;
 	private static final HashMap<Integer, Double> data=new HashMap<>( );
-	ArrayList<Instruction> instr_list= new ArrayList<>();
-	private static int[] values=new int[ 32 ];
-	
+	private static final ArrayList<Instruction> instr_list= new ArrayList<>();
+	private static final int[] values=new int[ 32 ];
 	
 	@BeforeAll
 	static void beforeAll ( ) {
+		Logger.Color.colorSupport=false; // can test colour output manually
 		logs = new TestLogs();
 		testLogs_ex = new TestLogs.FMT_MSG._Execution( values, data, logs.actualExecution, logs.expectedExecution );
 		
@@ -64,7 +66,7 @@ class ExecuteTest {
 				"|R1: 4\t\tR5: 0\tR9: 0\tR13: 0\t\t\tR17: 0\tR21: 0\tR25: 0\tR29: 0|\n" +
 				"|R2: 0\t\tR6: 0\tR10: 0\tR14: 0\t\t\tR18: 0\tR22: 0\tR26: 0\tR30: 0|\n" +
 				"|R3: 0\t\tR7: 0\tR11: 0\tR15: 0\t\t\tR19: 0\tR23: 0\tR27: 0\tR31: 0|\n" +
-				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n"
+				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Add [0x00400000] Add $2, $1, $1
 		logs.expectedExecution.append(TestLogs.FMT_MSG._Execution._fetch(0x00400000));
@@ -76,7 +78,7 @@ class ExecuteTest {
 				"|R1: 4\t\tR5: 0\tR9: 0\tR13: 0\t\t\tR17: 0\tR21: 0\tR25: 0\tR29: 0|\n" +
 				"|*R2: 8\t\tR6: 0\tR10: 0\tR14: 0\t\t\tR18: 0\tR22: 0\tR26: 0\tR30: 0|\n" +
 				"|R3: 0\t\tR7: 0\tR11: 0\tR15: 0\t\t\tR19: 0\tR23: 0\tR27: 0\tR31: 0|\n" +
-				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n"
+				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Jump [0x00400004] Jump -> 0x0040000C
 		logs.expectedExecution.append(TestLogs.FMT_MSG._Execution._fetch(0x00400004));
@@ -88,7 +90,7 @@ class ExecuteTest {
 				"|R1: 4\t\tR5: 0\tR9: 0\tR13: 0\t\t\tR17: 0\tR21: 0\tR25: 0\tR29: 0|\n" +
 				"|R2: 8\t\tR6: 0\tR10: 0\tR14: 0\t\t\tR18: 0\tR22: 0\tR26: 0\tR30: 0|\n" +
 				"|R3: 0\t\tR7: 0\tR11: 0\tR15: 0\t\t\tR19: 0\tR23: 0\tR27: 0\tR31: 0|\n" +
-				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n"
+				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Addi [0x0040000C] Addi $1, $1, -40
 		logs.expectedExecution.append(TestLogs.FMT_MSG._Execution._fetch(0x0040000C));
@@ -100,7 +102,7 @@ class ExecuteTest {
 				"|*R1: -36\t\tR5: 0\tR9: 0\tR13: 0\t\t\tR17: 0\tR21: 0\tR25: 0\tR29: 0|\n" +
 				"|R2: 8\t\tR6: 0\tR10: 0\tR14: 0\t\t\tR18: 0\tR22: 0\tR26: 0\tR30: 0|\n" +
 				"|R3: 0\t\tR7: 0\tR11: 0\tR15: 0\t\t\tR19: 0\tR23: 0\tR27: 0\tR31: 0|\n" +
-				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n"
+				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Exit [0x00400010] autoExit
 		logs.expectedExecution.append(TestLogs.FMT_MSG._Execution._fetch(0x00400010));
@@ -135,7 +137,7 @@ class ExecuteTest {
 				"|R1: 0\t\tR5: 0\tR9: 0\tR13: 0\t\t\tR17: 0\tR21: 0\tR25: 0\tR29: 0|\n" +
 				"|R2: 0\t\tR6: 0\tR10: 0\tR14: 0\t\t\tR18: 0\tR22: 0\tR26: 0\tR30: 268500997|\n" +
 				"|R3: 0\t\tR7: 0\tR11: 0\tR15: 0\t\t\tR19: 0\tR23: 0\tR27: 0\tR31: 0|\n" +
-				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n"
+				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		logs.expectedExecution.append(TestLogs.FMT_MSG._Execution._fetch(0x00400000));
 		testLogs_ex.decode( "0x00400000", "lw", "IMMEDIATE" );
@@ -149,4 +151,6 @@ class ExecuteTest {
 		execute.execute(instr_list, actualOutput);
 		assertEquals(expectedOutput.toString(), actualOutput.toString());
 	}
+	
+	//TODO - add Jump to invalid Instr Addr
 }

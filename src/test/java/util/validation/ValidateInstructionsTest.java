@@ -446,7 +446,7 @@ public class ValidateInstructionsTest {
 						Operands operands=opsVal.splitValidOperands( 30, "addi", "$0, $panda, 32769" );
 						// Errors with all Operands
 						assertNull( operands );
-						testLogs.expectErrors(
+						testLogs.appendErrors(
 								30,
 								FMT_MSG.reg._NotRecognised( "$panda" ),
 								FMT_MSG.imm.notSigned16Bit( 32769 ) + "!",

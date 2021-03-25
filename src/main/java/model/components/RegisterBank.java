@@ -21,7 +21,7 @@ public class RegisterBank {
 	private Integer LAST_READ1=null;
 	private Integer LAST_WRITTEN=null;
 	
-	//TODO Add Named versions of Read/Write, so the Opperand Name [RD/RS/RT] can be printed to the log with the action.
+	//TODO Add Named versions of Read/Write, so the Operand Name [RD/RS/RT] can be printed to the log with the action.
 	
 	public RegisterBank(int[] registers, @NotNull ExecutionLog executionLog) {
 		if ( registers.length!=32 )
@@ -223,6 +223,7 @@ public class RegisterBank {
 		}
 		rtn.append( "-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n" );
 		return rtn.toString( );
+		//TODO test alternative formats, Named/ Index
 	}
 	
 	/** Formats the register depending on {@link RegFormat}, and combines with the value at that register */

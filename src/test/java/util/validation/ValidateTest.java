@@ -5,6 +5,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import _test.TestLogs;
+import _test.TestLogs.FMT_MSG;
 import _test.Tags;
 import _test.Tags.Pkg;
 
@@ -13,11 +14,9 @@ import _test.providers.AddressProvider.DataAddr;
 import _test.providers.BlankProvider;
 import _test.providers.SetupProvider;
 
-import model.components.DataMemory;
 
 import util.logs.ErrorLog;
 import static org.junit.jupiter.api.Assertions.*;
-import static util.Convert.*;
 import static util.validation.AddressValidation.*;
 
 @Tag(Pkg.UTIL)
@@ -129,11 +128,12 @@ class ValidateTest {
 			void valid(String hexAddr, int address, String hexImm, int imm) {
 				assertEquals(address, convertValidImm2Addr( 150, imm, errLog));
 			}
+			
 			@ParameterizedTest (name="Not_Valid imm2Address[{index}] - Immediate: \"{arguments}\"")
 			@ArgumentsSource ( ImmediateProvider.ConvertInvalid.Boundary.class)
 			void invalid(String hexImm, int imm) {
 				assertNull(convertValidImm2Addr( 150, imm, errLog));
-				expectedErrs.appendEx( 150, "Immediate Value: \""+imm+"\", Cannot Be Converted To A Valid Address");
+				expectedErrs.appendEx( 150, FMT_MSG.imm.cantConvert( imm ) );
 			}
 		}
 	}
@@ -154,7 +154,7 @@ class ValidateTest {
 		@ArgumentsSource (SetupProvider.InvalidDirectives.class)
 		void directiveNot_Supported(String directive) {
 			assertFalse( validate.isValidDirective( 10, directive ) );
-			expectedErrs.appendEx(10, "Directive: \"" + directive + "\" Not Supported");
+			expectedErrs.appendEx( 10, FMT_MSG.DirectiveNotSupported( directive ));
 		}
 		
 		//DataTypes .word
@@ -184,7 +184,7 @@ class ValidateTest {
 		@ArgumentsSource (SetupProvider.InvalidLabels.class)
 		void labelsNot_Supported(String label) {
 			assertNull( validate.isValidLabel( 72, label ) );
-			expectedErrs.appendEx(72, "Label: \"" + label + "\" Not Supported");
+			expectedErrs.appendEx(72, FMT_MSG.label.notSupp( label ));
 		}
 		
 	}
