@@ -365,7 +365,7 @@ class MemoryBuilderTest {
 			
 			expected.appendEx( TestLogs.FMT_MSG.xAddressNot( "Instruction","0x10010000", "Valid") );
 			expected.appendEx( TestLogs.FMT_MSG.label.points2Invalid_Address("data","Instruction"  ) );
-			expected.appendEx(  FMT_MSG.FailedAssemble );
+			expected.appendEx( FMT_MSG.FailedAssemble );
 		}
 		@Test
 		void FailedAssembly_InvalidOperands ( ) {
@@ -381,7 +381,14 @@ class MemoryBuilderTest {
 			mb.assembleInstr( errors );
 			testLogs.expectedErrors.appendEx( "No Instructions Found" );
 		}
-		
+		@Test
+		void FailedAssembly_Missing_Label ( ) {
+			ErrorLog expected = testLogs.expectedErrors;
+			mb.addInstruction("j",new Operands("x") );
+			mb.assembleInstr( errors );
+			expected.appendEx( FMT_MSG.label.labelNotFound( "x" ) );
+			expected.appendEx( FMT_MSG.FailedAssemble );
+		}
 	}
 	
 	@Test

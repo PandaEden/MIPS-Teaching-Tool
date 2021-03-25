@@ -140,7 +140,7 @@ class InstructionTest {
 			// Result
 			assertEquals( -150, values[ 1 ] );
 			// Output
-			testLogs_ex.I_output(_PC, "addi",  30, 250, -400, 1, -150);
+			testLogs_ex.I_output( _PC, "addi", 30, 250, 1, -150, -400 );
 		}
 	}
 	

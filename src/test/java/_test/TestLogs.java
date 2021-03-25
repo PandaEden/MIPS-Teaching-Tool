@@ -200,6 +200,9 @@ public class TestLogs {
 			public void rb_read(int val, int reg){
 				expectedExLog.appendEx( "RegisterBank:\tReading Value[" + val + "]\tFrom Register Index[R" + reg + "]");
 			}
+			public void rb_read_Modified(int val, int reg){
+				expectedExLog.appendEx( "RegisterBank:\tReading Value[" + val + "]\tFrom Register Index[*R" + reg + "]");
+			}
 			private void rb_write(int val, int reg){
 				expectedExLog.appendEx( "RegisterBank:\tWriting Value[" + val + "]\tTo Register Index[*R" + reg + "]");
 			}
@@ -249,7 +252,7 @@ public class TestLogs {
 				dm_noAct( );
 				rb_write( rd_val, RD );
 			}
-			public void I_output(String hexPC, String opcode, int RS, int rs_val,int IMM, int RT, int rt_val){
+			public void I_output (String hexPC, String opcode, int RS, int rs_val, int RT, int rt_val, int IMM){
 				String sign="   ";
 				switch ( opcode ){
 					case "addi": sign = "+"; break;
@@ -277,6 +280,23 @@ public class TestLogs {
 				dm_write( rt_val, IMM+rs_val );
 				rb_noAct( );
 			}
+			//TODO - implement the modified versions a bit better,   perhaps changing the int RS/RT/RD inputs to String
+			public void load_output_modified(String hexPC, int RS, int rs_val, int IMM, int RT, int rt_val){
+				decode( hexPC, "lw", "IMMEDIATE" );
+				rb_read_Modified( rs_val, RS );
+				imm_cal_addr( IMM, rs_val, IMM+rs_val );
+				dm_read( rt_val, IMM+rs_val );
+				rb_write( rt_val, RT );
+			}
+			public void store_output_modified(String hexPC, int RS, int rs_val, int IMM, int RT, int rt_val){
+				decode( hexPC, "sw", "IMMEDIATE" );
+				rb_read_Modified( rs_val, RS );
+				rb_read( rt_val, RT );
+				imm_cal_addr( IMM, rs_val, IMM+rs_val );
+				dm_write( rt_val, IMM+rs_val );
+				rb_noAct( );
+			}
+			
 			public void J_output (String hexPC, int imm){
 				decode( hexPC, "j", "JUMP" );
 				rb_noAct( );

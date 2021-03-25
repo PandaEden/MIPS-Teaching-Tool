@@ -7,6 +7,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import util.logs.ExecutionLog;
+import util.logs.Logger;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -26,6 +27,7 @@ class RegisterBankTest {
 	
 	@BeforeEach
 	void setUp() {
+		Logger.Color.colorSupport=false;
 		regs=new int[ 32 ];        // Setup Register values to any random integer
 		for ( int i=1; i<32; i++ ) {    // skip index 0. that should always be ==0;
 			int r=random.nextInt( );
@@ -80,16 +82,18 @@ class RegisterBankTest {
 			// Make everything =5 so output is predicable
 			String fmt="";
 			fmt+="-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n";
-			fmt+="|R0: 0\t\tR4: 5\tR8: 5\tR12: 5\t\t\tR16: 5\tR20: 5\tR24: 5\tR28: 5|\n";
-			fmt+="|R1: 5\t\tR5: 5\tR9: 5\tR13: 5\t\t\tR17: 5\tR21: 5\tR25: 5\tR29: 5|\n";
-			fmt+="|R2: 5\t\tR6: 5\tR10: 5\tR14: 5\t\t\tR18: 5\tR22: 5\tR26: 5\tR30: 5|\n";
-			fmt+="|R3: 5\t\tR7: 5\tR11: 5\tR15: 5\t\t\tR19: 5\tR23: 5\tR27: 5\tR31: 5|\n";
+			fmt+="|R0: 0\tR4: 5\tR8: 5\tR12: 5\t\tR16: 5\tR20: 5\tR24: 5\tR28: 5|\n";
+			fmt+="|R1: 5\tR5: 5\tR9: 5\tR13: 5\t\tR17: 5\tR21: 5\tR25: 5\tR29: 5|\n";
+			fmt+="|R2: 5\tR6: 5\tR10: 5\tR14: 5\t\tR18: 5\tR22: 5\tR26: 5\tR30: 5|\n";
+			fmt+="|R3: 5\tR7: 5\tR11: 5\tR15: 5\t\tR19: 5\tR23: 5\tR27: 5\tR31: 5|\n";
 			fmt+="-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n";
 			for ( int i=1; i<regs.length; i++ ) {
 				regs[ i ]=5;
 			}
 			//When-Then
 			assertEquals( fmt, rb.format( ) );
+			
+			//TODO test alternative formats, Named/ Index
 		}
 		
 		@Test

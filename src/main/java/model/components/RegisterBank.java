@@ -212,10 +212,10 @@ public class RegisterBank {
 		for ( int i=0; i<4; i++ ) {
 			rtn.append( "|" )
 			   .append( fmtRegWithData( I1++ ) )
-			   .append( "\t\t" ).append( fmtRegWithData( I2++ ) )
+			   .append( "\t" ).append( fmtRegWithData( I2++ ) )
 			   .append( "\t" ).append( fmtRegWithData( I3++ ) )
 			   .append( "\t" ).append( fmtRegWithData( I4++ ) )
-			   .append( "\t\t\t" ).append( fmtRegWithData( I5++ ) )
+			   .append( "\t\t" ).append( fmtRegWithData( I5++ ) )
 			   .append( "\t" ).append( fmtRegWithData( I6++ ) )
 			   .append( "\t" ).append( fmtRegWithData( I7++ ) )
 			   .append( "\t" ).append( fmtRegWithData( I8++ ) )
@@ -223,7 +223,6 @@ public class RegisterBank {
 		}
 		rtn.append( "-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n" );
 		return rtn.toString( );
-		//TODO test alternative formats, Named/ Index
 	}
 	
 	/** Formats the register depending on {@link RegFormat}, and combines with the value at that register */
@@ -231,7 +230,7 @@ public class RegisterBank {
 		return colorReg( index, regName( index ) + ": " + registers[ index ] );
 	}
 	
-	enum RegFormat {
+	public enum RegFormat {
 		Index,  // $0 .. $31
 		R, // R0..R31
 		Named, //ZERO.S0.T0.RA

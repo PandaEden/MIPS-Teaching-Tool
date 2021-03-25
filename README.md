@@ -1,3 +1,23 @@
+# Executing the Jar File
+
+This application requires Java Runtime Environment 11 LTS.
+
+You can use [Oracle SE 11](https://www.oracle.com/java/technologies/javase-downloads.html) or [openjdk-11-jre](https://adoptopenjdk.net/releases.html).
+
+Please make sure you have this installed before attempting to run the application.
+
+`Future builds may be a standalone package installation.`
+
+------
+
+To run the executable jar file run:
+
+> **java -jar *MTT-1.0.jar*** <path>**
+
+`With PowerShell/CMD there is no colour in the output, and you need to use backslashes '\' between directories.`
+
+`If no path is specified it defaults to "FileInput.s" in pwd.`
+
 ## Feedback
 
 You may suggest new features/give feedback by leaving a comment on an issue.
@@ -18,11 +38,11 @@ You may suggest new features/give feedback by leaving a comment on an issue.
 
 - `MAX_FILE_LENGTH = 512` (Lines)
 
-- `MAX_INS_COUNT = 256` (Instructions)  *upto 257 instructions including auto Exit.
+- `MAX_INS_COUNT = 256` (Instructions)  *up to 257 instructions when including the auto Exit.
 
-- `MAX_DATA_SEGMENTS = 256`	(arbitrary limit for testing purposes)
+- `MAX_DATA_SEGMENTS = 256` (arbitrary limit for testing purposes)
 
-MEMORY DATA Segments are DoubleWord addressable (multiple of 8) to facilitate and simplify future double-precision float support.
+MEMORY DATA Segments are doubleWord addressable (multiple of 8) to facilitate and simplify future double-precision float support.
 
 	This makes the last supported addressable block of memory 0x100107F8
 
@@ -96,7 +116,7 @@ Support for more data types (single-precision float, doubleWords, half-words, by
 
 	- This is not done for load/store, as in other implementations memory is byte addressable.
 
-		- It is upto the user to ensure offsets used with Load/Store are doubleWord (8bytes) addressable.
+		- It is up to the user to ensure offsets used with Load/Store are doubleWord (8bytes) addressable.
 
 		- Meaning the Offset+$RS_Val is a multiple of 8.
 
@@ -139,16 +159,15 @@ Registers can be referenced by name (e.g. $s2, $t0, $zero) or R_Number (e.g. $r1
 Labels must start with a letter (a-z/A-Z) (The application is case-insensitive), or Underscore '_'
 
  - periods,hyphens and underscores '.','-','_' may be used in a label name for readability.
-
+ - Numbers can be used in a label.
  - no other symbols can be used, and spaces are not allowed. 
-
  - Label references are parsed for errors after instructions are parsed.
 
 In the place of a label operand for an instruction a Hexadecimal address may be written instead, or the address as a decimal number.
 
  - Hexadecimal values must start with "0x".
 
-> Where a label is used as an operand it must not contain the colon ':' !
+> Where a label is used as an operand it must not contain a colon ':' at the end!
 
 ### Supported Address Segments:
 
@@ -165,9 +184,9 @@ Load and Store instructions can reference Labels directed to data address space.
 Only 256 (2^8) instructions supported, (which is a maximum address of 0x004003E8).
 
 Jumping to this gap, where the address is supported, but can't possibly contain an instruction. 
- The Application acts as if no Exit instruction was ran.
+ The Application will think it has overran and automatically run an Exit instruction.
 
-And An Exit ('halt') instruction will automatically be ran next. With a warning.
+And An Exit ('halt') instruction will automatically be ran next.
 
 ###### MIPS Register addressing:
 
@@ -202,11 +221,7 @@ The current build executes a very basic model and Jump instructions update the P
 
 >  **! This behaviour is expected to change in the next build!**
 
-
-
 # End of User Manual
-
-
 
 ## Error/Warning messages:
 
@@ -235,9 +250,7 @@ The current build executes a very basic model and Jump instructions update the P
 		Registers:	usually start with a $, but don't have to.
 		Immediates:	continuous stream of digits.	- atm, only Integer is supported.
 			Hex Immediates: differentiated by "0x" sign at the beginning.
-			
-		Labels:	Same as above labels, but without the colon ":" at the end.
-	
+		Label-Op:	Same as above labels, but without the colon ":" at the end.
 	
 	From this the Parser builds a model:
 	Directive					(.data, .text, .code)
@@ -266,31 +279,32 @@ The current build executes a very basic model and Jump instructions update the P
 		A Warning will be issued And no further instructions will be parsed.
 		
 	If no EXIT/'halt' instruction is read:
-		A Warning will be issued. And one will automatically be appended to the end.
+		At Runtime, one will automatically be appended to the end.
+		"Ran Over Provided Instructions"
 
-Parser will not stop after an error is thrown. It will attempt to parse the remainder of the lines checking for additional errors.
+Parser will not stop after an error is thrown.
 
-> **However - It will fail assembly and not allow execution.**
+It will attempt to parse the remainder of the lines checking for additional errors.
 
-
+> **However - It will not attempt Assembly or Execution.**
 
 ### Assembly
 
-During Assembly the real addresses labels point to is calculated.
+During Assembly the real address a label points to is calculated.
 
-Labels point to the next valid data/instruction.
+Labels point to the next valid data/instruction from where it was defined.
 
-> This can cause a scenario where a tag was intended to point to data on the same line.
->
-> 	But due to an error with the data formatting it is not recognised.
->
-> 	Then the label will incorrectly be attached to the next instruction.
+> This can cause a scenario where a label was intended to point to data on the same line.
+>	But due to an error with the data formatting it is not recognised.
+>	Then the label will incorrectly be attached to the next instruction.
 
-Therefore users should fix Parsing Errors, before Assembly Errors.
-
-
+It will not continue to Execution, if there are errors at Assembly.
 
 ## MIPS Addresses Segments:
+
+This application is inspired by [MARS](http://courses.missouristate.edu/kenvollmar/mars/) and tries to replicate its memory layout.
+
+So it is easier for users to transition.
 
 ```
 *  Code range (.text) 0x00400000 to 0x004FFFFF (4194304 to 5242879)
@@ -317,7 +331,11 @@ The application currently does not support the CoProcessors.
 
 Meaning it does not support Traps (Exceptions) or Functional Units.
 
-# InProgress
+There are known bugs with colour output especially.
+
+@see [Known Bugs](https://github.com/EDEN786/MIPS-Teaching-Tool/projects/1#column-13528075)
+
+# In-Progress
 
 Branches are being added first.
 

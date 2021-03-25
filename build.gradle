@@ -9,7 +9,7 @@ compileJava {
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 }
 group 'github.com/EDEN786/MIPS-Teaching-Tool'
-version '1.0-SNAPSHOT'
+version '1.0'
 
 repositories {
     mavenCentral()
@@ -29,4 +29,14 @@ test {
 tasks.withType(Test){
     scanForTestClasses = false
     include "**/*Test.class"
+}
+
+jar {
+    manifest {
+        attributes "Main-Class": mainClassName
+    }
+
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
 }

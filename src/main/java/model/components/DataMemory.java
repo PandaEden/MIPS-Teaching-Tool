@@ -81,7 +81,7 @@ public class DataMemory {
 		if ( address>=BASE_DATA_ADDRESS && address<=(OVER_SUPPORTED_DATA_ADDRESS - DATA_ALIGN) )
 			return true;
 		else
-			throw new IndexOutOfBoundsException( "Data Address ["+Convert.int2Hex(address)+", "+address+"] must be >="
+			throw new IndexOutOfBoundsException( "Data Address ["+Convert.int2Hex(address)+", "+address+"] Must Be >="
 												 + Convert.int2Hex( BASE_DATA_ADDRESS ) + " and <="
 												 + Convert.int2Hex( OVER_SUPPORTED_DATA_ADDRESS - DATA_ALIGN ) + "!" );
 	}
