@@ -12,7 +12,7 @@ Please make sure you have this installed before attempting to run the applicatio
 
 To run the executable jar file run:
 
-> **java -jar *MTT-1.0.jar*** <path>**
+> **java -jar *MTT-1.0.jar*** <path>
 
 `With PowerShell/CMD there is no colour in the output, and you need to use backslashes '\' between directories.`
 

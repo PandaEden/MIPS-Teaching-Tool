@@ -5,6 +5,7 @@ import _test.TestLogs.FMT_MSG;
 
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.DisabledOnOs;
+import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import control.Execute;
@@ -126,14 +127,15 @@ class ParserTest {
 		}
 		
 		@ParameterizedTest ( name="[{index}] FileName[{arguments}] Not Valid" )
+		@EnabledOnOs ( org.junit.jupiter.api.condition.OS.WINDOWS )
 		@ValueSource ( strings={ "file|.s", "fi?le.s", "file.a*m" } )
 		void Invalid_FileName (String text) {
 			nullObjectErrors( parser.loadFile( text ),
 							  "File: \"" + text + "\", Not Valid FileName" );
 		}
 		
-		@Test    // May Need to Manually Test, by changing file permissions on system
-		@DisabledOnOs ( org.junit.jupiter.api.condition.OS.WINDOWS )
+		@Test
+		@Disabled	// Manually Tested on Ubuntu (WSL)
 		@DisplayName ( "File Not Accessible /NotReadable" )
 		void File_NotAccessible ( ) {
 			// Tried creating a file on the system without Read Permission, This made it think it was a non-valid file?
