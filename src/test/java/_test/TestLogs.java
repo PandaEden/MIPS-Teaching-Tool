@@ -38,6 +38,9 @@ public class TestLogs {
 	public final WarningsLog expectedWarnings=new WarningsLog( new ArrayList<>( ) );
 	public final ExecutionLog expectedExecution=new ExecutionLog( new ArrayList<>( ) );
 	private static int testNo=0;
+	public TestLogs ( ) {
+		Logger.Color.colorSupport=false;
+	}
 	
 	/**
 	 Checks any ExpectedLogs match their Actual Counterpart.

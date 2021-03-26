@@ -1,8 +1,6 @@
 import org.junit.jupiter.api.*;
 import _test.TestLogs.FMT_MSG;
 
-import model.components.DataMemory;
-
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
 import util.logs.Logger;

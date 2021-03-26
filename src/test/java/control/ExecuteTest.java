@@ -26,7 +26,6 @@ class ExecuteTest {
 	
 	@BeforeAll
 	static void beforeAll ( ) {
-		Logger.Color.colorSupport=false; // can test colour output manually
 		logs = new TestLogs();
 		testLogs_ex = new TestLogs.FMT_MSG._Execution( values, data, logs.actualExecution, logs.expectedExecution );
 		

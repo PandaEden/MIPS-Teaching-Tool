@@ -15,6 +15,7 @@ import model.instr.Operands;
 
 import util.Convert;
 import util.logs.ErrorLog;
+import util.logs.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
