@@ -1,120 +1,76 @@
 package model;
 
+import org.jetbrains.annotations.NotNull;
+
+import model.components.DataMemory;
+import model.components.RegisterBank;
+import model.instr.Operands;
+
+import util.Convert;
+import util.logs.ExecutionLog;
+
 public class I_Type extends Instruction {
 	
-	private enum SubType {EX, LOAD, STORE, BRANCH}
-	private final SubType subType;
-	private int RS;
-	private int RT;
-	private long IMM;
-	private long ADDRESS;
-	
-	I_Type( String ins, String[] operands, boolean isBranch ){
-		super(ins);
-		if (isBranch) this.subType=SubType.BRANCH;
-		else if (ins.contains("s")) this.subType=SubType.STORE;
-		else if (ins.contains("l")) this.subType=SubType.LOAD;
-		else this.subType=SubType.EX;
-		
-		int firstOp=Register_Bank.convert2r_reference(operands[0]);
-		String secondOp=operands[1];
-		//2 Operands are guaranteed for an I-Instruction, the 3rd might be null
-		//Second operand might not be register
-		
-		//set first operand
-		if (subType==SubType.BRANCH) //operands [rs, label] or [rs, rt, label]
-			RS=firstOp;
-		else //operands [rt, rs, imm] or [rt, imm(rs)] or [rt, imm]
-			RT=firstOp;
-		
-		//second operand depends on number of operands
-		// >2 operands mean three comma-space ", " separated values.
-		// while Imm($rs) are two operands, they will be read as one.
-		//if only 2 operands
-		if (operands.length==2)//Branch[rs, label] or Load/Store[rt, imm/imm(rs)]
-			allocateImm(secondOp);
-		else {//Branch[rs, rt, Label] or arithmetic[rt, rs, imm]
-			int registerNum=Register_Bank.convert2r_reference(secondOp);
-			if (subType==SubType.BRANCH)
-				RT = registerNum;
-			else
-				RS = registerNum;
-			
-			allocateImm(operands[2]);//3rd Operand either Label or Imm
-		}
-	}
-	
-	private  void allocateImm(String ImmRs){
-		//check if String contains '(', then it contains $RS
-		if (ImmRs.contains("(")){//split Imm($RS) into Imm and RS
-			String[] split= ImmRs.split("\\(");
-			IMM = Long.parseLong(split[0]);
-			//split[1] contains elements '$' 's/t' 'int' ')' . need to remove the ')'
-			String temp = split[1].split("\\)")[0];
-			RS=Register_Bank.convert2r_reference(temp);
-		}else{ //Imm or Label
-			IMM = Long.parseLong(ImmRs);
-		}
+	I_Type(String ins, Operands operands) {
+		super( ins, operands );
 	}
 	
 	@Override
-	public void execute( ){
-		if (subType==SubType.EX) {
-			super.execute( );
-			ex( );
-		}else if (subType==SubType.LOAD){
-			 lw();
-		}else if (subType==SubType.STORE)
-			sw();
+	protected void action(@NotNull DataMemory dataMem, @NotNull RegisterBank regBank,
+						  @NotNull ExecutionLog executionLog)
+			throws IndexOutOfBoundsException, IllegalArgumentException{
+		switch ( ins ) {
+			case "addi":
+				addi( dataMem, regBank, executionLog );
+				break;
+			case "lw":
+				lw( dataMem, regBank, executionLog );
+				break;
+			case "sw":
+				sw( dataMem, regBank, executionLog );
+				break;
+		}
 	}
 	
-	private boolean ex( ){
-		Color.setAnsiYellow();
-		System.out.print( "Reading register RS["+Register_Bank.convertFromR_reference(RS)+" ");
-		int rsVal = Register_Bank.read(RS);
-		System.out.println( rsVal+"], [IMMEDIATE: "+IMM+"]");
-		System.out.print( "Calculating Result:\n\tRT = ");
-		System.out.print( "RS+IMMEDIATE = "+rsVal+"+"+IMM+" = ");
-		int rtVal =Math.toIntExact(rsVal+IMM);
-		System.out.println(rtVal);
-		System.out.println( "Writing Result:\n\tValue: "+rtVal+" to register RT["
-		                    +Register_Bank.convertFromR_reference(RT)+"]");
-		Register_Bank.store(RT,rtVal);
-		Color.reset();
-		return true;
+	private void addi(DataMemory dataMem, RegisterBank regBank, ExecutionLog executionLog) {
+		int rsVal=regBank.read( RS );
+		
+		executionLog.append( "[IMMEDIATE: " + IMM + "]" );
+		executionLog.append( "Calculating Result:" );
+		int rtVal=rsVal + IMM;
+		executionLog.append( "RT = RS+IMMEDIATE = " + rsVal + "+" + IMM + " ==> " + rtVal );
+		dataMem.noAction( );
+		regBank.write( RT, rtVal );
 	}
 	
-	private void calculateImmRs(){
-		System.out.println( "\n\t"+(subType)+" - "+ins+"");
-		System.out.print( "Reading register RS["+Register_Bank.convertFromR_reference(RS)+" ");
-		int rsVal = Register_Bank.read(RS);
-		System.out.println( rsVal+"], [IMMEDIATE: "+IMM+"]");
-		System.out.print( "\nCalculating Address:\n\tADDRESS = ");
-		System.out.print( "RS+IMMEDIATE = "+rsVal+"+"+IMM+" = ");
-		ADDRESS = IMM+rsVal;
-		System.out.println(ADDRESS);
+	private void lw(DataMemory dataMem, RegisterBank regBank, ExecutionLog executionLog)
+			throws IndexOutOfBoundsException, IllegalArgumentException{
+		int rsVal=regBank.read( RS );
+		int ADDRESS=calculateDataAddress( executionLog, rsVal );
+		int data=dataMem.readData( ADDRESS );
+		regBank.write( RT, data );
 	}
 	
-	private boolean lw( ){
-		Color.setAnsiBlue();
-		calculateImmRs();
-		System.out.println("\t\tFetching data from ADDRESS: "+Memory.toHexAddr(ADDRESS));
-		int data =( int ) Memory.getData(Memory.getIndex(ADDRESS));
-		System.out.println( "Writing \n\tData: "+data+" to register RD["
-		                    +Register_Bank.convertFromR_reference(RT)+"]");
-		Register_Bank.store(RT,data);
-		Color.reset();
-		return true;
+	private void sw(DataMemory dataMem, RegisterBank regBank, ExecutionLog executionLog)
+			throws IndexOutOfBoundsException, IllegalArgumentException{
+		int rsVal=regBank.read( RS );
+		int data=regBank.read( RT );
+		int ADDRESS=calculateDataAddress( executionLog, rsVal );
+		dataMem.writeData( ADDRESS, data );
+		regBank.noAction( );
 	}
-	private boolean sw( ){
-		Color.setAnsiPurple();
-		int data = Register_Bank.read(RT);
-		System.out.println( "Reading \n\tData: "+data+" from register RS["
-		                    +Register_Bank.convertFromR_reference(RT)+"]");
-		calculateImmRs();
-		System.out.println("\t\tWriting data to ADDRESS: "+Memory.toHexAddr(ADDRESS));
-		Memory.putData(Memory.getIndex(ADDRESS),data);
-		Color.reset();
-		return true;
+	
+	private Integer calculateDataAddress(ExecutionLog executionLog, int rsVal) {
+		executionLog.append( "[IMMEDIATE: " + IMM + " === " + Convert.int2Hex( IMM ) + "]" );
+		executionLog.append( "Calculating Address:" );
+		int ADDRESS = rsVal + IMM;    // Presumed the Immediate, or rsVal are already the full Address
+		executionLog.append( "ADDRESS = RS+IMMEDIATE = " + rsVal + " + " + IMM + " = "
+							 + ADDRESS + " ==> " + Convert.int2Hex( ADDRESS ) );
+		//TODO
+		// - Result MUST BE ADDRESS ALIGNED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+		// - Add to Err Log -> Throw IllegalStateException.
+		// Change ExecutionLog input - to a general LOGS SuperType ??
+		return ADDRESS;
 	}
+	
 }

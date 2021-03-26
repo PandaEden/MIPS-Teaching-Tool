@@ -1,27 +1,36 @@
 package model;
 
-public class J_Type extends Instruction{
-	private final String label;
+import org.jetbrains.annotations.NotNull;
+
+import model.components.DataMemory;
+import model.components.RegisterBank;
+import model.instr.Operands;
+
+import util.Convert;
+import util.logs.ExecutionLog;
+
+public class J_Type extends Instruction {
 	
 	/**
-	 * @param ins
-	 * 	- NotNull use code 'no_ins' if not an instruction
+	 @param ins - NotNull use code 'no_ins' if not an instruction
 	 */
-	J_Type( String ins, String label ){
-		super(ins);
-		this.label=label;
+	J_Type(String ins, Operands operands) {
+		super( ins, operands );
 	}
 	
 	@Override
-	public void execute( ){
-		Color.setAnsiWhite();
-		System.out.println( "\n\tJ_Type"+" - "+ins+"");
-		System.out.print( "\tConverted LABEL: "+label+" to ADDRESS: ");
-		long ADDRESS = Memory.getAddress(label);
-		System.out.println(ADDRESS);
-		System.out.println( "\t\tPC="+Memory.ProgramCounter);
-		System.out.println( "\t\t\tDifference="+(ADDRESS-Memory.ProgramCounter));
-		Memory.ProgramCounter=ADDRESS;
-		Color.reset();
+	protected void action(@NotNull DataMemory dataMem, @NotNull RegisterBank regBank,
+						  @NotNull ExecutionLog executionLog) {
+		final int RETURN_ADDRESS_REGISTER=31;
+		if ( ins.equals( "jal" ) ) {
+			executionLog.append( "Storing Next Program Counter! : " + Convert.int2Hex( NPC ) );
+			regBank.write( RETURN_ADDRESS_REGISTER, NPC );
+		} else
+			regBank.noAction( );
+		NPC = shiftImm(executionLog);
+		
+		dataMem.noAction( );
+		executionLog.append( "Returning Jump Address: " + Convert.int2Hex( NPC ) + "!" );
 	}
+	
 }
