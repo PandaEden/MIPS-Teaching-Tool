@@ -1,18 +1,11 @@
 package _test;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
 import model.Instruction;
 import model.components.DataMemory;
-import model.components.InstrMemory;
 import model.components.RegisterBank;
-import model.instr.Operands;
-
-import setup.Parser;
 
 import util.Convert;
+import util.ansi_codes.Color;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
 import util.logs.Logger;
@@ -39,7 +32,7 @@ public class TestLogs {
 	public final ExecutionLog expectedExecution=new ExecutionLog( new ArrayList<>( ) );
 	private static int testNo=0;
 	public TestLogs ( ) {
-		Logger.Color.colorSupport=false;
+		Color.colorSupport=false;
 	}
 	
 	/**
@@ -80,9 +73,9 @@ public class TestLogs {
 		return actualString;
 	}
 	public static void tempPrint(String txt){
-		Logger.Color.colorSupport=true;
-		System.out.print(Logger.Color.fmtColored(Logger.Color.next(), txt));
-		Logger.Color.colorSupport=false;
+		Color.colorSupport=true;
+		System.out.print( Color.fmt( Color.next(), txt));
+		Color.colorSupport=false;
 	}
 	
 	// Methods starting with an underscore have the !, so use append for those, for the rest, use appendEx
@@ -192,6 +185,9 @@ public class TestLogs {
 				return "Fetching Instruction At Address [" + Convert.int2Hex(pc) + "]";
 			}
 			private void rb_noAct (){ expectedExLog.appendEx( "RegisterBank:\tNo Action"); }
+			private void rb_noRead (){ expectedExLog.appendEx( "RegisterBank:\tNo Read"); }
+			private void rb_noWrite (){ expectedExLog.appendEx( "RegisterBank:\tNo Write"); }
+			
 			private void dm_noAct(){ expectedExLog.appendEx( "DataMemory:\tNo Action"); }
 			public void decode (String hexPC, String opcode, String type){
 				expectedExLog.append( "\n\t ---- " + hexPC + " ---- " + type + " Type Instruction >> \"" + opcode + "\":");

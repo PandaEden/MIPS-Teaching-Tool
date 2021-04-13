@@ -121,6 +121,7 @@ class InstructionTest {
 			Instr.failAssemble_andExecuteThrows( ins );
 			//TODO - Add a check to Instr.Assemble - to only attempt .setImm if the Operands match the Opcode...  not sure
 		}
+		
 	}
 	
 	@Nested

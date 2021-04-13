@@ -3,11 +3,11 @@ package model.components;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import util.ansi_codes.Color;
 import util.validation.AddressValidation;
 import util.Convert;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
-import util.logs.Logger;
 import util.validation.OperandsValidation;
 
 import java.util.HashMap;
@@ -30,7 +30,7 @@ public class DataMemory {
 	public static final int BASE_DATA_ADDRESS=0x10010000;
 	public static final int OVER_SUPPORTED_DATA_ADDRESS=BASE_DATA_ADDRESS + (MAX_DATA_ITEMS)*DATA_ALIGN;
 	public static final int OVER_DATA_ADDRESS=0x10040000;
-	private final String NAME="DataMemory";
+	private final String NAME= Color.fmt( Color.DM, "DataMemory");
 	private final HashMap<Integer, Double> data;
 	private final ExecutionLog executionLog;
 	
@@ -94,13 +94,13 @@ public class DataMemory {
 	}
 	
 	private String fmtMem(int address, boolean write) {
-		final String READ_COL=Logger.Color.DATA_READ;
-		final String WRITE_COL=Logger.Color.DATA_WRITE;
+		final String READ_COL=Color.DATA_READ;
+		final String WRITE_COL=Color.DATA_WRITE;
 		
 		if ( write )
-			return Logger.Color.fmtColored( WRITE_COL, Convert.int2Hex( address ) );
+			return Color.fmt( WRITE_COL, Convert.int2Hex( address ) );
 		else
-			return Logger.Color.fmtColored( READ_COL, Convert.int2Hex( address ) );
+			return Color.fmt( READ_COL, Convert.int2Hex( address ) );
 	}
 	
 	/**

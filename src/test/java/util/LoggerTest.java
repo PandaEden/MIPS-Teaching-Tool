@@ -9,6 +9,7 @@ import _test.Tags.Pkg;
 
 import _test.providers.BlankProvider;
 
+import util.ansi_codes.Color;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
 import util.logs.Logger;
@@ -189,31 +190,31 @@ class LoggerTest {
 		
 		@BeforeEach
 		void setUp() {
-			preset=Logger.Color.colorSupport;
-			Logger.Color.colorSupport=true; // enable colour support
+			preset=Color.colorSupport;
+			Color.colorSupport=true; // enable colour support
 		}
 		
 		@AfterEach
 		void tearDown() {
-			Logger.Color.colorSupport=preset; // reset colour support
+			Color.colorSupport=preset; // reset colour support
 		}
 		
 		@ParameterizedTest (name="Color[{index}] - Ansi: \"{arguments}\"")
 		@ValueSource (strings={
-				Logger.Color.ANSI_RESET,
-				Logger.Color.BLACK_ANSI,
-				Logger.Color.RED_ANSI,
-				Logger.Color.GREEN_ANSI,
-				Logger.Color.YELLOW_ANSI,
-				Logger.Color.BLUE_ANSI,
-				Logger.Color.PURPLE_ANSI,
-				Logger.Color.CYAN_ANSI,
-				Logger.Color.WHITE_ANSI
+				Color.RESET,
+				Color.BLACK,
+				Color.RED,
+				Color.GREEN,
+				Color.YELLOW,
+				Color.BLUE,
+				Color.MAGENTA,
+				Color.CYAN,
+				Color.WHITE
 		})
 
 		void Format_Colored(String color) {
-			System.out.println( Logger.Color.fmtColored( color, "<PANDA>" ) );
-			assertEquals( color + "PANDA\u001B[0m", Logger.Color.fmtColored( color, "PANDA" ) );
+			System.out.println( Color.fmt( color, "<PANDA>" ) );
+			assertEquals( color + "PANDA\u001B[0m", Color.fmt( color, "PANDA" ) );
 		}
 		
 	}

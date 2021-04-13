@@ -1,9 +1,9 @@
 import org.junit.jupiter.api.*;
 import _test.TestLogs.FMT_MSG;
 
+import util.ansi_codes.Color;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
-import util.logs.Logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -26,7 +26,7 @@ class MainTest {
 	
 	@BeforeEach
 	void setUp ( ) {
-		Logger.Color.colorSupport=false;
+		Color.colorSupport=false;
 		System.setOut( new PrintStream( outputStreamCaptor ) );
 	}
 	@AfterEach

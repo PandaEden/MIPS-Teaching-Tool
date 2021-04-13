@@ -1,4 +1,3 @@
-import org.jetbrains.annotations.Nullable;
 import control.Execute;
 
 import model.Instruction;
@@ -8,19 +7,18 @@ import model.components.RegisterBank;
 
 import setup.Parser;
 
+import util.ansi_codes.Color;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
-import util.logs.Logger;
 import util.logs.WarningsLog;
 
 import java.util.ArrayList;
-import java.util.Scanner;
 
 public class Main {
 	public static void main(String[] args) {
 		//Disable Colour for Windows Terminals
 		if ( System.console( )!=null && System.getenv( ).get( "TERM" )==null )
-			Logger.Color.colorSupport=false;	// Tested Manually, enabled on CMD/Powershell
+			Color.colorSupport=false;	// Tested Manually, enabled on CMD/Powershell
 		//Setup
 		final ErrorLog errorLog=new ErrorLog( new ArrayList<>( ) );
 		final WarningsLog warningsLog=new WarningsLog( new ArrayList<>( ) );

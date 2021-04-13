@@ -81,13 +81,13 @@ class InstrMemoryTest {
 		expected.execute(0x00500000, dm, rm, testLogs.expectedExecution );
 	}
 	
-	@ParameterizedTest
+	@ParameterizedTest (name = "[{index}] == InstructionFetch - Invalid Address[{arguments}] :: Not Supported")
 	@ArgumentsSource( AddressProvider.InstrAddr.Supported.Not_Supported_Boundaries.class )
 	void Invalid_InstructionFetch_NotSupported_OverBounds( String hexAddr, Integer address ) {
 		assertThrows( IndexOutOfBoundsException.class, ()-> instrMemory.InstructionFetch( address ) );
 	}
 	
-	@ParameterizedTest
+	@ParameterizedTest (name = "[{index}] == InstructionFetch - Invalid Address[{arguments}] :: NotAligned")
 	@ArgumentsSource( AddressProvider.InstrAddr.Supported.Not_Aligned.class )
 	void Invalid_InstructionFetch_NotAligned ( String hexAddr, Integer address ) {
 		assertThrows( IllegalArgumentException.class, ()-> instrMemory.InstructionFetch( address ) );

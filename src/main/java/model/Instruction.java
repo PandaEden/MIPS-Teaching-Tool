@@ -139,7 +139,7 @@ public class Instruction {
 	/** Uses {@link Convert#imm2Address(Integer)} on {@link #IMM} */
 	protected Integer shiftImm(ExecutionLog executionLog){
 		int ADDR = Convert.imm2Address(IMM);
-		executionLog.append( "Left Shifting IMMEDIATE By 2 = " +  Convert.int2Hex( IMM )
+		executionLog.append( "\tLeft Shifting IMMEDIATE By 2 = " +  Convert.int2Hex( IMM )
 							 + " << " + 2 + " ==> ["+ADDR+" === " + Convert.int2Hex( ADDR ) +"]");
 		return ADDR;
 	}

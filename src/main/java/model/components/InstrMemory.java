@@ -5,7 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import model.Instruction;
 import model.instr.Operands;
 
-import util.logs.Logger;
+import util.ansi_codes.Color;
 import util.validation.AddressValidation;
 import util.Convert;
 import util.logs.ErrorLog;
@@ -68,8 +68,8 @@ public class InstrMemory {
 			return instructions.get( index );
 		} else { // index >256
 			executionLog.appendEx(
-					Logger.Color.fmtColored( Logger.Color.WARN_LOG,
-											 "\tRun Over Provided Instructions"  )
+					Color.fmt( Color.WARN_LOG,
+							   "\tRun Over Provided Instructions"  )
 			);
 			return autoExit;
 		}

@@ -7,8 +7,8 @@ import model.components.DataMemory;
 import model.components.InstrMemory;
 import model.components.RegisterBank;
 
+import util.ansi_codes.Color;
 import util.logs.ExecutionLog;
-import util.logs.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,7 +54,7 @@ public class Execute {
 			// catch Exception -> Calling method should print the ErrLog/ WarningLog
 			// after Execution Finishes to see what went wrong
 			output.append( exLog.toString( ) );
-			output.append( Logger.Color.fmtColored( Logger.Color.ERR_LOG, "ERROR: "+e.getMessage() ) );
+			output.append( Color.fmt( Color.ERR_LOG, "ERROR: " + e.getMessage() ) );
 		}
 		return output.toString();
 	}

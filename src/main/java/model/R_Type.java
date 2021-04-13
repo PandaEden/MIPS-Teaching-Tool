@@ -2,6 +2,7 @@ package model;
 
 import org.jetbrains.annotations.NotNull;
 
+import model.components.Component;
 import model.components.DataMemory;
 import model.components.RegisterBank;
 import model.instr.Operands;

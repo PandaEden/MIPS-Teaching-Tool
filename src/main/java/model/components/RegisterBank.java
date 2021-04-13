@@ -2,9 +2,10 @@ package model.components;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
 import util.Convert;
+import util.ansi_codes.Color;
 import util.logs.ExecutionLog;
-import util.logs.Logger;
 
 /**
  Wrapper for int[32] registers. Must be size 32
@@ -17,7 +18,7 @@ public class RegisterBank {
 	public static boolean fmtUpperCase=true;
 	private final int[] registers;
 	private final ExecutionLog executionLog;
-	private final String NAME="RegisterBank";
+	private final String NAME=Color.fmt( Color.RB, "RegisterBank" );
 	private Integer LAST_READ0=null;
 	private Integer LAST_READ1=null;
 	
@@ -144,55 +145,51 @@ public class RegisterBank {
 		else
 			throw new IndexOutOfBoundsException( "Index must be >=" + MIN_INDEX + " and <=" + MAX_INDEX + "!" );
 	}
+	private String colorVal (int index, int val) {
+		return colorize(index, ""+val );
+	}
+	/** Depending on the status colorize the output */
+	private String colorize (int index, String text){
+		final String READ_COL=Color.RB_READ;
+		final String WRITE_COL=Color.RB_WRITE;
+		
+		if ( LAST_READ0!=null && index==LAST_READ0 )
+				text=Color.fmt( READ_COL, text );
+		else if ( LAST_READ1!=null && index==LAST_READ1 )
+				text=Color.fmt( READ_COL, text );
+		else if ( LAST_WRITTEN!=null && index==LAST_WRITTEN )
+				text=Color.fmt( WRITE_COL, text );
+		
+		return text;
+	}
 	
 	/**
 	 Formats the register depending on {@link RegFormat}, and combines with the value at that register
+	 and add an asterisk if {@link #LAST_WRITTEN}
 	 */
-	private String fmtReg(int index) {
-		return colorReg( index, regName( index ) );
-	}
-	
-	/** Depending on the status colorize the output, and add an asterisk if {@link #LAST_WRITTEN} */
-	private String colorReg(int index, String reg) {
-		final String READ_COL=Logger.Color.RB_READ;
-		final String WRITE_COL=Logger.Color.RB_WRITE;
-		
-		if ( LAST_READ0!=null )
-			if ( index==LAST_READ0 )
-				reg=Logger.Color.fmtColored( READ_COL, reg );
-		
-		if ( LAST_READ1!=null )
-			if ( index==LAST_READ1 )
-				reg=Logger.Color.fmtColored( READ_COL, reg );
-		
-		if ( LAST_WRITTEN!=null )
-			if ( index==LAST_WRITTEN )
-				reg=Logger.Color.fmtColored( WRITE_COL, "*" + reg );
-		
+	private String fmtReg (int index) {
+		String reg = colorize( index, regName( index ) );
+		if ( LAST_WRITTEN!=null && index==LAST_WRITTEN )
+			reg = Color.fmt( Color.RB_WRITE, "*" + colorize( index, reg));
 		return reg;
 	}
-	
 	/** Formats the register index for output based on {@link RegFormat} */
-	private String regName(int index) {
+	private String regName (int index) {
 		if ( regFormat==RegFormat.Index )
 			return "$" + index;
 		
-		String rtn;
+		String rtn="";
 		switch ( regFormat ) {
 			case $R:
 			case $Named:
 				rtn="$";
 				break;
-			default:
-				rtn="";
-				break;
 		}
 		String reg=Convert.index2R( index );
 		switch ( regFormat ) {
-			case Named:
 			case $Named:
+			case Named:
 				reg=Convert.r2Named( reg );
-			default:
 				break;
 		}
 		return rtn + (fmtUpperCase ? reg.toUpperCase( ) : reg);
@@ -229,8 +226,8 @@ public class RegisterBank {
 		return rtn.toString( );
 	}
 	/** Formats the register depending on {@link RegFormat}, and combines with the value at that register */
-	private String fmtRegWithData(int index) {
-		return colorReg( index, regName( index ) + ": " + registers[ index ] );
+	private String fmtRegWithData (int index) {
+		return colorize( index, fmtReg( index ) + ": " + registers[ index ] );
 	}
 	
 	public enum RegFormat {
@@ -240,4 +237,5 @@ public class RegisterBank {
 		$R, // $R0 ..$R31
 		$Named //$ZERO.$S0.$T0.$RA
 	}
+	
 }
