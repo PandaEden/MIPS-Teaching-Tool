@@ -7,9 +7,9 @@ import util.logs.ExecutionLog;
 
 public class Component {
 	
-	/** If the control_signal is true, Input 0 is forwarded, Otherwise Input1 is forwarded. */
+	/** Multiplexer::If the control_signal is true, Input 0 is forwarded, Otherwise Input1 is forwarded. */
 	@Nullable
-	public static Integer Mutex(Integer input0, Integer input1, boolean control_signal){
+	public static Integer Mux (Integer input0, Integer input1, boolean control_signal){
 		return control_signal?input0:input1;
 	}
 	
@@ -25,11 +25,9 @@ public class Component {
 		return input0+input1;
 	}
 	
-	/** Performs ALU operation based on 4-bit ALU_OP, The last Bit is BInvert
-	 <p><b>If the first (leading) Bit is 1, it Inverts the result.</b> I.E 00010</p>
-	 
-	 
-	 */
+	/** Performs ALU operation based on ALU_OP,
+	 <ui><li>NOP - no action</li><li>ADD</li><li>SUB</li>
+	 <li>SLL - Shift Left Logical</li><li>SLT - Set On Less Than</li></ui>*/
 	public static int ALU(@NotNull Integer input0, @NotNull Integer input1, @NotNull String ALU_OP, @NotNull ExecutionLog log){
 		int output; // TODO remove null
 		// BInvert is determined by bit[0], SUB/SLT

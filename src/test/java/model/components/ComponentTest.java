@@ -23,27 +23,27 @@ class ComponentTest {
 	}
 	
 	@Nested
-	class Mutex {
+	class Multiplexer {
 		private final Integer I0=-900;
 		private final Integer I1=50;
 		
-		private Integer mutex (boolean signal) {
-			return Component.Mutex( I0, I1, signal );
+		private Integer mux (boolean signal) {
+			return Component.Mux( I0, I1, signal );
 		}
 		
 		@Test
 		void Input0 ( ) {
-			assertEquals( I0, mutex( true ) );
+			assertEquals( I0, mux( true ) );
 		}
 		
 		@Test
 		void Input1 ( ) {
-			assertEquals( I1, mutex( false ) );
+			assertEquals( I1, mux( false ) );
 		}
 		
 		@SuppressWarnings ( "ConstantConditions" ) @Test
 		void Input1_Null_PassThrough ( ) {
-			assertNull( Component.Mutex( I0, null, false ) );
+			assertNull( Component.Mux( I0, null, false ) );
 		}
 	}
 	
