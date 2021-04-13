@@ -211,17 +211,17 @@ public class TestLogs {
 			}
 			private void IMM(int imm){ expectedExLog.append( "[IMMEDIATE: " + imm + "]"); }
 			public void cal_result(String aluAction){
-				expectedExLog.append( "Calculating Result:" );
-				expectedExLog.append( aluAction );
+				expectedExLog.append( "\tCalculating Result:" );
+				expectedExLog.append( "\t"+aluAction );
 			}
 			
 			public void imm_cal_addr (int imm, int rs_val, int addr){
 				expectedExLog.append( "[IMMEDIATE: " + imm + " === " + Convert.int2Hex(imm) + "]");
-				expectedExLog.append( "Calculating Address:" );
-				expectedExLog.append( "ADDRESS = RS+IMMEDIATE = "+rs_val+" + "+imm+" = "+addr+" ==> "+Convert.int2Hex(addr) );
+				expectedExLog.append( "\tCalculating Address:" );
+				expectedExLog.append( "\tResult = "+rs_val+" + "+imm+" = "+addr+" ==> "+Convert.int2Hex(addr) );
 			}
 			private void shift_imm(int imm, int addr){
-				expectedExLog.append( "Left Shifting IMMEDIATE By 2 = "+Convert.int2Hex(imm)
+				expectedExLog.append( "\tLeft Shifting IMMEDIATE By 2 = "+Convert.int2Hex(imm)
 										+" << 2 ==> ["+addr+" === "+Convert.int2Hex(addr)+"]");
 			}
 			private void dm_read(int val, int addr){
@@ -251,7 +251,7 @@ public class TestLogs {
 				decode( hexPC, opcode, "REGISTER" );
 				rb_read( rs_val, RS );
 				rb_read( rt_val, RT);
-				cal_result( "RD = RS"+sign+"RT = "+rs_val+sign+rt_val+" ==> "+rd_val );
+				cal_result( "Result = "+rs_val+sign+rt_val+" ==> "+rd_val );
 				dm_noAct( );
 				rb_write( rd_val, RD );
 			}
@@ -263,7 +263,7 @@ public class TestLogs {
 				decode( hexPC, opcode, "IMMEDIATE" );
 				rb_read( rs_val, RS );
 				IMM( IMM );
-				cal_result( "RT = RS"+sign+"IMMEDIATE = "+rs_val+sign+IMM+" ==> "+rt_val );
+				cal_result( "Result = "+rs_val+sign+IMM+" ==> "+rt_val );
 				dm_noAct( );
 				rb_write( rt_val, RT );
 			}
@@ -281,7 +281,7 @@ public class TestLogs {
 				rb_read( rt_val, RT );
 				imm_cal_addr( IMM, rs_val, IMM+rs_val );
 				dm_write( rt_val, IMM+rs_val );
-				rb_noAct( );
+				rb_noWrite( );
 			}
 			//TODO - implement the modified versions a bit better,   perhaps changing the int RS/RT/RD inputs to String
 			public void load_output_modified(String hexPC, int RS, int rs_val, int IMM, int RT, int rt_val){
@@ -297,7 +297,7 @@ public class TestLogs {
 				rb_read( rt_val, RT );
 				imm_cal_addr( IMM, rs_val, IMM+rs_val );
 				dm_write( rt_val, IMM+rs_val );
-				rb_noAct( );
+				rb_noWrite();
 			}
 			
 			public void J_output (String hexPC, int imm){
@@ -311,6 +311,7 @@ public class TestLogs {
 			public void jal_output(String hexPC, int imm){
 				int npc = Convert.hex2uInt(hexPC)+4;
 				decode( hexPC, "jal", "JUMP" );
+				rb_noRead();
 				storeNPC( npc );
 				rb_write( npc, 31 );
 				shift_imm( imm, imm*4 );

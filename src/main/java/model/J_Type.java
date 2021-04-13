@@ -22,13 +22,15 @@ public class J_Type extends Instruction {
 	protected void action(@NotNull DataMemory dataMem, @NotNull RegisterBank regBank,
 						  @NotNull ExecutionLog executionLog) {
 		final int RETURN_ADDRESS_REGISTER=31;
+		
 		if ( ins.equals( "jal" ) ) {
+			regBank.read( null, null );
 			executionLog.append( "Storing Next Program Counter! : " + Convert.int2Hex( NPC ) );
 			regBank.write( RETURN_ADDRESS_REGISTER, NPC );
 		} else
 			regBank.noAction( );
-		NPC = shiftImm(executionLog);
 		
+		NPC = shiftImm(executionLog);
 		dataMem.noAction( );
 		executionLog.append( "Returning Jump Address: " + Convert.int2Hex( NPC ) + "!" );
 	}

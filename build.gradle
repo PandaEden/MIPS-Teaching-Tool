@@ -9,7 +9,7 @@ compileJava {
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 }
 group 'github.com/EDEN786/MIPS-Teaching-Tool'
-version '1.0'
+version '1.0.1'
 
 repositories {
     mavenCentral()

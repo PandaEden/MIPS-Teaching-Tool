@@ -2,6 +2,7 @@ package model;
 
 import org.jetbrains.annotations.NotNull;
 
+import model.components.Component;
 import model.components.DataMemory;
 import model.components.RegisterBank;
 import model.instr.Operands;
@@ -36,9 +37,8 @@ public class I_Type extends Instruction {
 		int rsVal=regBank.read( RS );
 		
 		executionLog.append( "[IMMEDIATE: " + IMM + "]" );
-		executionLog.append( "Calculating Result:" );
-		int rtVal=rsVal + IMM;
-		executionLog.append( "RT = RS+IMMEDIATE = " + rsVal + "+" + IMM + " ==> " + rtVal );
+		executionLog.append( "\tCalculating Result:" );
+		int rtVal=Component.ALU( rsVal, IMM, "add", executionLog);
 		dataMem.noAction( );
 		regBank.write( RT, rtVal );
 	}
@@ -53,24 +53,22 @@ public class I_Type extends Instruction {
 	
 	private void sw(DataMemory dataMem, RegisterBank regBank, ExecutionLog executionLog)
 			throws IndexOutOfBoundsException, IllegalArgumentException{
-		int rsVal=regBank.read( RS );
-		int data=regBank.read( RT );
+		int[] values = regBank.read( RS, RT );
+		int rsVal=values[0];
+		int rtVal=values[1];
 		int ADDRESS=calculateDataAddress( executionLog, rsVal );
-		dataMem.writeData( ADDRESS, data );
-		regBank.noAction( );
+		dataMem.writeData( ADDRESS, rtVal );
+		regBank.write( null,null );
 	}
 	
 	private Integer calculateDataAddress(ExecutionLog executionLog, int rsVal) {
 		executionLog.append( "[IMMEDIATE: " + IMM + " === " + Convert.int2Hex( IMM ) + "]" );
-		executionLog.append( "Calculating Address:" );
-		int ADDRESS = rsVal + IMM;    // Presumed the Immediate, or rsVal are already the full Address
-		executionLog.append( "ADDRESS = RS+IMMEDIATE = " + rsVal + " + " + IMM + " = "
-							 + ADDRESS + " ==> " + Convert.int2Hex( ADDRESS ) );
+		executionLog.append( "\tCalculating Address:" );
 		//TODO
 		// - Result MUST BE ADDRESS ALIGNED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		// - Add to Err Log -> Throw IllegalStateException.
 		// Change ExecutionLog input - to a general LOGS SuperType ??
-		return ADDRESS;
+		return Component.ALU( rsVal, IMM, "add", executionLog);
 	}
 	
 }

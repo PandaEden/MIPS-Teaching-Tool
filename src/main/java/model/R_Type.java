@@ -8,8 +8,6 @@ import model.instr.Operands;
 
 import util.logs.ExecutionLog;
 
-import java.security.InvalidParameterException;
-
 public class R_Type extends Instruction {
 	
 	R_Type(String ins, Operands operands) {
@@ -19,23 +17,13 @@ public class R_Type extends Instruction {
 	@Override
 	protected void action(@NotNull DataMemory dataMem, @NotNull RegisterBank regBank,
 						  @NotNull ExecutionLog executionLog) {
-		int rsVal=regBank.read( RS );
-		int rtVal=regBank.read( RT );
+		int[] values = regBank.read( RS, RT );
+		int rsVal=values[0];
+		int rtVal=values[1];
 		
-		executionLog.append( "Calculating Result:" );
+		executionLog.append( "\tCalculating Result:" );
 		int rdVal;
-		switch ( ins ) {
-			case "add":
-				rdVal=rsVal + rtVal;
-				executionLog.append( "RD = RS+RT = " + rsVal + "+" + rtVal + " ==> " + rdVal );
-				break;
-			case "sub":
-				rdVal=rsVal - rtVal;
-				executionLog.append( "RD = RS-RT = " + rsVal + "-" + rtVal + " ==> " + rdVal );
-				break;
-			default:
-				throw new InvalidParameterException( "Instruction:{" + ins + "} not recognised or Implemented" );
-		}
+		rdVal=Component.ALU(rsVal,rtVal,ins,executionLog);
 		dataMem.noAction( );
 		regBank.write( RD, rdVal );
 	}
