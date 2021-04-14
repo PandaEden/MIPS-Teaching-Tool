@@ -6,26 +6,30 @@ import org.jetbrains.annotations.VisibleForTesting;
 import java.util.List;
 
 public class Color {    // Static Class Constructor preventing 100% Coverage
+	private static final String CSI="\033["; // Control Sequence Introducer "ESC ["
+	//ESC{literal:\e octal:\033 hex:\x1b unicode:\u001b}
+	private static String csi(String code){ return CSI + code + "m"; }
+	private static String csi(int code){ return CSI + code + "m"; }
 	// BLACK -> RED -> GREEN -> YELLOW
-	public static final String BLACK="\u001B[30m";
-	public static final String RED="\u001B[31m";    //Reserve for Error Log
-	public static final String GREEN="\u001B[32m";    // - Read
-	public static final String YELLOW="\u001B[33m";    //Reserve for Warnings Log
-	public static final String BLUE="\u001B[34m";    // - Write
+	public static final int BLACK=30;
+	public static final int RED=31;    //Reserve for Error Log
+	public static final int GREEN=32;    // - Read
+	public static final int YELLOW=33;    //Reserve for Warnings Log
+	public static final int BLUE=34;    // - Write
 	// BLUE -> MAGENTA -> CYAN -> WHITE
-	public static final String MAGENTA="\u001B[35m";    // DataManager
-	public static final String CYAN="\u001B[36m";    // RegisterBank
-	public static final String WHITE="\u001B[37m";
-	public static final String RESET="\u001B[0m";
+	public static final int MAGENTA=35;    // DataManager
+	public static final int CYAN=36;    // RegisterBank
+	public static final int WHITE=37;
+	public static final String RESET=csi(0);
 	
-	public static final String ERR_LOG=bold( RED);
-	public static final String WARN_LOG=bold( YELLOW);
-	public static final String RB_READ=GREEN;
-	public static final String RB_WRITE=BLUE;
-	public static final String DATA_READ=GREEN;
-	public static final String DATA_WRITE=BLUE;
-	public static final String DM=underline(reverse(BLUE));
-	public static final String RB=underline(reverse(GREEN));
+	public static final String ERR_LOG=bold(doubleUnderline(reverse((csi(RED)))));
+	public static final String WARN_LOG=bold(underline(csi(YELLOW)));
+	public static final String RB_READ=csi(GREEN);
+	public static final String RB_WRITE=csi(BLUE);
+	public static final String DATA_READ=csi(GREEN);
+	public static final String DATA_WRITE=csi(BLUE);
+	public static final String DM=underline(csi(BLUE));
+	public static final String RB=underline(csi(GREEN));
 	
 	public static boolean colorSupport=true;
 	private static int nextColCounter=0;
@@ -33,10 +37,10 @@ public class Color {    // Static Class Constructor preventing 100% Coverage
 	/**Only used for testing*/
 	@VisibleForTesting
 	public static String next ( ) {    // Excluding Purple & Black
-		List<String> temp=List.of( RED, BLUE, GREEN, YELLOW, CYAN, WHITE, bold( BLACK),
-								   bold( RED), bold( BLUE), bold( GREEN), bold( YELLOW),
-								   bold( CYAN), bold( WHITE), RESET );
-		return temp.get( nextColCounter++%temp.size( ) );
+		List<Integer> temp=List.of( RED, BLUE, GREEN, YELLOW, CYAN, WHITE, bright( BLACK),
+								   bright( RED), bright( BLUE), bright( GREEN), bright( YELLOW),
+								   bright( CYAN), bright( WHITE));
+		return csi(temp.get( nextColCounter++%temp.size( ) ));
 	}
 	
 	@NotNull
@@ -44,52 +48,57 @@ public class Color {    // Static Class Constructor preventing 100% Coverage
 		return string.isBlank( ) ? string :
 			   ((Color.colorSupport) ? (ansi + string + RESET) : string);
 	}
+	// Bright & Bold are often displayed the same
 	
-	/**ANSI Color Code Modifier, BackGround*/
-	public static String bkg(String color){
-		return color.substring(0,2)+"4"+color.substring(3);//Expects: Esc,[,3,#,m
+	/**ANSI Color Code Modifier: BackGround*/
+	public static int bkg(int color){
+		return color+10;
 	}
-	/**ANSI Color Code Modifier, BackGround*/
-	public static String alt(String color){
-		return color.substring(0,2)+"9"+color.substring(3);//Expects: Esc,[,3,#,m
+	/**ANSI Color Code Modifier: Bright*/
+	public static int bright(int color){
+		return color+60;
 	}
-	/**ANSI Color Code Modifier, BackGround*/
-	public static String alt_bkg(String color){
-		return color.substring(0,2)+"10"+color.substring(3);//Expects: Esc,[,3,#,m
-	}
-	/**ANSI Color Code Modifier, Bright/Bold*/
+	/**ANSI Color Code Modifier: Bold, Same as Bright on some Terminals, Expects Input: Esc[3#m*/
 	public static String bold(String color){
 		return color.substring( 0, color.length()-1 )+";1m";
 	}
-	/**ANSI Color Code Modifier, Underline*/
+	/**ANSI Color Code Modifier: Underline, Expects Input: Esc[3#m*/
 	public static String underline(String color){
 		return color.substring( 0, color.length()-1 )+";4m";
 	}
-	/**ANSI Color Code Modifier, Reverses*/
+	/**ANSI Color Code Modifier: Double-Underline, Expects Input: Esc[3#m*/
+	public static String doubleUnderline(String color){
+		return color.substring( 0, color.length()-1 )+";21m";
+	}
+	/**ANSI Color Code Modifier: Reverse, Expects Input: Esc[3#m*/
 	public static String reverse(String color){
 		return color.substring( 0, color.length()-1 )+";7m";
 	}
 	
 	// Test Print Ascii codes
 	public static void main (String[] args) {
-		
 		for ( int i=0; i<8; i++ ) {
-			System.out.print( " \u001b[3"+i+"m A"+RESET );
-			System.out.print( " \u001b[4"+i+"m A"+RESET );
-			System.out.print( " \u001b[9"+i+"m A"+RESET );
-			System.out.print( " \u001b[10"+i+"m A"+RESET );
-			System.out.println( " " );
-		}
-		System.out.println( " " );
-		
-		for ( int j=0; j<4; j++ ){
-			for ( int i=0; i<8; i++ ) {
-				System.out.print( " \u001b[3"+i+"m A"+RESET );
-				System.out.print( " \u001b[4"+i+"m A"+RESET );
-				System.out.print( " \u001b[9"+i+"m A"+RESET );
-				System.out.print( " \u001b[10"+i+"m A"+RESET );
-				System.out.println( " " );
+			for ( int j=0; j<2; j++ ) {
+				int num=30 + i;
+				String bkg_code=csi( bkg( num ) );
+				if ( j==1 )
+					num=bright( num );
+				
+				String code=csi( num );
+				System.out.print( num + "\t" );
+				System.out.print( fmt( code, " A" ) );
+				System.out.print( fmt( bold( code ), " A" ) + "  " );
+				System.out.print( fmt( underline( code ), " A" ) + " " );
+				System.out.print( fmt( doubleUnderline( code ), " A" ) + " " );
+				
+				System.out.print( fmt( reverse( code ), " A" ) + " " );
+				System.out.print( fmt( reverse( bold( doubleUnderline( code ) ) ), " A" ) + " " );
+				
+				System.out.print( bkg( num ) + "\t" );
+				System.out.print( fmt( bold( doubleUnderline( bkg_code ) ), " A" ) + " " );
+				System.out.print( fmt( reverse( bold( doubleUnderline( bkg_code ) ) ), " A" ) + "\n" );
 			}
 		}
+		System.out.print( fmt( ERR_LOG, " ERR" ) + fmt( WARN_LOG, " WARN" ) + fmt( RB, " RB" ) + fmt( DM, " DM" ) );
 	}
 }
