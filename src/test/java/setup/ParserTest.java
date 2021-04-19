@@ -18,6 +18,7 @@ import model.components.RegisterBank;
 import util.Convert;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
+import util.validation.OperandsValidation;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,7 +41,7 @@ class ParserTest {
 		testLogs=new TestLogs( );
 		expected=testLogs.expectedErrors;
 		
-		mb=new MemoryBuilder( );
+		mb=new MemoryBuilder( testLogs.actualErrors, testLogs.actualWarnings );
 		parser=new Parser( mb, testLogs.actualErrors, testLogs.actualWarnings );
 	}
 	
@@ -233,6 +234,8 @@ class ParserTest {
 			assertNull( split[ 2 ] );
 			assertNull( split[ 3 ] );
 			
+			//TODO: atm, it thinks everything unto ':' is part of a label. It does not check if the first space separated word
+			//  is a valid directive/ opcode.   (labels can't start with a dot. and )
 			//assertEquals( "addi", split[ 1 ] );
 			//assertEquals( "$r0, . 87 not va:lid", split[ 2 ] );
 		}

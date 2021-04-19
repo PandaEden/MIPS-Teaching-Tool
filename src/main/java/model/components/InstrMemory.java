@@ -3,7 +3,7 @@ package model.components;
 import org.jetbrains.annotations.NotNull;
 
 import model.Instruction;
-import model.instr.Operands;
+import model.Nop;
 
 import util.ansi_codes.Color;
 import util.validation.AddressValidation;
@@ -34,7 +34,7 @@ public class InstrMemory {
 	private final ExecutionLog executionLog;
 	
 	// reference autoExit instruction TODO with lineNo (-1)
-	private static final Instruction autoExit = Instruction.buildInstruction( "exit", Operands.getExit() );
+	private static final Instruction autoExit = new Nop( "exit" );
 	
 	public InstrMemory(@NotNull ArrayList<Instruction> instructions, @NotNull ExecutionLog executionLog) {
 		this.instructions=instructions;

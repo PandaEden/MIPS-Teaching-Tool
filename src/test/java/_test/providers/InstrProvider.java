@@ -4,9 +4,9 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 
+import model.Instruction;
 import model.components.DataMemory;
 import model.components.InstrMemory;
-import model.instr.Operands;
 
 import java.util.*;
 import java.util.stream.Stream;
@@ -40,15 +40,12 @@ public class InstrProvider implements ArgumentsProvider {
 	);
 	
 	/** Based on the Lists, Returns the Type an opcode belongs to*/
-	public static Operands.InstrType type(String opcode){
-		if ( op_RT_MEM.contains( opcode )) {
-			if ( op_I_REG_READ.contains( opcode ) ) return Operands.InstrType.I_rt_read;
-			else return Operands.InstrType.I_rt_write;
-		}
-		if ( op_RD_RS_RT.contains( opcode )) return Operands.InstrType.R;
-		if ( op_RT_RS_IMM.contains( opcode )) return Operands.InstrType.I_rt_read;
-		if ( op_J.contains( opcode )) return Operands.InstrType.J;
-		if ( op_NO_OPS.contains( opcode ) ) return Operands.InstrType.R;
+	public static Instruction.Type type(String opcode){
+		if ( op_RT_MEM.contains( opcode )) return Instruction.Type.IMMEDIATE;
+		else if ( op_RD_RS_RT.contains( opcode )) return Instruction.Type.REGISTER;
+		else if ( op_RT_RS_IMM.contains( opcode )) return Instruction.Type.IMMEDIATE;
+		else if ( op_J.contains( opcode )) return Instruction.Type.JUMP;
+		else if ( op_NO_OPS.contains( opcode ) ) return Instruction.Type.NOP;
 		else
 			throw new IllegalArgumentException(" Opcode "+opcode+" Does Not Belong To A Type");
 	}
@@ -97,14 +94,12 @@ public class InstrProvider implements ArgumentsProvider {
 	public static class RD_RS_RT implements ArgumentsProvider {
 		public Stream<Arguments> provideArguments(ExtensionContext context) { return toArgs( op_RD_RS_RT ); }
 		public static final String OPS = "$1 , r1, $at";
-		public static Operands operands = new Operands(1,1,2);
 	}
 	
 	public static class I {
 		public static class RT_RS_IMM implements ArgumentsProvider {
 			public Stream<Arguments> provideArguments(ExtensionContext context) { return toArgs( op_RT_RS_IMM ); }
 			public static final String OPS = "$1 , r1, -40";
-			public static Operands operands = new Operands("addi",1,1,-40);
 		}
 		
 		public static class RT_MEM implements ArgumentsProvider {

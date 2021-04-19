@@ -7,7 +7,6 @@ import org.jetbrains.annotations.VisibleForTesting;
 import model.MemoryBuilder;
 import model.components.DataMemory;
 import model.components.InstrMemory;
-import model.instr.Operands;
 
 import util.Convert;
 import util.validation.OperandsValidation;
@@ -222,9 +221,6 @@ public class Parser {
 		String label=this.val.isValidLabel( lineNo, split[ 0 ] );
 		if ( label!=null )
 			mb.pushLabel( label );
-//
-//		if ( errLength<errorLog.toString( ).length( ) )    // caused by Invalid Label
-//			errorLog.append( "_" );
 		
 		String arg1=split[ 1 ];
 		String arg2=split[ 2 ];
@@ -246,8 +242,7 @@ public class Parser {
 				// validate arg2 (operands)
 				// mb.addInstr
 				if ( this.opsVal.isValidOpCode( lineNo, arg1 ) ) {
-					Operands operands=this.opsVal.splitValidOperands( lineNo, arg1, arg2 );
-					if ( operands!=null && !mb.addInstruction( arg1, operands ) ) {
+					if ( !mb.addInstruction( lineNo, arg1, arg2 ) ) {
 						warningsLog.appendEx( lineNo,"Reached MAX Instructions!, Further Instructions Will Not Be Parsed" );
 						warningsLog.append( "\t\t\tInstruction Limit == [" + InstrMemory.MAX_INSTR_COUNT + "]" );
 						instrLimit=true;

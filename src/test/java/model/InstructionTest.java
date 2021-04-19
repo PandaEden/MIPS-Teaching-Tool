@@ -11,11 +11,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import model.components.DataMemory;
 import model.components.InstrMemory;
-import model.instr.Operands;
 
 import util.Convert;
 import util.logs.ErrorLog;
-import util.logs.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,10 +50,9 @@ class InstructionTest {
 	
 	@ParameterizedTest ( name="[{index}] EXIT_Execution : {0}" )
 	@ArgumentsSource(InstrProvider.NO_OPS.class)
-	@DisplayName ( "EXIT_Execution" )
 	void Exit_Execution (String opcode) {
 		// Build
-		Instruction ins=Instruction.buildInstruction( opcode, Operands.getExit() );
+		Instruction ins=new Nop(opcode);
 		// Execute
 		Instr.assembleAndExecute_newPC(null, ins );
 		// Output
@@ -64,12 +61,7 @@ class InstructionTest {
 	
 	@Test
 	void Undefined_Instruction_ThrowsException_At_Runtime ( ) {
-		Instruction i = new R_Type("panda",InstrProvider.RD_RS_RT.operands );
-		Instr.assembleAndExecute_Throws( IllegalArgumentException.class, i );
-		testLogs_ex.decode( _PC, "panda", "EXIT" );
-		testLogs_ex.rb_read( 0, 1 );
-		testLogs_ex.rb_read( 0, 1);
-		testLogs_ex.cal_result( "" );
+		assertThrows(IllegalArgumentException.class, ()-> new R_Type("panda", 0,0,0 ));
 	}
 	
 	@Nested
@@ -82,8 +74,7 @@ class InstructionTest {
 			values[ 5 ]=0;
 			// - Expect after addition, Register # 5 will have the value 60 = (25+35)
 			// Build
-			Instruction ins=Instruction.buildInstruction( "add", new Operands( 6, 7, 5 ) );
-			assertTrue( ins instanceof R_Type );
+			Instruction ins=new R_Type( "add",6, 7, 5 );
 			//Execute
 			Instr.assembleAndExecute_incPC( ins );
 			// Result
@@ -100,8 +91,7 @@ class InstructionTest {
 			assertEquals( 0, values[ 16 ] ); // check initial value is 0
 			// - Expect after subtraction, Register #16 will have the value -4750 = (5000-78)
 			// Build
-			Instruction ins=Instruction.buildInstruction( "sub", new Operands( 20, 24, 16 ) );
-			assertTrue( ins instanceof R_Type );
+			Instruction ins=new R_Type("sub",20, 24, 16 );
 			// Execute
 			Instr.assembleAndExecute_incPC( ins );
 			// Result
@@ -114,12 +104,7 @@ class InstructionTest {
 		@Test
 		void Invalid_ADD_Execution_With_Invalid_Operands ( ) {
 			// Expect after addition, Register # 5 will have the value 60 = (25+35)
-			Instruction ins=Instruction.buildInstruction( "add", new Operands("instr" ) );
-			// Operands for "lw" given to "add"
-			assertNotNull( ins );
-			assertTrue( ins instanceof R_Type );
-			Instr.failAssemble_andExecuteThrows( ins );
-			//TODO - Add a check to Instr.Assemble - to only attempt .setImm if the Operands match the Opcode...  not sure
+			assertThrows( IllegalArgumentException.class, ()-> new R_Type( "add", 0, 0, -5));
 		}
 		
 	}
@@ -134,9 +119,8 @@ class InstructionTest {
 			values[ 16 ]=0;
 			// - Expect after addition, Register #1 will have the value -150 = (250+-400)
 			// Build
-			Instruction ins=Instruction.buildInstruction( "addi", new Operands( "addi", 30, 1, -400 ) );
+			Instruction ins=new I_Type( "addi", 30, 1, -400 );
 			assertNotNull( ins );
-			assertTrue( ins instanceof I_Type );
 			// Execute
 			Instr.assembleAndExecute_incPC( ins );
 			// Result
@@ -157,10 +141,8 @@ class InstructionTest {
 			data.put( Convert.dataAddr2Index( labelMap.get( "data" ) ), 20.0 );
 			// - Expect after load, Register #1 will have the value 20
 			// Build
-			Operands operands=new Operands( "lw", 1, "data" );
-			Instruction ins=Instruction.buildInstruction( "lw", operands );
+			Instruction ins=new MemAccess( "lw", 1, "data" );
 			assertNotNull( ins );
-			assertTrue( ins instanceof I_Type );
 			// Execute
 			Instr.assembleAndExecute_incPC( ins );
 			// Result
@@ -179,10 +161,9 @@ class InstructionTest {
 			data.put( 0, 200.0 );
 			// - Expect after load, Register #1 will have the value 200
 			// Build
-			Instruction ins=Instruction.buildInstruction( "lw", new Operands( "lw", 30, 1, imm ) );
+			Instruction ins=new MemAccess( "lw", 30, 1, imm );
 			// RS_val + Imm should give the correct address.
 			assertNotNull( ins );
-			assertTrue( ins instanceof I_Type );
 			// Execute
 			Instr.assembleAndExecute_incPC( ins );
 			// Result
@@ -200,9 +181,8 @@ class InstructionTest {
 			data.put( 0, 20.0 );
 			// - Expect after store, Memory #0 will have the value 250
 			// Build
-			Instruction ins=Instruction.buildInstruction( "sw", new Operands( "sw", 30, "data" ) );
+			Instruction ins=new MemAccess( "sw", 30, "data" );
 			assertNotNull( ins );
-			assertTrue( ins instanceof I_Type );
 			// Execute
 			Instr.assembleAndExecute_incPC( ins );
 			// Results
@@ -212,14 +192,13 @@ class InstructionTest {
 			
 		}
 		@Test
-		void Invalid_LW_Execution_DataOver () {
+		void Invalid_MEM_Execution_DataOver () {
 			// Setup
 			String label="not_data";
 			String addr=Convert.int2Hex( labelMap.get( label ) );
 			// Build
-			Instruction ins=Instruction.buildInstruction( "lw", new Operands( "lw", 1, label ) );
+			Instruction ins=new MemAccess( "lw", 1, label );
 			assertNotNull( ins );
-			assertTrue( ins instanceof I_Type );
 			// Execute -> Errors
 			Instr.failAssemble_andExecuteThrows( ins );
 			// Output
@@ -228,13 +207,12 @@ class InstructionTest {
 		}
 		@ParameterizedTest ( name="[{index}] LW_Execution with Instr-Label" )
 		@ValueSource ( strings={ "instr", "instr_top" } )
-		void Invalid_LW_Execution (String label) {
+		void Invalid_MEM_Execution (String label) {
 			// Setup
 			String addr=Convert.int2Hex( labelMap.get( label ) );
 			// Build
-			Instruction ins=Instruction.buildInstruction( "lw", new Operands( "lw", 1, label ) );
+			Instruction ins=new MemAccess( "lw", 1, label );
 			assertNotNull( ins );
-			assertTrue( ins instanceof I_Type );
 			// Execute -> Errors
 			Instr.failAssemble_andExecuteThrows( ins );
 			// Output
@@ -242,7 +220,7 @@ class InstructionTest {
 			testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Data" ) );
 		}
 		@Test
-		void InvalidLW_Execution_BassOffset_OutOfBounds ( ) {
+		void Invalid_MEM_Execution_BassOffset_OutOfBounds ( ) {
 			// Setup
 			int imm=40;
 			int addr=DataMemory.BASE_DATA_ADDRESS-4;
@@ -251,10 +229,9 @@ class InstructionTest {
 			data.put( 0, 200.0 );
 			// - Expect after load, Register #1 will have the value 200
 			// Build
-			Instruction ins=Instruction.buildInstruction( "lw", new Operands( "lw", 30, 1, imm ) );
+			Instruction ins=new MemAccess( "lw",  30, 1, imm );
 			// RS_val + Imm should give the correct address.
 			assertNotNull( ins );
-			assertTrue( ins instanceof I_Type );
 			// Execute
 			Instr.assembleAndExecute_Throws(IndexOutOfBoundsException.class, ins);
 			// Result
@@ -266,7 +243,7 @@ class InstructionTest {
 			// Output cut off by exception
 		}
 		@Test
-		void InvalidLW_Execution_BassOffset_NotAligned ( ) {
+		void Invalid_MEM_Execution_BassOffset_NotAligned ( ) {
 			// Setup
 			int imm=40;
 			int addr=DataMemory.BASE_DATA_ADDRESS+3;
@@ -275,10 +252,9 @@ class InstructionTest {
 			data.put( 0, 200.0 );
 			// - Expect after load, Register #1 will have the value 200
 			// Build
-			Instruction ins=Instruction.buildInstruction( "lw", new Operands( "lw", 30, 1, imm ) );
+			Instruction ins=new MemAccess( "lw", 30, 1, imm  );
 			// RS_val + Imm should give the correct address.
 			assertNotNull( ins );
-			assertTrue( ins instanceof I_Type );
 			// Execute
 			Instr.assembleAndExecute_Throws(IllegalArgumentException.class, ins);
 			// Result
@@ -300,9 +276,8 @@ class InstructionTest {
 			// Setup
 			int addr=labelMap.get( "instr" );
 			// Build
-			Instruction ins=Instruction.buildInstruction( "j", new Operands("instr" ) );
+			Instruction ins=new J_Type( "j", "instr" );
 			assertNotNull( ins );
-			assertTrue( ins instanceof J_Type );
 			// Execute & Result
 			Instr.assembleAndExecute_newPC( addr, ins );
 			// Output
@@ -313,9 +288,8 @@ class InstructionTest {
 		void Jump_Execution_IMM ( ) {
 			// Setup
 			int addr=0x00400014; // index 21
-			Instruction ins=Instruction.buildInstruction( "j", new Operands(addr/4 ) );
+			Instruction ins=new J_Type( "j", addr/4 );
 			assertNotNull( ins );
-			assertTrue( ins instanceof J_Type );
 			// Execute & Result
 			Instr.assembleAndExecute_newPC( addr, ins );
 			// Output
@@ -328,7 +302,7 @@ class InstructionTest {
 			String label="instr";
 			int addr=labelMap.get( label );
 			// Build
-			Instruction ins=Instruction.buildInstruction( "jal", new Operands( label ) );
+			Instruction ins=new J_Type( "jal",  label );
 			assertNotNull( ins );
 			assertTrue( ins instanceof J_Type );
 			// Execute & Result
@@ -343,9 +317,8 @@ class InstructionTest {
 			String label="not_instr";
 			String addr=Convert.int2Hex( labelMap.get( label ) );
 			// Build
-			Instruction ins=Instruction.buildInstruction( "j", new Operands( label ) );
+			Instruction ins=new J_Type( "j",  label );
 			assertNotNull( ins );
-			assertTrue( ins instanceof J_Type );
 			// Execute -> Errors
 			Instr.failAssemble_andExecuteThrows( ins );
 			// Output
@@ -358,9 +331,8 @@ class InstructionTest {
 			// Setup
 			String addr=Convert.int2Hex( labelMap.get( label ) );
 			// Build
-			Instruction ins=Instruction.buildInstruction( "j", new Operands( label ) );
+			Instruction ins=new J_Type( "j", label );
 			assertNotNull( ins );
-			assertTrue( ins instanceof J_Type );
 			// Execute -> Errors
 			Instr.failAssemble_andExecuteThrows( ins );
 			// Output
@@ -373,9 +345,8 @@ class InstructionTest {
 			// Setup
 			int addr=5242884;
 			// Build
-			Instruction ins=Instruction.buildInstruction( "jal", new Operands( addr/4 ) );
+			Instruction ins=new J_Type( "jal", addr/4 );
 			assertNotNull( ins );
-			assertTrue( ins instanceof J_Type );
 			// Execute & Result
 			Instr.assembleAndExecute_newPC( addr, ins );	// NPC = Addr
 			// Output

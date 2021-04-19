@@ -2,17 +2,17 @@ package util.logs;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.VisibleForTesting;
+
+import util.ansi_codes.Color;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  Provides logging capacity for the application.
  Use with <b>System.out.print()</b>
  */
 public class Logger {
-	private final String name;
+	protected String name;
 	private final ArrayList<String> logs;
 	private String prefix;
 	

@@ -1,18 +1,21 @@
 package model;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import model.components.DataMemory;
 import model.components.RegisterBank;
-import model.instr.Operands;
 
 import setup.Parser;
 
 import util.Convert;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
+import util.validation.AddressValidation;
+import util.validation.OperandsValidation;
 
 import java.util.HashMap;
+import java.util.List;
 
 /**
  Expects all used variables to not be null.
@@ -21,62 +24,40 @@ import java.util.HashMap;
  <p>For Jump Type,
  <p> - it presumes the immediate stores the address shifted 2 bits right.
  */
-public class Instruction {
+public abstract class Instruction {
 	private final Type type;
-	private final Operands operands;
-	protected String ins;
+	protected final String opcode;
 	protected Integer NPC;
-	protected Integer RD;
-	protected Integer RS;
-	protected Integer RT;
+	protected final int RD;
+	protected final int RS;
+	protected final int RT;
 	protected Integer IMM;
-	protected String label;
-	private boolean assembled=false;
+	protected final String label;
+	// TODO Add lineNo
 	
-	/**
-	 @param ins - NotNull use code 'no_ins' if not an instruction
-	 */
-	Instruction(String ins, Operands operands) {
-		this.ins=ins;
-		this.type=ins2Type( ins );
-		this.operands=operands;
-	}
-	
-	//TODO refactor to use the same list that validate uses
-	private static Type ins2Type(String ins) {
-		switch ( ins ) {
-			case "add":
-			case "sub":
-				return Type.REGISTER;
-			case "addi":
-			case "lw":
-			case "sw":
-				return Type.IMMEDIATE;
-			case "j":
-			case "jal":
-				return Type.JUMP;
-			default:
-				return Type.EXIT;
-		}
-	}
-	
-	/**
-	 <b>This builder only pairs the opcode, with the operand, It performs no validation</b>
+	/**No Validation is performed, assumed all input to be valid. {@link #assemble(ErrorLog, HashMap)} needs to be ran before execution.
 	 <p>Errors with format may be caught during assembly.</p>
-	 <p>Trying to Execute an instruction where assembly has failed will throw an exception.</p>
-	 */
-	public static Instruction buildInstruction(@NotNull String opcode, @NotNull Operands operands) {
-		Type type=ins2Type( opcode );
+	 <p>Trying to Execute an instruction where assembly has failed will throw an exception.</p>*/
+	protected Instruction (@NotNull Type type, @NotNull List<String> codes, @NotNull String opcode,
+						   int RS, int RT, int RD, @Nullable Integer IMM, @Nullable String label)
+	throws IllegalArgumentException{
+		this.type=type;	// TODO is the Type Enum Necessary ?
+		this.opcode=opcode;
+		this.RD=RD;
+		this.RS=RS;
+		this.RT=RT;
+		this.IMM=IMM;
+		this.label=label;
 		
-		//TODO refactor into all being in One Class,
-		if ( type==Type.REGISTER )
-			return new R_Type( opcode, operands );
-		else if ( type==Type.IMMEDIATE )
-			return new I_Type( opcode, operands );
-		else if ( type==Type.JUMP )
-			return new J_Type( opcode, operands );
-		else
-			return new Instruction( opcode, operands );
+		if ( !codes.contains( opcode ) ) // TODO - rename to InstructionValidation
+			throw new IllegalArgumentException("Instruction ["+opcode+"], Has not been defined in OperandsValidation");
+		regNotInRange( RD );
+		regNotInRange( RS );
+		regNotInRange( RT );
+	}
+	private void regNotInRange (int reg){
+		if (!OperandsValidation.notNullAndInRange( reg, 0, 31 ))
+			throw new IllegalArgumentException("Registers not in range!, "+toString());
 	}
 	
 	/**
@@ -89,53 +70,18 @@ public class Instruction {
 	 */
 	public Integer execute(int PC, @NotNull DataMemory dataMem, @NotNull RegisterBank regBank,
 						   @NotNull ExecutionLog executionLog) throws IndexOutOfBoundsException, IllegalArgumentException {
-		if ( !assembled )
-			throw new IllegalStateException( ins + " must be Assembled before Execution " + Convert.int2Hex( PC ) );
+		if ( IMM==null )
+			throw new IllegalStateException( opcode + " must be Assembled before Execution " + Convert.int2Hex( PC ) );
 		
 		String dash=" ---- ";
-		executionLog.append( "\n\t" + dash + Convert.int2Hex( PC ) + dash + type.name( ) + " Type Instruction >> \"" + ins + "\":" );
+		executionLog.append( "\n\t" + dash + Convert.int2Hex( PC ) + dash + type.name( ) + " Type Instruction >> \"" + opcode + "\":" );
 		NPC=PC + 4;
 		action( dataMem, regBank, executionLog );
 		return NPC;
 	}
 	
-	protected void action(@NotNull DataMemory dataMem, @NotNull RegisterBank regBank,
-						  @NotNull ExecutionLog executionLog) {
-		//EXIT do nothing, - set NPC to null
-		regBank.noAction( );
-		dataMem.noAction( );
-		NPC=null;
-	}
+	protected abstract void action(@NotNull DataMemory dataMem, @NotNull RegisterBank regBank, @NotNull ExecutionLog executionLog);
 	
-	/**
-	 Returns the success of assembling the instruction & it's operands.
-	 also returns True if the instruction has already been assembled.
-	 
-	 <p>Illegal Argument Exception may be throw is the label map
-	 
-	 @see Operands#setImmediate(ErrorLog, HashMap)
-	 */
-	public boolean assemble(@NotNull ErrorLog log, @NotNull HashMap<String, Integer> labelMap) throws IllegalStateException, IllegalArgumentException{
-		String opLabel=operands.getLabel( );
-		if ( this.IMM==null && (!Parser.isNullOrBlank(opLabel)) )
-			operands.setImmediate( log, labelMap );
-		
-		readOperands( );
-		if ( this instanceof R_Type ) {
-			assembled=(this.RS!=null && this.RT!=null && this.RD!=null)
-					  && this.IMM==null;
-		} else if ( this instanceof I_Type ) {
-			assembled=(this.RS!=null && this.RT!=null && this.IMM!=null)
-					  && this.RD==null;
-		} else if ( this instanceof J_Type ) {
-			assembled=this.IMM!=null
-					  && (this.RS==null && this.RT==null && this.RD==null);
-		} else {
-			assembled=true; // Exit Type
-		}
-		
-		return assembled;
-	}
 	/** Uses {@link Convert#imm2Address(Integer)} on {@link #IMM} */
 	protected Integer shiftImm(ExecutionLog executionLog){
 		int ADDR = Convert.imm2Address(IMM);
@@ -144,15 +90,81 @@ public class Instruction {
 		return ADDR;
 	}
 	
-	// Reads from the Operands object, and sets the appropriate values
-	protected void readOperands() {
-		this.RD=operands.getRd( );
-		this.RS=operands.getRs( );
-		this.RT=operands.getRt( );
-		this.IMM=operands.getImmediate( );
-		this.label=operands.getLabel( );
+	/**
+	 Returns the success of assembling the instruction & it's operands.
+	 also returns True if the instruction has already been assembled.
+	 
+	 <p>Illegal Argument Exception may be throw is the label map
+	 */
+	public boolean assemble(@NotNull ErrorLog log, @NotNull HashMap<String, Integer> labelMap)
+			throws IllegalArgumentException{
+		if ( this.IMM==null && (!Parser.isNullOrBlank(this.label)) )
+			return this.setImm( log, labelMap );
+		return true;
 	}
 	
-	private enum Type {REGISTER, IMMEDIATE, JUMP, EXIT}
+	/**
+	 <b>Only to be used in Assembly Phase.</b>
+	 
+	 <p>Adds to {@link ErrorLog}, if label match not found in labelMap
+	 
+	 @return success of setting the immediate - if label matches an address
+	 
+	 @throws IllegalArgumentException if used with null label Operand.
+	 @throws IllegalStateException error with initialisation of instruction.
+	 */
+	public boolean setImm(@NotNull ErrorLog errorLog, @NotNull HashMap<String, Integer> labelMap)
+			throws IllegalArgumentException, IllegalStateException {
+		if ( IMM==null) {
+			if ( this.label==null || this.label.isBlank( ) )
+				throw new IllegalArgumentException( "Cannot setImmediate with Blank/Null internal Label!" );
+			
+			String pfx="Label: \"" + this.label + "\"";
+			if ( !labelMap.containsKey( this.label ) )
+				errorLog.appendEx( pfx + " Not Found" );
+			else {
+				int address=labelMap.get( this.label );
+				final String invalidInstrAddr=" points to Invalid Instruction Address"; // JUMP / BRANCH
+				switch ( this.type ) {
+					case JUMP:	// TODO, move to subclass
+						if ( AddressValidation.isSupportedInstrAddr( address, errorLog ) )
+							this.IMM=Convert.address2Imm( address );
+						else
+							errorLog.appendEx( pfx+invalidInstrAddr );
+						break;
+					case IMMEDIATE:	// TODO, move to subclass
+						if ( OperandsValidation.I_TYPE_MEM_ACCESS.contains( opcode ) ) {
+							if ( RS!=0 )
+								throw new IllegalStateException( "Invalid Operands for Assembly, IMM[" + IMM + "], RS[" + RS + "]" );
+							else if ( AddressValidation.isSupportedDataAddr( address, errorLog ) )
+								//TODO, really it should be creating a pseudo instruction LUI before this.
+								//	Split ADDR.toHexString in half, top half is loaded by LUI, bottom half is set to the IMM
+								this.IMM=(address);
+							else
+								errorLog.appendEx( pfx+" points to Invalid Data Address" );
+						}
+						break;
+				}
+			}
+		}
+		return (this.IMM!=null); // returns True if Immediate has been set.
+	}
 	
+	public Integer getImmediate( ) {
+		return IMM;
+	}
+	
+	@Override public String toString ( ) {
+		return "Instruction{" +
+			   " opcode= '" + opcode + '\'' +
+			   ", type= " + type +
+			   ", RD= " + RD +
+			   ", RS= " + RS +
+			   ", RT= " + RT +
+			   ", IMM= " + IMM +
+			   (label==null?"":", label= '" + label + '\'') +
+			   " }";
+	}
+	
+	public enum Type {REGISTER, IMMEDIATE, JUMP, NOP}
 }

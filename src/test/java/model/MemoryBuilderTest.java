@@ -6,6 +6,7 @@ import _test.TestLogs.FMT_MSG;
 
 import _test.providers.BlankProvider;
 import _test.providers.ImmediateProvider;
+import _test.providers.InstrProvider;
 import _test.providers.SetupProvider;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -14,7 +15,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import model.components.DataMemory;
 import model.components.InstrMemory;
-import model.instr.Operands;
 
 import util.logs.ErrorLog;
 
@@ -39,11 +39,12 @@ class MemoryBuilderTest {
 	private static MemoryBuilder mb;
 	private static TestLogs testLogs;
 	private static ErrorLog errors;
+	
 	@BeforeAll
 	static void beforeAll() {
 		testLogs = new TestLogs();
 		errors=testLogs.actualErrors;
-		mb=new MemoryBuilder();
+		mb=new MemoryBuilder( errors, testLogs.actualWarnings );
 	}
 	
 	@AfterEach
@@ -272,11 +273,11 @@ class MemoryBuilderTest {
 			assertTrue( mb.addData( null, BLANK, errors ) );
 			
 			// Null Opcode
-			assertTrue( mb.addInstruction( null, Operands.getExit( ) ) );
+			assertTrue( mb.addInstruction( 2,null, null) );
 			// Null Operands ?
-			assertThrows( IllegalStateException.class, ( ) -> mb.addInstruction( "add", null ) );
-			
-			assertFalse( errors.hasEntries( ) );
+			assertTrue( mb.addInstruction( 3,"add", null ) );	// Only returns false, if Instr Limit has been reached
+			testLogs.appendErrors( 3, FMT_MSG._NO_OPS,
+								   FMT_MSG._opsForOpcodeNotValid( "add", null ) );
 			// Null Data
 			// Word - Already Tested
 			// Range - Already Tested
@@ -311,7 +312,7 @@ class MemoryBuilderTest {
 		@Test
 		void PushLabels_ValidInstr ( ) {
 			mb.pushLabel("panda");
-			mb.addInstruction("add",new Operands("$1,$1,$1") );
+			mb.addInstruction(4,"add", InstrProvider.RD_RS_RT.OPS );
 			
 			assertTrue(mb.getLabels().isEmpty());
 			assertEquals(0x00400000, mb.getLabelMap().get("panda"));
@@ -324,7 +325,7 @@ class MemoryBuilderTest {
 			mb.addData(WORD,"2.0", errors);	// 0x10010000 #0
 			testLogs.expectedErrors.appendEx( FMT_MSG.data.NotValFor_WordType( "2.0" ));
 			// Valid Instr
-			mb.addInstruction("add",new Operands(1,1,1) );
+			mb.addInstruction(5,"add",InstrProvider.RD_RS_RT.OPS  );
 			// Label Points to Instr added After Data
 			assertTrue(mb.getLabels().isEmpty());
 			assertEquals(0x00400000, mb.getLabelMap().get("panda"));
@@ -340,10 +341,10 @@ class MemoryBuilderTest {
 			mb.pushLabel("data");
 			mb.addData(WORD,"20", errors);
 			mb.pushLabel("instr");
-			mb.addInstruction("add",new Operands(1,1,1) );
+			mb.addInstruction(6,"add", InstrProvider.RD_RS_RT.OPS  );
 			
-			mb.addInstruction("lw",new Operands("lw",1,"data") );
-			mb.addInstruction("j",new Operands("instr") );
+			mb.addInstruction(7,"lw", InstrProvider.I.RT_MEM.OPS_LABEL );
+			mb.addInstruction(8,"j", InstrProvider.J.OPS_LABEL );
 			mb.assembleInstr( errors );
 			// Assembles without Errors
 		}
@@ -354,10 +355,10 @@ class MemoryBuilderTest {
 			mb.pushLabel("data");
 			mb.addData(WORD,"20", errors);
 			mb.pushLabel("instr");
-			mb.addInstruction("add",new Operands(0) );
+			mb.addInstruction( 9,"add", InstrProvider.RD_RS_RT.OPS );
 			
-			mb.addInstruction("lw",new Operands("lw",1,"instr") );
-			mb.addInstruction("j",new Operands("data") );
+			mb.addInstruction(10,"lw", "$1,instr" );
+			mb.addInstruction(11,"j","data" );
 			mb.assembleInstr( errors );
 			
 			expected.appendEx( TestLogs.FMT_MSG.xAddressNot( "Data","0x00400000", "Valid") );
@@ -366,14 +367,16 @@ class MemoryBuilderTest {
 			expected.appendEx( TestLogs.FMT_MSG.xAddressNot( "Instruction","0x10010000", "Valid") );
 			expected.appendEx( TestLogs.FMT_MSG.label.points2Invalid_Address("data","Instruction"  ) );
 			expected.appendEx( FMT_MSG.FailedAssemble );
-		}
-		@Test
-		void FailedAssembly_InvalidOperands ( ) {
-			mb.addInstruction("add", new Operands(0) );
-			mb.assembleInstr( errors );
-			testLogs.expectedErrors.appendEx( FMT_MSG.FailedAssemble );
+			
 			//TODO - Highlight Specific Error That Failed Assembly
 			// Possibly Adding LineNo to Instr
+		}
+		@Test
+		void FailedAssembly_InvalidInstructionOperands ( ) {
+			mb.addInstruction(12,"add", "0"); // Error at Parsing
+			mb.assembleInstr( errors );
+			testLogs.appendErrors( 12, FMT_MSG._opsForOpcodeNotValid( "add", "0" ) );
+			testLogs.expectedErrors.appendEx( "No Instructions Found" );
 		}
 		
 		@Test
@@ -384,7 +387,7 @@ class MemoryBuilderTest {
 		@Test
 		void FailedAssembly_Missing_Label ( ) {
 			ErrorLog expected = testLogs.expectedErrors;
-			mb.addInstruction("j",new Operands("x") );
+			mb.addInstruction(13,"j", "x" );
 			mb.assembleInstr( errors );
 			expected.appendEx( FMT_MSG.label.labelNotFound( "x" ) );
 			expected.appendEx( FMT_MSG.FailedAssemble );
@@ -394,8 +397,8 @@ class MemoryBuilderTest {
 	@Test
 	void Add_Instructions_TooMany ( ) {
 		for ( int i=0; i<InstrMemory.MAX_INSTR_COUNT; i++ ) {
-			mb.addInstruction( "exit", Operands.getExit() );
+			mb.addInstruction( 14,"exit", null );
 		}
-		assertFalse(mb.addInstruction( "exit", Operands.getExit() ));
+		assertFalse(mb.addInstruction( 15,"exit",null ));
 	}
 }

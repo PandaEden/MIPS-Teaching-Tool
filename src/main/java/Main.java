@@ -11,6 +11,7 @@ import util.ansi_codes.Color;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
 import util.logs.WarningsLog;
+import util.validation.OperandsValidation;
 
 import java.util.ArrayList;
 
@@ -22,7 +23,7 @@ public class Main {
 		//Setup
 		final ErrorLog errorLog=new ErrorLog( new ArrayList<>( ) );
 		final WarningsLog warningsLog=new WarningsLog( new ArrayList<>( ) );
-		final MemoryBuilder MEMORY_BUILDER=new MemoryBuilder( );
+		final MemoryBuilder MEMORY_BUILDER=new MemoryBuilder( errorLog, warningsLog );
 		final StringBuilder output = new StringBuilder();
 		final String path=(args.length>0)?args[0]:"";
 		

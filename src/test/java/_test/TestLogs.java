@@ -142,7 +142,7 @@ public class TestLogs {
 				return "Label: \"" + label + "\" points to Invalid " + type + " Address";
 			}
 			public static String labelNotFound(String label) {
-				return "Label \"" + label + "\" Not Found";
+				return "Label: \"" + label + "\" Not Found";
 			}
 			
 		}
@@ -214,7 +214,9 @@ public class TestLogs {
 			public void imm_cal_addr (int imm, int rs_val, int addr){
 				expectedExLog.append( "[IMMEDIATE: " + imm + " === " + Convert.int2Hex(imm) + "]");
 				expectedExLog.append( "\tCalculating Address:" );
-				expectedExLog.append( "\tResult = "+rs_val+" + "+imm+" = "+addr+" ==> "+Convert.int2Hex(addr) );
+				expectedExLog.append( "\tResult = "+rs_val+" + "+imm+" ==> "+addr );
+				
+				expectedExLog.append( "\t[Result: "+addr+" === "+Convert.int2Hex(addr)+"]" );
 			}
 			private void shift_imm(int imm, int addr){
 				expectedExLog.append( "\tLeft Shifting IMMEDIATE By 2 = "+Convert.int2Hex(imm)
@@ -233,7 +235,7 @@ public class TestLogs {
 			}
 			
 			public void exit_output (String hexPc, String opcode){
-				decode( hexPc, opcode, "EXIT" );
+				decode( hexPc, opcode, "NOP" );
 				rb_noAct();
 				dm_noAct();
 			}
@@ -241,8 +243,8 @@ public class TestLogs {
 			public void R_output(String hexPC, String opcode, int RS, int rs_val, int RT, int rt_val, int RD, int rd_val){
 				String sign="   ";
 				switch ( opcode ){
-					case "add": sign = "+"; break;
-					case "sub": sign = "-"; break;
+					case "add": sign = " + "; break;
+					case "sub": sign = " - "; break;
 				}
 				decode( hexPC, opcode, "REGISTER" );
 				rb_read( rs_val, RS );
@@ -254,7 +256,7 @@ public class TestLogs {
 			public void I_output (String hexPC, String opcode, int RS, int rs_val, int RT, int rt_val, int IMM){
 				String sign="   ";
 				switch ( opcode ){
-					case "addi": sign = "+"; break;
+					case "addi": sign = " + "; break;
 				}
 				decode( hexPC, opcode, "IMMEDIATE" );
 				rb_read( rs_val, RS );

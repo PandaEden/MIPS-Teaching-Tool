@@ -200,8 +200,7 @@ class LoggerTest {
 		}
 		
 		@ParameterizedTest (name="Color[{index}] - Ansi: \"{arguments}\"")
-		@ValueSource (strings={
-				Color.RESET,
+		@ValueSource (ints={
 				Color.BLACK,
 				Color.RED,
 				Color.GREEN,
@@ -212,9 +211,9 @@ class LoggerTest {
 				Color.WHITE
 		})
 
-		void Format_Colored(String color) {
-			System.out.println( Color.fmt( color, "<PANDA>" ) );
-			assertEquals( color + "PANDA\u001B[0m", Color.fmt( color, "PANDA" ) );
+		void Format_Colored(int color) {
+			System.out.println( Color.fmt( Color.csi(color), "<PANDA>" ) );
+			assertEquals( "\u001B["+color + "mPANDA\u001B[0m", Color.fmt( Color.csi(color), "PANDA" ) );
 		}
 		
 	}

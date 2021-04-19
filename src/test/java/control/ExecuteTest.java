@@ -5,10 +5,7 @@ import _test.TestLogs;
 import _test.providers.InstrProvider;
 import org.junit.jupiter.api.*;
 
-import model.Instruction;
-import model.instr.Operands;
-
-import util.logs.Logger;
+import model.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,7 +32,8 @@ class ExecuteTest {
 	void tearDown ( ) {
 		logs.after();
 		instr_list.clear();
-		for ( int i=1; i<32; i++ ) values[i]=0; /*reset values*/
+		data.clear();
+		for ( int i=1; i<32; i++ ) values[i]=0; /*reset Register Bank values*/
 	}
 	
 	/**Takes the Output from the expectedExecutionLog
@@ -50,10 +48,10 @@ class ExecuteTest {
 	@Test
 	void RunToEnd ( ) {
 		values[1]=4;
-		instr_list.add( Instruction.buildInstruction( "add", InstrProvider.RD_RS_RT.operands ));//0 -> 4
-		instr_list.add( Instruction.buildInstruction( "j", new Operands(0x00100003) ));//4 -> 12
-		instr_list.add( Instruction.buildInstruction( "sub", InstrProvider.RD_RS_RT.operands ));//8 - skipped
-		instr_list.add( Instruction.buildInstruction( "addi", InstrProvider.I.RT_RS_IMM.operands ));//12 <-
+		instr_list.add( new R_Type( "add", 1,1,2 ));//0 -> 4
+		instr_list.add( new J_Type( "j",0x00100003 ));//4 -> J: 12
+		instr_list.add( new R_Type( "sub", 1,1,1 ));//8 - skipped
+		instr_list.add( new I_Type( "addi", 1, 1, -40));//12 <-
 		instr_list.forEach( i -> i.assemble(logs.actualErrors, InstrProvider.labelsMap) ); // ASSEMBLE
 		// 16 (0x10) ,  <- AutoExit
 		
@@ -124,8 +122,8 @@ class ExecuteTest {
 	@Test
 	void Run_Interrupted_ByError ( ) {
 		values[30]=0x10010005;
-		instr_list.add( Instruction.buildInstruction( "lw", new Operands( "lw", 30, 1, 40 ) ));//0 -> * ERROR
-		instr_list.add( Instruction.buildInstruction( "add", InstrProvider.RD_RS_RT.operands )); // Not Run
+		instr_list.add( new MemAccess( "lw", 30, 1, 40 ) );//0 -> * ERROR
+		instr_list.add( new R_Type( "add", 1,1,1 )); // Not Run
 		instr_list.forEach( i -> i.assemble(logs.actualErrors, InstrProvider.labelsMap) ); // ASSEMBLE
 		
 		// Output

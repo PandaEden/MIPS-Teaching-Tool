@@ -6,11 +6,12 @@ import org.jetbrains.annotations.VisibleForTesting;
 
 import model.components.DataMemory;
 import model.components.InstrMemory;
-import model.instr.Operands;
 
 import setup.Parser;
 
 import util.Convert;
+import util.logs.WarningsLog;
+import util.validation.OperandsValidation;
 import util.validation.Validate;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
@@ -70,12 +71,13 @@ public class MemoryBuilder {
 	private final DataMemory dataMem=new DataMemory( dataArr, new ExecutionLog( new ArrayList<>( ) ) );
 	private final HashMap<String, Integer> labelMap=new HashMap<>( );
 	private final LinkedList<String> labels=new LinkedList<>( );
-	
+	private final OperandsValidation opsVal;
 	private final ArrayList<Instruction> instructions=new ArrayList<>( );
 	private int ProgramCounter;
 	private int MEM_PTR;
 	
-	public MemoryBuilder ( ) {
+	public MemoryBuilder (@NotNull ErrorLog errorLog, @NotNull WarningsLog warningsLog) {
+		this.opsVal = new OperandsValidation( errorLog, warningsLog ) ;
 		clear(); // Sets PC and MemPtr
 	}
 	
@@ -276,22 +278,20 @@ public class MemoryBuilder {
 	 <p>
 	 <b>If Opcode is null, does nothing</b>
 	 
-	 @throws IllegalStateException If Operands And Opcode are null
 	 @see MemoryBuilder#attachLabelsToAddress(int)
 	 @see util.validation.OperandsValidation#isValidOpCode(int, String)
 	 @see util.validation.OperandsValidation#splitValidOperands(int, String, String)
 	 */
-	public boolean addInstruction(@Nullable String opcode, Operands operands) {
+	public boolean addInstruction(int lineNo, @Nullable String opcode, @Nullable String operands) {
 		if ( ProgramCounter<(INS_ADDR_BASE + LIMIT*ADDR_SIZE) ) {
 			if ( opcode!=null ) {
-				if ( operands==null )
-					throw new IllegalStateException( "Null Operands for Opcode: " + opcode );
-				
-				int index=Convert.instrAddr2Index( ProgramCounter );
-				
-				instructions.add( index, Instruction.buildInstruction( opcode, operands ) );
-				attachLabelsToAddress( ProgramCounter );
-				ProgramCounter+=ADDR_SIZE;
+				Instruction ins =opsVal.splitValidOperands(lineNo,opcode,operands);
+				if ( ins!=null ) {
+					int index=Convert.instrAddr2Index( ProgramCounter );
+					instructions.add( index, ins );
+					attachLabelsToAddress( ProgramCounter );
+					ProgramCounter+=ADDR_SIZE;
+				}
 			}
 			return true;
 		}

@@ -4,8 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
-import model.DataType;
-import model.instr.Operands;
+import model.*;
 
 import setup.Parser;
 
@@ -22,37 +21,37 @@ import java.util.stream.Stream;
 
 public class OperandsValidation {
 	// Operands should only belong to one subset, the subsets can then be merged
-	static final List<String> NO_OPERANDS_OPCODE=List.of( "exit", "halt" );
-	private static final List<String> R_RD_RS_RT=List.of( "add", "sub" );
+	public static final List<String> NO_OPERANDS_OPCODE=List.of( "exit", "halt" );
+	public static final List<String> R_RD_RS_RT=List.of( "add", "sub" );
 	
-	private static final List<String> I_MEM_READ=List.of( "sw" );
-	private static final List<String> I_MEM_WRITE=List.of( "lw" );
+	public static final List<String> I_MEM_READ=List.of( "sw" );
+	public static final List<String> I_MEM_WRITE=List.of( "lw" );
 	
 	//private static final List<String> I_TYPE_BRANCH =  List.of("branch");
 	// if it supports I type labels
-	private static final List<String> I_TYPE_RT_IMM_RS=Stream.of( I_MEM_READ, I_MEM_WRITE )
-															 .flatMap( Collection :: stream ).collect( Collectors.toList( ) );
-	private static final List<String> I_TYPE_RT_LABEL_DATA=I_TYPE_RT_IMM_RS; // + Branch
-	private static final List<String> I_TYPE_RT_RS_IMM=List.of( "addi" ); //+Branch
+	public static final List<String> I_TYPE_RT_IMM_RS=Stream.of( I_MEM_READ, I_MEM_WRITE )
+															 .flatMap( Collection :: stream ).collect( Collectors.toUnmodifiableList( ) );
+	public static final List<String> I_TYPE_MEM_ACCESS=I_TYPE_RT_IMM_RS; // + Branch
+	public static final List<String> I_TYPE_RT_RS_IMM=List.of( "addi" ); //+Branch
 	
 	// SUPPORTED OPCODES
-	private static final List<String> R_TYPE=(R_RD_RS_RT);
-	private static final List<String> I_TYPE=Stream.of( I_TYPE_RT_RS_IMM, I_TYPE_RT_IMM_RS )
-												   .flatMap( Collection :: stream ).collect( Collectors.toList( ) );
-	private static final List<String> J_TYPE=List.of( "j", "jal" );
+	public static final List<String> R_TYPE=(R_RD_RS_RT);
+	public static final List<String> I_TYPE=Stream.of( I_TYPE_RT_RS_IMM, I_TYPE_RT_IMM_RS )
+												   .flatMap( Collection :: stream ).collect( Collectors.toUnmodifiableList( ) );
+	public static final List<String> J_TYPE=List.of( "j", "jal" );
 	
 	// ALL SUPPORTED OPCODES
-	private static final List<String> SUPPORTED_OPCODES=
+	public static final List<String> SUPPORTED_OPCODES=
 			Stream.of( R_TYPE, I_TYPE,
 					   J_TYPE, NO_OPERANDS_OPCODE )
-				  .flatMap( Collection :: stream ).collect( Collectors.toList( ) );
-	
+				  .flatMap( Collection :: stream ).collect( Collectors.toUnmodifiableList( ) );
 	
 	private final ErrorLog errorLog;
 	private final WarningsLog warningsLog;
 	private String opcode;
 	private int lineNo;
-	
+	// TODO - rename to InstructionValidation
+	// TODO - Move to Instructions Package, and change visibility
 	public OperandsValidation (@NotNull ErrorLog errorLog, @NotNull WarningsLog warningsLog) {
 		this.errorLog=errorLog;
 		this.warningsLog=warningsLog;
@@ -113,28 +112,24 @@ public class OperandsValidation {
 	 @see #isValidOpCode(int, String)
 	 */
 	@Nullable
-	public Operands splitValidOperands (int lineNo, @Nullable String opcode, String operands) {
+	public Instruction splitValidOperands (int lineNo, @Nullable String opcode, @Nullable String operands) {
 		final String opsNotValid = "Operands: [" + operands + "] for Opcode: \"" + opcode + "\" Not Valid ";
 		final String comma="\\s?,\\s?";
-		
-		// TODO -> Merge with Operands Constructor
 		
 		if ( opcode==null )
 			return null;
 		
-		setOpcode( opcode );
+		setOpcode( opcode );	// Todo refactor into method signatures
 		setLineNo( lineNo );
 		
-		// TODO Move operand validation to {@link Operands}?
-		// NO Op - should be null
-		Operands rtn=null;
+		Instruction rtn=null;
 		DataType dataType=DataType.NORMAL; // TODO datatype check before adding floating point support
-		Integer rs, rt=null, imm;
+		Integer rs, rt, imm;
 		
 		// No_Operands type
 		if ( Parser.isNullOrBlank(operands ) ) {
 			if ( NO_OPERANDS_OPCODE.contains( opcode ) )
-				rtn=Operands.getExit( ); // Return Exit Operands (Blank)
+				rtn = new Nop(opcode);
 			else
 				errorLog.appendEx( lineNo, "\tNo Operands found" );
 			// -> Not Valid
@@ -159,23 +154,24 @@ public class OperandsValidation {
 			switch ( ops_List.size() ) {
 				case 1:
 					if ( J_TYPE.contains( opcode ) )
-						rtn=Jump_LabelOrInt( first );
+						rtn =  Jump_LabelOrInt( first );
 					break;// -> Not Valid
 				
 				case 2:
-					if ( I_TYPE_RT_LABEL_DATA.contains( opcode ) ) {		// TODO - Could set InstrType here instead?
+					if ( I_TYPE_MEM_ACCESS.contains( opcode ) ) {		// TODO - Could set InstrType here instead?
 						if ( I_MEM_WRITE.contains( opcode ) ) //Set RT
 							rt=convertWriteRegister( first, dataType );
 						else if ( I_MEM_READ.contains( opcode ) )
 							rt=convertRegister( first, dataType );
+						else rt=null; // Unreachable
 						// Future - (Branch) else rt=null;// TODO Branch RT_RS_IMM /RS_IMM
 						
 						if ( rt!=null )  // _ IMM(RS) or _ IMM/LABEL
-							rtn=rt_ImmRs( rt, second );
+							rtn = rt_ImmRs( rt, second ); // _ IMM($0) or _ IMM/LABEL
 					}
 					break;// -> Not Valid
 				
-				case 3:    // RD, RS, RT or // RT, RS, IMM - first Operands is Dest
+				case 3:    // RD, RS, RT or // RT, RS, IMM - first Operands is Destination
 					if (R_TYPE.contains(opcode)||I_TYPE_RT_RS_IMM.contains(opcode)) {
 						Integer dest=convertWriteRegister( first, dataType );
 						rs=convertRegister( second, dataType );
@@ -184,19 +180,19 @@ public class OperandsValidation {
 							// RD, RS, RT
 							rt=convertRegister( third, dataType );
 							if ( dest!=null && rs!=null && rt!=null )
-								return new Operands( rs, rt, dest );
+								rtn = new R_Type( opcode, rs, rt, dest );
 						} else { //( I_TYPE_RT_RS_IMM.contains( opcode ) )
 							// RT, RS, IMM
+							rt=dest;
 							imm=is16Bit( convertInteger( third ) );    // Check for Null/Blank
-							if ( dest!=null && rs!=null && imm!=null )
-								return new Operands( opcode, rs, dest, imm );
+							if ( rt!=null && rs!=null && imm!=null )
+								rtn = new I_Type( opcode, rs, rt, imm);
 						}
 					}
 					break;// -> Not Valid
 				default:	// if for some reason the user gives more than 3 operands ? -> not Valid
 			}
 		}
-		
 		if ( rtn==null )
 			errorLog.appendEx( lineNo, opsNotValid );
 		return rtn;
@@ -207,11 +203,11 @@ public class OperandsValidation {
 	
 	/**
 	 Splits Valid Imm(RS), If they are valid, and correctly formatted,
-	 Returns a {@link Operands} model of the values, and the value of RT.
+	 Returns a {@link I_Type} instruction with the operands assigned.
 	 */
 	@Nullable
 	@VisibleForTesting
-	protected Operands rt_ImmRs (@NotNull Integer rt, @Nullable String immRs) {
+	protected I_Type rt_ImmRs (@NotNull Integer rt, @Nullable String immRs) {
 		final String openBracket_DelimiterRegex="\\s?\\(\\s?";
 		final String closeBracket_DelimiterRegex="\\s?\\)\\s?";
 		
@@ -229,7 +225,6 @@ public class OperandsValidation {
 					immediateString=Parser.isNullOrBlank( immediateString ) ? "0" : immediateString;
 					imm=is16Bit( convertInteger( immediateString ) );    // not 16bit, Imm->null
 					
-					//TODO "()" without gaps, might break this ?
 					split=split[ 1 ].split( closeBracket_DelimiterRegex, 2 ); // remove ')', expect returned[1] to be null
 					rs_String=split[ 0 ];
 					
@@ -237,11 +232,12 @@ public class OperandsValidation {
 					rs_String=Parser.isNullOrBlank( rs_String ) ? "$zero" : rs_String;
 					rs=convertRegister( rs_String, DataType.NORMAL );
 					
+					//TODO check if RS=0, if so, check if IMM is a valid address
 					if ( imm!=null )
-						return new Operands( opcode, rs, rt, imm );    // Return Imm(RS)
+						return new MemAccess( opcode, rs, rt, imm );    // Return Imm(RS)
 					// else -> return null
 				} else
-					errorLog.appendEx( lineNo, "\tMissing Closing Bracket: \")\" " );    //TODO Change to Warning ?
+					errorLog.appendEx( lineNo, "\tMissing Closing Bracket: \")\" " );
 			} else if ( immRs.contains( ")" ) )    // unmatched Bracket
 				errorLog.appendEx( lineNo, "\tMissing Opening Bracket: \"(\" " );
 			else
@@ -252,7 +248,7 @@ public class OperandsValidation {
 	}
 	@Nullable
 	@VisibleForTesting
-	protected Operands Mem_LabelOrInt (@NotNull Integer rt, @NotNull String addr) {
+	protected I_Type Mem_LabelOrInt (@NotNull Integer rt, @NotNull String addr) {
 		if ( !Parser.isNullOrBlank( addr ) ) {
 			Integer imm;
 			if ( isDec( addr ) || isHex( addr ) ){
@@ -264,7 +260,7 @@ public class OperandsValidation {
 								"You Have Broken The Laws Of Mathematics, Or I have some Debugging to do!" );//return new Operands( opcode, zero, rt, imm );
 				}
 			}else if ( isValidLabel( addr ) )
-				return new Operands( opcode, rt, addr );
+				return new MemAccess( opcode, rt, addr );
 			
 		}
 		return null;
@@ -276,17 +272,17 @@ public class OperandsValidation {
 	 */
 	@Nullable
 	@VisibleForTesting
-	protected Operands Jump_LabelOrInt (@Nullable String addr) {
+	protected J_Type Jump_LabelOrInt (@Nullable String addr) {
 		if ( !Parser.isNullOrBlank( addr ) ) {
 			Integer imm;
 			if ( isDec( addr ) || isHex( addr ) ) {
 				if ( (imm=isU26Bit( convertInteger( addr ) ))!=null ) {
 					Integer address=AddressValidation.convertValidImm2Addr( lineNo, imm, errorLog );
 					if ( address!=null && AddressValidation.isSupportedInstrAddr( address, errorLog ) )
-						return new Operands( imm );
+						return new J_Type( opcode, imm );
 				}
 			} else if ( isValidLabel( addr ) )
-					return new Operands( addr );
+					return new J_Type( opcode, addr );
 		}
 		return null;
 	}

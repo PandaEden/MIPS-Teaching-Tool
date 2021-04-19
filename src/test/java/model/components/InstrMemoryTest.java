@@ -3,13 +3,14 @@ package model.components;
 import _test.Tags;
 import _test.TestLogs;
 import _test.providers.AddressProvider;
-import _test.providers.InstrProvider;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
+import model.I_Type;
 import model.Instruction;
-import model.instr.Operands;
+import model.Nop;
+import model.R_Type;
 
 import util.logs.ExecutionLog;
 
@@ -49,10 +50,10 @@ class InstrMemoryTest {
 		Integer PC = 0x00400000;
 		Instruction ins;
 		
-		instr_list.add( Instruction.buildInstruction( "add", InstrProvider.RD_RS_RT.operands ));
-		instr_list.add( Instruction.buildInstruction( "sub", InstrProvider.RD_RS_RT.operands ));
-		instr_list.add( Instruction.buildInstruction( "addi", InstrProvider.I.RT_RS_IMM.operands ));
-		instr_list.add( Instruction.buildInstruction( "exit", Operands.getExit( ) ) );
+		instr_list.add( new R_Type( "add", 1, 1, 1 ));//0 -> 4
+		instr_list.add( new R_Type( "sub", 1,1,1 ));//4 -> 8
+		instr_list.add( new I_Type( "addi", 1, 1, -40));//8 -> 12
+		instr_list.add( new Nop( "exit" ) );
 		
 		for ( Instruction i: instr_list ){
 			i.assemble(testLogs.actualErrors, new HashMap<>( ) );
@@ -74,7 +75,7 @@ class InstrMemoryTest {
 		ins.execute(0x00500000, dm, rm, testLogs.actualExecution );
 		
 		// Expected Pre Assembled Exit Instruction
-		Instruction expected = Instruction.buildInstruction("exit", Operands.getExit( ) );
+		Instruction expected = new Nop("exit");
 		expected.assemble( testLogs.expectedErrors, new HashMap<>() );
 		testLogs.expectedExecution.append( TestLogs.FMT_MSG._Execution._fetch(0x00500000 ) );
 		testLogs.expectedExecution.appendEx( "\tRun Over Provided Instructions" );
