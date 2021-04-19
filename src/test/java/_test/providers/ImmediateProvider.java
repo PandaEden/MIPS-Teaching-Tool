@@ -106,6 +106,7 @@ public class ImmediateProvider {
 			AddressProvider.MINUS_1,
 			Arguments.of( "0xC0000000", -1073741824 ), // Midpoint -(2^30)
 			AddressProvider.INT_MIN ); // Max -(2^31)
+	@SuppressWarnings ( "SpellCheckingInspection" )
 	private static final List<Arguments> Invalid_32Bit = List.of(
 			Arguments.of( "0xFFFFFFFF7FFFFFFF", -2147483649L ),	// (Int.Min)-1
 			Arguments.of( "0x0000000080000000", 2147483648L ) ); // (Int.Max)+1

@@ -107,12 +107,14 @@ class ConvertTest {
 		@ArgumentsSource ( AddressProvider.AddrRange.Negative.class )
 		@CsvSource ( { "0xFFFFFFFF, -1" } )
 		void testInvalid_Negative_Add2Imm (String hex, Integer addr) {
+			//noinspection ResultOfMethodCallIgnored
 			assertThrows( IllegalArgumentException.class, ( ) -> Convert.address2Imm( addr ) );
 		}
 		
 		@ParameterizedTest ( name="[{index}] - Fail Convert Invalid Immediate: \"{1}\" To Address" )
 		@ArgumentsSource ( ImmediateProvider.ConvertInvalid.OutOfRange.class )
 		void testInvalid_Immediate2Address (String hex, Integer imm) {
+			//noinspection ResultOfMethodCallIgnored
 			assertThrows( IllegalArgumentException.class, ( ) -> Convert.imm2Address( imm ) );
 		}
 		
@@ -153,7 +155,7 @@ class ConvertTest {
 	class Register_Conversion {
 		final int Index=0, R=1, Named=2;
 		/** (Index, R, Named, $index, $R, $Named) */
-		List<String[]> registers=RegisterProvider.getRegisters( );
+		private final List<String[]> registers=RegisterProvider.getRegisters( );
 		@Test
 		void R_to_Named ( ) {
 			registers.forEach( arr -> assertEquals(
@@ -219,6 +221,7 @@ class ConvertTest {
 			}
 			
 			@Test
+			@SuppressWarnings ( "ResultOfMethodCallIgnored" )
 			void index2R ( ) {
 				assertThrows( IllegalArgumentException.class, ( ) -> Convert.index2R( -1 ) );
 				assertThrows( IllegalArgumentException.class, ( ) -> Convert.index2R( 32 ) );

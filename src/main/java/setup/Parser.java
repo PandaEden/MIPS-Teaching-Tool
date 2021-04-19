@@ -9,7 +9,7 @@ import model.components.DataMemory;
 import model.components.InstrMemory;
 
 import util.Convert;
-import util.validation.OperandsValidation;
+import util.Util;
 import util.validation.Validate;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
@@ -45,7 +45,6 @@ public class Parser {
 	private final WarningsLog warningsLog;
 	private final MemoryBuilder mb;
 	private final Validate val;
-	private final OperandsValidation opsVal;
 	
 	private String errorFn; // This should not be returned!, Error Messages should be meaningful!
 	private boolean dataLimit, instrLimit;
@@ -69,8 +68,6 @@ public class Parser {
 		loadParseFile( filepath );
 	}
 	
-	public static boolean isNullOrBlank (@Nullable String s){ return (s==null || s.isBlank()); }
-	
 	/**
 	 Initializes the setup.Parser with an empty model. Either Load a file {@link #loadFile(String)}, and parse it {@link
 	#loadParseFile(String)} Which will also automatically assemble the models ready for execution.
@@ -88,7 +85,6 @@ public class Parser {
 		this.errorLog=errorLog;
 		this.warningsLog=warningsLog;
 		this.val=new Validate( errorLog );
-		this.opsVal=new OperandsValidation( errorLog,warningsLog );
 	}
 	
 	/** Resets Internal State, Use before re-running modified file */
@@ -174,7 +170,7 @@ public class Parser {
 	public File loadFile(String filename) {
 		clear(); // Reset State
 		// Check fileName
-		if ( isNullOrBlank( filename ) ) {
+		if ( Util.isNullOrBlank( filename ) ) {
 			warningsLog.append( "Filename Not Provided, Using Default File: \"" + DEFAULT_FILENAME + "\"" );
 			filename=DEFAULT_FILENAME;
 		}
@@ -224,7 +220,7 @@ public class Parser {
 		
 		String arg1=split[ 1 ];
 		String arg2=split[ 2 ];
-		if ( !isNullOrBlank( arg1 ) ) {
+		if ( !Util.isNullOrBlank( arg1 ) ) {
 			// first character is a dot '.'
 			if ( arg1.matches( "\\..*" ) ) {
 				// validate directive
@@ -241,13 +237,11 @@ public class Parser {
 				// validate opcode
 				// validate arg2 (operands)
 				// mb.addInstr
-				if ( this.opsVal.isValidOpCode( lineNo, arg1 ) ) {
-					if ( !mb.addInstruction( lineNo, arg1, arg2 ) ) {
-						warningsLog.appendEx( lineNo,"Reached MAX Instructions!, Further Instructions Will Not Be Parsed" );
-						warningsLog.append( "\t\t\tInstruction Limit == [" + InstrMemory.MAX_INSTR_COUNT + "]" );
-						instrLimit=true;
-					}// TODO Change to report Error
-				}
+				if ( !mb.addInstruction( lineNo, arg1, arg2 ) ) {
+					warningsLog.appendEx( lineNo,"Reached MAX Instructions!, Further Instructions Will Not Be Parsed" );
+					warningsLog.append( "\t\t\tInstruction Limit == [" + InstrMemory.MAX_INSTR_COUNT + "]" );
+					instrLimit=true;
+				}// TODO Change to report Error
 			}
 		}
 		return (errLength==errorLog.toString( ).length( ));

@@ -18,7 +18,6 @@ import model.components.RegisterBank;
 import util.Convert;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
-import util.validation.OperandsValidation;
 
 import java.io.File;
 import java.io.IOException;
@@ -172,13 +171,13 @@ class ParserTest {
 	@Nested
 			// TODO - Refactor To Parametrized
 	class Split_Line_Test {
-		List<String> comments=Arrays.asList(
+		private final List<String> comments=Arrays.asList(
 				"   #  HashOnly_  Text    1233 addi $r0   ",
 				"   ;  SemiOnly_ Random Text 2",
 				"#   HashFirst_ Random ;Text  ",
 				"   ;  SemiFirst_ Random #Text  "
 		);
-		List<String> labels=Arrays.asList( "panda :   ", "_notAPanda:", "  :", " not a valid label :" );
+		private final List<String> labels=Arrays.asList( "panda :   ", "_notAPanda:", "  :", " not a valid label :" );
 		
 		@Test
 		void Split_CommentOnly ( ) {

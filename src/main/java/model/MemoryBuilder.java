@@ -7,14 +7,13 @@ import org.jetbrains.annotations.VisibleForTesting;
 import model.components.DataMemory;
 import model.components.InstrMemory;
 
-import setup.Parser;
-
 import util.Convert;
-import util.logs.WarningsLog;
-import util.validation.OperandsValidation;
-import util.validation.Validate;
+import util.Util;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
+import util.logs.WarningsLog;
+import util.validation.InstructionValidation;
+import util.validation.Validate;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -71,14 +70,14 @@ public class MemoryBuilder {
 	private final DataMemory dataMem=new DataMemory( dataArr, new ExecutionLog( new ArrayList<>( ) ) );
 	private final HashMap<String, Integer> labelMap=new HashMap<>( );
 	private final LinkedList<String> labels=new LinkedList<>( );
-	private final OperandsValidation opsVal;
+	private final InstructionValidation opsVal;
 	private final ArrayList<Instruction> instructions=new ArrayList<>( );
 	private int ProgramCounter;
 	private int MEM_PTR;
 	
 	public MemoryBuilder (@NotNull ErrorLog errorLog, @NotNull WarningsLog warningsLog) {
-		this.opsVal = new OperandsValidation( errorLog, warningsLog ) ;
-		clear(); // Sets PC and MemPtr
+		this.opsVal=new InstructionValidation( errorLog, warningsLog );
+		clear( ); // Sets PC and MemPtr
 	}
 	
 	// TODO - Move addData / addCSVArray / addRange .  to setup.Parser
@@ -103,13 +102,13 @@ public class MemoryBuilder {
 	 @see Validate#isValidDirective(int, String)
 	 @see Validate#isDataType(String)
 	 */
-	public boolean addData(@Nullable String dataType, @Nullable String data, @NotNull ErrorLog errorLog) {
+	public boolean addData (@Nullable String dataType, @Nullable String data, @NotNull ErrorLog errorLog) {
 		final String SIGNED_INT="-?\\d*";    // matches optional '-' sign, then any length int
 		if ( dataType==null )
 			return true;
 		
 		// Validate.isValidDataType // Directive
-		if ( Parser.isNullOrBlank( data ) ) {
+		if ( Util.isNullOrBlank( data ) ) {
 			errorLog.append( "No Data Given! For DataType: \"" + dataType + "\"!" );    //TODO Line Numbers ?
 		} else if ( dataType.equals( ".word" ) ) {
 			if ( MEM_PTR<DATA_ADDR_BASE + DATA_LIMIT*DATA_SIZE ) {
@@ -143,11 +142,11 @@ public class MemoryBuilder {
 	 @see #storeCsvArray(String, ErrorLog)
 	 @see #storeWord(Integer)
 	 */
-	private boolean storeRange(@NotNull String input, ErrorLog errorLog) {
+	private boolean storeRange (@NotNull String input, ErrorLog errorLog) {
 		//TODO prevent wasted cycles if isMemoryFull() ?
 		
 		// Parse/Validate Input
-		String[] arr=input.split( "\\s?:\\s?",2);
+		String[] arr=input.split( "\\s?:\\s?", 2 );
 		Integer v=tryParseInt( arr[ 0 ], null, errorLog );
 		Integer n=tryParseInt( arr[ 1 ], null, errorLog );
 		if ( n!=null && n<0 ) { // if n negative -> invalid
@@ -182,7 +181,7 @@ public class MemoryBuilder {
 	 @see #storeRange(String, ErrorLog)
 	 @see #storeWord(Integer)
 	 */
-	private boolean storeCsvArray(@NotNull String csvIntArray, ErrorLog errorLog) {
+	private boolean storeCsvArray (@NotNull String csvIntArray, ErrorLog errorLog) {
 		//TODO prevent wasted cycles if isMemoryFull() ?
 		
 		// if contains more than DATA_LIMIT CSV's .  then split at DATA_LIMIT'st comma
@@ -224,7 +223,7 @@ public class MemoryBuilder {
 	 @see #storeRange(String, ErrorLog)
 	 @see #storeCsvArray(String, ErrorLog)
 	 */
-	private boolean storeWord(Integer word) {
+	private boolean storeWord (Integer word) {
 		if ( word!=null && !isMemoryFull( ) ) {
 			dataMem.writeData( MEM_PTR, word );
 			attachLabelsToAddress( MEM_PTR ); // Labels are only attached, if Data is successfully added.
@@ -236,12 +235,12 @@ public class MemoryBuilder {
 		}
 	}
 	
-	private boolean isMemoryFull() {
+	private boolean isMemoryFull ( ) {
 		return !(MEM_PTR<DATA_ADDR_BASE + DATA_LIMIT*DATA_SIZE);
 	}
 	
 	/** If successful, returns value, Else, returns null and prints to {@link ErrorLog} */
-	private Integer tryParseInt(@NotNull String value, @Nullable Integer index, @NotNull ErrorLog errorLog) {
+	private Integer tryParseInt (@NotNull String value, @Nullable Integer index, @NotNull ErrorLog errorLog) {
 		try {
 			return Integer.parseInt( value );
 		} catch ( NumberFormatException e ) {
@@ -265,7 +264,7 @@ public class MemoryBuilder {
 	 @see #attachLabelsToAddress(int)
 	 @see Validate#isValidLabel(int, String)
 	 */
-	public void pushLabel(@Nullable String label) {
+	public void pushLabel (@Nullable String label) {
 		if ( label!=null ) labels.push( label );
 	}
 	
@@ -279,13 +278,12 @@ public class MemoryBuilder {
 	 <b>If Opcode is null, does nothing</b>
 	 
 	 @see MemoryBuilder#attachLabelsToAddress(int)
-	 @see util.validation.OperandsValidation#isValidOpCode(int, String)
-	 @see util.validation.OperandsValidation#splitValidOperands(int, String, String)
+	 @see InstructionValidation#splitValidOperands(int, String, String)
 	 */
-	public boolean addInstruction(int lineNo, @Nullable String opcode, @Nullable String operands) {
+	public boolean addInstruction (int lineNo, @Nullable String opcode, @Nullable String operands) {
 		if ( ProgramCounter<(INS_ADDR_BASE + LIMIT*ADDR_SIZE) ) {
 			if ( opcode!=null ) {
-				Instruction ins =opsVal.splitValidOperands(lineNo,opcode,operands);
+				Instruction ins=opsVal.splitValidOperands( lineNo, opcode, operands );
 				if ( ins!=null ) {
 					int index=Convert.instrAddr2Index( ProgramCounter );
 					instructions.add( index, ins );
@@ -309,7 +307,7 @@ public class MemoryBuilder {
 	 
 	 @throws IndexOutOfBoundsException if addr does not refer to an instruction or data address
 	 */
-	private void attachLabelsToAddress(int addr) {
+	private void attachLabelsToAddress (int addr) {
 		if ( addr<INS_ADDR_BASE || addr>DataMemory.OVER_DATA_ADDRESS )
 			throw new IndexOutOfBoundsException( "Address: " + addr );
 		
@@ -320,7 +318,7 @@ public class MemoryBuilder {
 	}
 	
 	/** May Have 0 Entries, This does not mean it is invalid */
-	public HashMap<Integer, Double> retrieveData() {
+	public HashMap<Integer, Double> retrieveData ( ) {
 		return dataArr;
 	}
 	
@@ -328,7 +326,7 @@ public class MemoryBuilder {
 	 @return null means error during assembly, and application should be terminated.
 	 <b>Even if errors are from before assembly!</b>
 	 */
-	public ArrayList<Instruction> assembleInstr(ErrorLog errorLog) {
+	public ArrayList<Instruction> assembleInstr (ErrorLog errorLog) {
 		if ( instructions.isEmpty( ) ) {
 			errorLog.appendEx( "No Instructions Found" );
 		} else { // if errorLog already has errors, then assembly should report as failed anyway.
@@ -355,12 +353,12 @@ public class MemoryBuilder {
 		return labelMap;
 	}
 	
-	/**Resets the Memory Builder to initial state*/
+	/** Resets the Memory Builder to initial state */
 	public void clear ( ) {
-		this.dataArr.clear();
-		this.labelMap.clear();
-		this.labels.clear();
-		this.instructions.clear();
+		this.dataArr.clear( );
+		this.labelMap.clear( );
+		this.labels.clear( );
+		this.instructions.clear( );
 		this.ProgramCounter=INS_ADDR_BASE;
 		this.MEM_PTR=DATA_ADDR_BASE;
 	}

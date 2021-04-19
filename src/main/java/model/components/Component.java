@@ -32,7 +32,7 @@ public class Component {
 		int output; // TODO remove null
 		// BInvert is determined by bit[0], SUB/SLT
 		
-		String sign = "+";
+		String sign;
 		switch (ALU_OP.toUpperCase()){
 			case "NOP": // -- do nothing, for Nop & Exit
 				return input0;

@@ -3,8 +3,6 @@ package util.logs;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import util.ansi_codes.Color;
-
 import java.util.ArrayList;
 
 /**

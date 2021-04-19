@@ -2,9 +2,6 @@ apply plugin: "application"
 
 mainClassName = "Main"
 
-sourceCompatibility = 11
-targetCompatibility = 11
-
 compileJava {
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 }

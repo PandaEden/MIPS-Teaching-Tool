@@ -33,7 +33,7 @@ public class Execute {
 	 Output is appended to the StringBuilder.@return
 	 */
 	@VisibleForTesting
-	public static String execute(DataMemory dataMem, RegisterBank regBank,
+	public static void execute(DataMemory dataMem, RegisterBank regBank,
 								 ArrayList<Instruction> instructions, ExecutionLog exLog,
 								 StringBuilder output)
 			throws IndexOutOfBoundsException, IllegalArgumentException {
@@ -56,7 +56,6 @@ public class Execute {
 			output.append( exLog.toString( ) );
 			output.append( Color.fmt( Color.ERR_LOG, "ERROR: " + e.getMessage() ) );
 		}
-		return output.toString();
 	}
 	
 }

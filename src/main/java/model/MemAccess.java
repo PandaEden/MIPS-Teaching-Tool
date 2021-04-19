@@ -8,17 +8,17 @@ import model.components.RegisterBank;
 
 import util.Convert;
 import util.logs.ExecutionLog;
-import util.validation.OperandsValidation;
+import util.validation.InstructionValidation;
 
 public class MemAccess extends I_Type {
-	/**{@link util.validation.OperandsValidation#I_TYPE_MEM_ACCESS}, Label needs to be assembled into IMM value*/
+	/**{@link InstructionValidation#I_TYPE_MEM_ACCESS}, Label needs to be assembled into IMM value*/
 	public MemAccess (@NotNull String ins, int RT, @NotNull String label) throws IllegalArgumentException{
-		super( OperandsValidation.I_TYPE_MEM_ACCESS, ins, 0, RT, label );
+		super( InstructionValidation.I_TYPE_MEM_ACCESS, ins, 0, RT, label );
 	}
 	
-	/**{@link util.validation.OperandsValidation#I_TYPE_RT_IMM_RS}*/
+	/**{@link InstructionValidation#I_TYPE_RT_IMM_RS}*/
 	public MemAccess (@NotNull String ins, int RS, int RT, int IMM) throws IllegalArgumentException{
-		super( OperandsValidation.I_TYPE_RT_IMM_RS, ins, RS, RT, IMM );
+		super( InstructionValidation.I_TYPE_RT_IMM_RS, ins, RS, RT, IMM );
 	}
 	
 	@Override

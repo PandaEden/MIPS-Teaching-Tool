@@ -304,7 +304,6 @@ class InstructionTest {
 			// Build
 			Instruction ins=new J_Type( "jal",  label );
 			assertNotNull( ins );
-			assertTrue( ins instanceof J_Type );
 			// Execute & Result
 			Instr.assembleAndExecute_newPC( addr, ins );
 			// Output

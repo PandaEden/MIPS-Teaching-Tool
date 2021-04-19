@@ -11,7 +11,6 @@ import util.ansi_codes.Color;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
 import util.logs.WarningsLog;
-import util.validation.OperandsValidation;
 
 import java.util.ArrayList;
 

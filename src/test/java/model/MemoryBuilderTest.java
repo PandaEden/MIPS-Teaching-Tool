@@ -53,6 +53,24 @@ class MemoryBuilderTest {
 		mb.clear();
 	}
 	
+	@Test
+	void Testing_Null_Inputs ( ) {
+		// Null Label
+		assertDoesNotThrow( ( ) -> mb.pushLabel( null ) );
+		
+		// Null DataType
+		assertTrue( mb.addData( null, BLANK, errors ) );
+		
+		// Nul Instruction
+		// Null Opcode - Already Tested
+		// Null Operands - Already Tested
+		
+		// Null Data
+		// Word - Already Tested
+		// Range - Already Tested
+		// CSV - Not Possible to be Null, might be blank - Tested
+	}
+	
 	@Nested
 	@Tag( Tags.MUT )
 	class Add_Data {
@@ -113,7 +131,7 @@ class MemoryBuilderTest {
 			
 			@ParameterizedTest ( name="[{index}] Add Data-Range int_N:[{0}]" )
 			@ValueSource ( strings={ "20", "200", "50", "5" } )
-			void Add_Data_Range_Word (int range_N) {
+			void AddData_Range_Word (int range_N) {
 				assertTrue( mb.addData( WORD, 20 + ":" + range_N, errors ) ); // Added Successfully
 				
 				assertEquals( 20.0, mb.retrieveData( ).get( mb.retrieveData( ).size( ) - 1 ), DELTA );
@@ -264,24 +282,69 @@ class MemoryBuilderTest {
 			assertTrue( mb.retrieveData( ).isEmpty( ) );
 		}
 		
+	}
+	
+	@Nested
+	@Tag( Tags.MUT )
+	class Add_Instruction {
+		
 		@Test
-		void Testing_Null_Inputs ( ) {
-			// Null Label
-			assertDoesNotThrow( ( ) -> mb.pushLabel( null ) );
+		void Add_Successfully ( ) {
+			assertTrue( mb.addInstruction( 2,"exit", null) );
 			
-			// Null DataType
-			assertTrue( mb.addData( null, BLANK, errors ) );
-			
-			// Null Opcode
+			ArrayList<Instruction> instrList = mb.assembleInstr( errors );
+			assertEquals( 1, instrList.size() );
+			assertEquals( new Nop("exit"), instrList.get( 0 ));
+		}
+		
+		@Test
+		void Null_Opcode ( ) {
 			assertTrue( mb.addInstruction( 2,null, null) );
-			// Null Operands ?
+			mb.assembleInstr( errors );
+			testLogs.expectedErrors.appendEx( "No Instructions Found" );
+		}
+		
+		@Test
+		void Invalid_Opcode ( ) {
+			assertTrue( mb.addInstruction( 5,"panda", "$1,$1,$1") );
+			testLogs.expectedErrors.appendEx( 5, FMT_MSG.Opcode_NotSupported( "panda" ) );
+			
+			mb.assembleInstr( errors );
+			testLogs.expectedErrors.appendEx( "No Instructions Found" );
+		}
+		
+		@Test
+		void Null_Operands ( ) {
+			// Null Operands is invalid for Some instructions
 			assertTrue( mb.addInstruction( 3,"add", null ) );	// Only returns false, if Instr Limit has been reached
 			testLogs.appendErrors( 3, FMT_MSG._NO_OPS,
 								   FMT_MSG._opsForOpcodeNotValid( "add", null ) );
-			// Null Data
-			// Word - Already Tested
-			// Range - Already Tested
-			// CSV - Not Possible to be Null, might be blank - Tested
+		}
+		@Test
+		void Null_Operands_NOP ( ) {
+			// Null Operands valid for NOP
+			assertTrue( mb.addInstruction( 2,"exit", null) );
+			
+			ArrayList<Instruction> instrList = mb.assembleInstr( errors );
+			assertEquals( 1, instrList.size() );
+			assertEquals( new Nop("exit"), instrList.get( 0 ));
+		}
+		
+		@Test
+		void Invalid_Operands ( ) {
+			assertTrue( mb.addInstruction( 20,"add", "panda" ) );	// Only returns false, if Instr Limit has been reached
+			testLogs.appendErrors( 20, FMT_MSG._opsForOpcodeNotValid( "add", "panda" ) );
+			
+			mb.assembleInstr( errors );
+			testLogs.expectedErrors.appendEx( "No Instructions Found" );
+		}
+		
+		@Test
+		void Add_Instructions_TooMany ( ) {
+			for ( int i=0; i<InstrMemory.MAX_INSTR_COUNT; i++ ) {
+				mb.addInstruction( 14,"exit", null );
+			}
+			assertFalse(mb.addInstruction( 15,"exit",null ));
 		}
 		
 	}
@@ -394,11 +457,4 @@ class MemoryBuilderTest {
 		}
 	}
 	
-	@Test
-	void Add_Instructions_TooMany ( ) {
-		for ( int i=0; i<InstrMemory.MAX_INSTR_COUNT; i++ ) {
-			mb.addInstruction( 14,"exit", null );
-		}
-		assertFalse(mb.addInstruction( 15,"exit",null ));
-	}
 }

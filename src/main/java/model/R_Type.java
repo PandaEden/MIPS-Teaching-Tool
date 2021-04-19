@@ -8,15 +8,15 @@ import model.components.RegisterBank;
 
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
-import util.validation.OperandsValidation;
+import util.validation.InstructionValidation;
 
 import java.util.HashMap;
 
 public class R_Type extends Instruction {
 	
-	/**{@link util.validation.OperandsValidation#R_TYPE}*/
+	/**{@link InstructionValidation#R_TYPE}*/
 	public R_Type (@NotNull String ins, int RS, int RT, int RD) {
-		super( Type.REGISTER, OperandsValidation.R_RD_RS_RT, ins, RS, RT, RD, 0, null );
+		super( Type.REGISTER, InstructionValidation.R_RD_RS_RT, ins, RS, RT, RD, 0, null );
 	}	// TODO - Make a different constructor for Shift instructions
 	
 	@Override

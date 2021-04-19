@@ -7,14 +7,14 @@ import model.components.RegisterBank;
 
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
-import util.validation.OperandsValidation;
+import util.validation.InstructionValidation;
 
 import java.util.HashMap;
 
 public class Nop extends Instruction {
-	/**{@link util.validation.OperandsValidation#NO_OPERANDS_OPCODE}*/
+	/**{@link InstructionValidation#NO_OPERANDS_OPCODE}*/
 	public Nop (@NotNull String ins) {
-		super( Type.NOP, OperandsValidation.NO_OPERANDS_OPCODE, ins, 0, 0, 0, 0, null );
+		super( Type.NOP, InstructionValidation.NO_OPERANDS_OPCODE, ins, 0, 0, 0, 0, null );
 	}
 	@Override
 	public boolean assemble (@NotNull ErrorLog log, @NotNull HashMap<String, Integer> labelMap) throws IllegalArgumentException {

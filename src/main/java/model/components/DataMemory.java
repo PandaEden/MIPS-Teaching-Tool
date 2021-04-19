@@ -3,12 +3,13 @@ package model.components;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import util.Util;
 import util.ansi_codes.Color;
 import util.validation.AddressValidation;
 import util.Convert;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
-import util.validation.OperandsValidation;
+import util.validation.InstructionValidation;
 
 import java.util.HashMap;
 
@@ -39,7 +40,7 @@ public class DataMemory {
 			throw new IllegalArgumentException( "Data Memory cannot have move than " + MAX_DATA_ITEMS + " indexes" );
 		
 		data.forEach((k,v) ->{
-			if( !OperandsValidation.notNullAndInRange(k,0, MAX_DATA_ITEMS-1) )
+			if( !Util.notNullAndInRange( k, 0, MAX_DATA_ITEMS - 1) )
 				throw new IllegalArgumentException( "Data Contains a Key["+k+"] Out Of Range[0->"+(MAX_DATA_ITEMS-1)+"]!" );
 		} );// Check all the Keys are InRange
 		

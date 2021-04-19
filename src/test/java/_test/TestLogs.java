@@ -53,6 +53,7 @@ public class TestLogs {
 		testNo++;
 	}
 	
+	/**Uses {@link ErrorLog#append(String)}*/
 	public void appendErrors (int lineNo, String... list) {
 		String pre=expectedErrors.setLineNoPrefix( lineNo );
 		Arrays.stream( list ).forEach( expectedErrors :: append );
@@ -117,12 +118,8 @@ public class TestLogs {
 			public static String notValInt(String imm) {
 				return "\tImmediate Value: \""+imm+"\" Not Valid Integer";
 			}
-			public static String RS_MissingClosingBracket() {
-				return "\tMissing Closing Bracket: \")\" ";
-			}
-			public static String RS_MissingOpeningBracket() {
-				return "\tMissing Opening Bracket: \"(\" ";
-			}
+			public static final String RS_MissingClosingBracket = "\tMissing Closing Bracket: \")\" ";
+			public static final String RS_MissingOpeningBracket = "\tMissing Opening Bracket: \"(\" ";
 			public static String notSigned16Bit(int imm) {
 				return "\tImmediate Value: \"" + imm + "\" Not In (Signed 16Bit) Range";
 			}
@@ -161,7 +158,7 @@ public class TestLogs {
 			public static String NotValFor_WordType (String data){
 				return "Data: [" + data + "], Not Valid For DataType: \".word\"";
 			}
-			public static String NoDataGiven_Word = "No Data Given! For DataType: \".word\"";
+			public static final String NoDataGiven_Word = "No Data Given! For DataType: \".word\"";
 		}
 		
 		public static final String FailedAssemble = "Failed To Assemble Instructions";

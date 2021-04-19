@@ -9,10 +9,11 @@ import model.components.RegisterBank;
 import setup.Parser;
 
 import util.Convert;
+import util.Util;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
 import util.validation.AddressValidation;
-import util.validation.OperandsValidation;
+import util.validation.InstructionValidation;
 
 import java.util.HashMap;
 import java.util.List;
@@ -50,13 +51,13 @@ public abstract class Instruction {
 		this.label=label;
 		
 		if ( !codes.contains( opcode ) ) // TODO - rename to InstructionValidation
-			throw new IllegalArgumentException("Instruction ["+opcode+"], Has not been defined in OperandsValidation");
+			throw new IllegalArgumentException("Instruction ["+opcode+"], Has not been defined in InstructionValidation");
 		regNotInRange( RD );
 		regNotInRange( RS );
 		regNotInRange( RT );
 	}
 	private void regNotInRange (int reg){
-		if (!OperandsValidation.notNullAndInRange( reg, 0, 31 ))
+		if (!Util.notNullAndInRange( reg, 0, 31 ))
 			throw new IllegalArgumentException("Registers not in range!, "+toString());
 	}
 	
@@ -98,7 +99,7 @@ public abstract class Instruction {
 	 */
 	public boolean assemble(@NotNull ErrorLog log, @NotNull HashMap<String, Integer> labelMap)
 			throws IllegalArgumentException{
-		if ( this.IMM==null && (!Parser.isNullOrBlank(this.label)) )
+		if ( this.IMM==null && (!Util.isNullOrBlank(this.label)) )
 			return this.setImm( log, labelMap );
 		return true;
 	}
@@ -133,7 +134,7 @@ public abstract class Instruction {
 							errorLog.appendEx( pfx+invalidInstrAddr );
 						break;
 					case IMMEDIATE:	// TODO, move to subclass
-						if ( OperandsValidation.I_TYPE_MEM_ACCESS.contains( opcode ) ) {
+						if ( InstructionValidation.I_TYPE_MEM_ACCESS.contains( opcode ) ) {
 							if ( RS!=0 )
 								throw new IllegalStateException( "Invalid Operands for Assembly, IMM[" + IMM + "], RS[" + RS + "]" );
 							else if ( AddressValidation.isSupportedDataAddr( address, errorLog ) )
@@ -166,5 +167,8 @@ public abstract class Instruction {
 			   " }";
 	}
 	
+	@Override public boolean equals (Object o) {
+		return this.toString().equals( o.toString() );
+	}
 	public enum Type {REGISTER, IMMEDIATE, JUMP, NOP}
 }

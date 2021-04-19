@@ -22,7 +22,7 @@ import util.validation.Validate;
 public class Convert {
 	
 	// Named registers are necessary - but AT,K#,GP,SP,FP are not implemented properly
-	public static String[] namedRegisters=splitCSV(
+	public static final String[] namedRegisters=splitCSV(
 			("ZERO, AT, V0,V1, A0,A1,A2,A3," + "T0,T1,T2,T3,T4,T5,T6,T7,"
 			 + "S0,S1,S2,S3,S4,S5,S6,S7," + "T8,T9," + "K1,K2," + "GP,SP,S8, RA").toLowerCase( )
 	);//TODO add FP reference.

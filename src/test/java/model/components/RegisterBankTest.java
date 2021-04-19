@@ -320,4 +320,9 @@ class RegisterBankTest {
 		
 	}
 	
+	@Test
+	void InvalidRange() {
+		assertThrows(IndexOutOfBoundsException.class, ()-> rb.inRange( 400 ));
+	}
+	
 }

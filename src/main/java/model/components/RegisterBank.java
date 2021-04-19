@@ -128,8 +128,8 @@ public class RegisterBank {
 		} else if ( inRange( index ) ) {
 			LAST_WRITTEN=index;
 			
-			LAST_READ0=(LAST_READ0==LAST_WRITTEN) ? null : LAST_READ0; // if read == written, clear read
-			LAST_READ1=(LAST_READ1==LAST_WRITTEN) ? null : LAST_READ1; // to avoid read colour being printed
+			LAST_READ0=(LAST_READ0.equals(LAST_WRITTEN)) ? null : LAST_READ0; // if read == written, clear read
+			LAST_READ1=(LAST_READ1.equals(LAST_WRITTEN)) ? null : LAST_READ1; // to avoid read colour being printed
 			
 			this.registers[ index ]=data;
 			this.executionLog.append( NAME + ":\t" + "Writing Value[" + colorVal( index, data ) + "]\tTo Register Index["
