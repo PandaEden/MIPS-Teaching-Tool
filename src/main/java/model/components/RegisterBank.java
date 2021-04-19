@@ -7,6 +7,8 @@ import util.Convert;
 import util.ansi_codes.Color;
 import util.logs.ExecutionLog;
 
+import java.util.Objects;
+
 /**
  Wrapper for int[32] registers. Must be size 32
  Null inputs are ignored.
@@ -38,21 +40,11 @@ public class RegisterBank {
 	/**
 	 Reads the data of the register at the given index, Returns 0 for null input.
 	 
+	 @see #read(Integer, Integer) 
 	 @throws IndexOutOfBoundsException if register index out of bounds.
 	 */
 	public int read (@Nullable Integer index) throws IndexOutOfBoundsException {
-		LAST_READ1=null;
-		int val=0;
-		
-		if ( index==null ) {
-			LAST_READ0=null;
-			this.executionLog.append( NAME + ":\t" + "No Read!" );
-		} else if ( inRange( index ) ) {
-			LAST_READ0=index;
-			val=readVal( index );
-		}
-		
-		return val;
+		return read( index, null )[0];
 	}
 	/**
 	 Reads the data of the registers at both given index, Returns 0 for null input.
@@ -75,8 +67,11 @@ public class RegisterBank {
 			this.executionLog.append( NAME + ":\t" + "No Read!" );
 			
 		} else if ( index0!=null && index1==null ) {
-			data0=read( index0 );
-			
+			LAST_READ0=index0;
+			LAST_READ1=null;
+			if ( inRange( index0 ) ) {
+				data0=readVal( index0 );
+			}
 		} else if ( index0==null ) { // index0 == null && index1 != null
 			LAST_READ0=null;
 			LAST_READ1=index1;
@@ -128,8 +123,8 @@ public class RegisterBank {
 		} else if ( inRange( index ) ) {
 			LAST_WRITTEN=index;
 			
-			LAST_READ0=(LAST_READ0.equals(LAST_WRITTEN)) ? null : LAST_READ0; // if read == written, clear read
-			LAST_READ1=(LAST_READ1.equals(LAST_WRITTEN)) ? null : LAST_READ1; // to avoid read colour being printed
+			LAST_READ0=(Objects.equals( LAST_READ0, LAST_WRITTEN )) ? null : LAST_READ0; // if read == written, clear read
+			LAST_READ1=(Objects.equals( LAST_READ1, LAST_WRITTEN )) ? null : LAST_READ1; // to avoid read colour being printed
 			
 			this.registers[ index ]=data;
 			this.executionLog.append( NAME + ":\t" + "Writing Value[" + colorVal( index, data ) + "]\tTo Register Index["
