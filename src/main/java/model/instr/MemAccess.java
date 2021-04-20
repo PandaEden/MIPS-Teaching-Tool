@@ -1,4 +1,4 @@
-package model;
+package model.instr;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -12,13 +12,13 @@ import util.validation.InstructionValidation;
 
 public class MemAccess extends I_Type {
 	/**{@link InstructionValidation#I_TYPE_MEM_ACCESS}, Label needs to be assembled into IMM value*/
-	public MemAccess (@NotNull String ins, int RT, @NotNull String label) throws IllegalArgumentException{
-		super( InstructionValidation.I_TYPE_MEM_ACCESS, ins, 0, RT, label );
+	public MemAccess (@NotNull String opcode, int RT, @NotNull String label) throws IllegalArgumentException{
+		super( InstructionValidation.I_TYPE_MEM_ACCESS, opcode, 0, RT, label );
 	}
 	
 	/**{@link InstructionValidation#I_TYPE_RT_IMM_RS}*/
-	public MemAccess (@NotNull String ins, int RS, int RT, int IMM) throws IllegalArgumentException{
-		super( InstructionValidation.I_TYPE_RT_IMM_RS, ins, RS, RT, IMM );
+	public MemAccess (@NotNull String opcode, int RS, int RT, int IMM) throws IllegalArgumentException{
+		super( InstructionValidation.I_TYPE_MEM_ACCESS, opcode, RS, RT, IMM );
 	}
 	
 	@Override
@@ -58,7 +58,7 @@ public class MemAccess extends I_Type {
 		// - Result MUST BE ADDRESS ALIGNED!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 		// - Add to Err Log -> Throw IllegalStateException.
 		// Change ExecutionLog input - to a general LOGS SuperType ??
-		int result = Component.ALU( rsVal, IMM, "add", executionLog);
+		int result = Component.ALU( rsVal, IMM, 2, executionLog);
 		executionLog.append( "\t[Result: " + result + " === " + Convert.int2Hex( result ) + "]" );
 		return result;
 	}

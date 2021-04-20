@@ -6,6 +6,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 
 import model.components.DataMemory;
 import model.components.InstrMemory;
+import model.instr.Instruction;
 
 import util.Convert;
 import util.Util;

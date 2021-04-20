@@ -2,8 +2,8 @@ package model.components;
 
 import org.jetbrains.annotations.NotNull;
 
-import model.Instruction;
-import model.Nop;
+import model.instr.Instruction;
+import model.instr.Nop;
 
 import util.ansi_codes.Color;
 import util.validation.AddressValidation;

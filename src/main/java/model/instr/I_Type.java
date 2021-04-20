@@ -1,4 +1,4 @@
-package model;
+package model.instr;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -15,20 +15,20 @@ import java.util.List;
 public class I_Type extends Instruction {
 	
 	/**{@link InstructionValidation#I_TYPE}*/
-	protected I_Type (@NotNull List<String> codes, @NotNull String ins, int RS, int RT, int IMM) throws IllegalArgumentException{
-		super( Type.IMMEDIATE, codes, ins, RS, RT, 0, IMM, null );
+	protected I_Type (@NotNull List<String> codes, @NotNull String opcode, int RS, int RT, int IMM) throws IllegalArgumentException{
+		super( Type.IMMEDIATE, codes, opcode, RS, RT, 0, IMM, null );
 	}
 	
 	/**{@link InstructionValidation#I_TYPE}, Label needs to be assembled into IMM value*/
-	protected I_Type (@NotNull List<String> codes, @NotNull String ins, int RS, int RT, @NotNull String label) throws IllegalArgumentException{
-		super( Type.IMMEDIATE, codes, ins, RS, RT, 0, null, label );
+	protected I_Type (@NotNull List<String> codes, @NotNull String opcode, int RS, int RT, @NotNull String label) throws IllegalArgumentException{
+		super( Type.IMMEDIATE, codes, opcode, RS, RT, 0, null, label );
 		if ( RS!=0 )
 			throw new IllegalArgumentException("RS:["+RS+"], must be 0, when IMM is null");
 	}
 	
 	/**{@link InstructionValidation#I_TYPE_RT_RS_IMM}*/
-	public I_Type (@NotNull String ins, int RS, int RT, int IMM) throws IllegalArgumentException{
-		this( InstructionValidation.I_TYPE_RT_RS_IMM, ins, RS, RT, IMM );
+	public I_Type (@NotNull String opcode, int RS, int RT, int IMM) throws IllegalArgumentException{
+		this( InstructionValidation.I_TYPE_RT_RS_IMM, opcode, RS, RT, IMM );
 		if (!Util.notNullAndInRange( IMM, -32768, 32767))//Signed 16Bit
 			throw new IllegalArgumentException("Immediate["+IMM+"] Not In Range!");
 	}
@@ -42,7 +42,7 @@ public class I_Type extends Instruction {
 			
 			executionLog.append( "[IMMEDIATE: " + IMM + "]" );
 			executionLog.append( "\tCalculating Result:" );
-			int rtVal=Component.ALU( rsVal, IMM, "add", executionLog);
+			int rtVal=Component.ALU( rsVal, IMM, 2, executionLog);
 			dataMem.noAction( );
 			regBank.write( RT, rtVal );
 		} else

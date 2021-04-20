@@ -15,6 +15,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import model.components.DataMemory;
 import model.components.InstrMemory;
+import model.instr.Instruction;
+import model.instr.Nop;
 
 import util.logs.ErrorLog;
 

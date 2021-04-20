@@ -9,7 +9,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import control.Execute;
 
-import model.Instruction;
+import model.instr.Instruction;
 import model.MemoryBuilder;
 import model.components.DataMemory;
 import model.components.InstrMemory;

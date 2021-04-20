@@ -7,6 +7,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 import model.MemoryBuilder;
 import model.components.DataMemory;
 import model.components.InstrMemory;
+import model.instr.Instruction;
 
 import util.Convert;
 import util.Util;
@@ -323,7 +324,7 @@ public class Parser {
 	 
 	 @return success of assembly.
 	 */
-	public ArrayList<model.Instruction> assemble() {
+	public ArrayList<Instruction> assemble() {
 		return mb.assembleInstr( errorLog );
 	}
 	

@@ -7,10 +7,10 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 
-import model.I_Type;
-import model.Instruction;
-import model.Nop;
-import model.R_Type;
+import model.instr.I_Type;
+import model.instr.Instruction;
+import model.instr.Nop;
+import model.instr.R_Type;
 
 import util.logs.ExecutionLog;
 

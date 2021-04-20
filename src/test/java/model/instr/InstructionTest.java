@@ -1,4 +1,4 @@
-package model;
+package model.instr;
 
 import _test.Tags;
 import _test.TestLogs;
@@ -52,7 +52,7 @@ class InstructionTest {
 	@ArgumentsSource(InstrProvider.NO_OPS.class)
 	void Exit_Execution (String opcode) {
 		// Build
-		Instruction ins=new Nop(opcode);
+		Instruction ins=new Nop( opcode);
 		// Execute
 		Instr.assembleAndExecute_newPC(null, ins );
 		// Output
@@ -61,7 +61,7 @@ class InstructionTest {
 	
 	@Test
 	void Undefined_Instruction_ThrowsException_At_Runtime ( ) {
-		assertThrows(IllegalArgumentException.class, ()-> new R_Type("panda", 0,0,0 ));
+		assertThrows(IllegalArgumentException.class, ()-> new R_Type( "panda", 0, 0, 0 ));
 	}
 	
 	@Nested

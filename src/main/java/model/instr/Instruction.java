@@ -1,12 +1,10 @@
-package model;
+package model.instr;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import model.components.DataMemory;
 import model.components.RegisterBank;
-
-import setup.Parser;
 
 import util.Convert;
 import util.Util;

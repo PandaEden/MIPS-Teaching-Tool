@@ -1,4 +1,4 @@
-package model;
+package model.instr;
 
 import org.jetbrains.annotations.NotNull;
 

@@ -5,16 +5,21 @@ import _test.Tags.Pkg;
 import _test.TestLogs;
 import _test.TestLogs.FMT_MSG;
 import _test.providers.*;
-import _test.providers.InstrProvider.*;
+import _test.providers.InstrProvider.I;
+import _test.providers.InstrProvider.J;
+import _test.providers.InstrProvider.NO_OPS;
+import _test.providers.InstrProvider.RD_RS_RT;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import model.*;
-import model.Instruction.Type;
+import model.DataType;
+import model.instr.Instruction;
+import model.instr.Instruction.Type;
+import model.instr.J_Type;
+import model.instr.Nop;
 
-import util.Util;
 import util.logs.ErrorLog;
 
 import java.util.Arrays;
@@ -35,8 +40,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tag ( Pkg.UTIL )
 @Tag ( Pkg.VALID )
 @Tag ( Tags.INSTR )
-@DisplayName ( Pkg.UTIL + " : " + Pkg.VALID + " : " + Tags.INSTR + " Test" )
-public class ValidateInstructionsTest {
+@DisplayName ( Pkg.UTIL + " : " + Tags.INSTR + " : " + Pkg.VALID + " Test" )
+public class InstructionValidationTest {
 	
 	private static final TestLogs testLogs=new TestLogs( );
 	private static ErrorLog expectedErrs;

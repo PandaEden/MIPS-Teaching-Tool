@@ -1,6 +1,6 @@
 package _test;
 
-import model.Instruction;
+import model.instr.Instruction;
 import model.components.DataMemory;
 import model.components.RegisterBank;
 

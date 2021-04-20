@@ -2,7 +2,7 @@ package control;
 
 import org.jetbrains.annotations.VisibleForTesting;
 
-import model.Instruction;
+import model.instr.Instruction;
 import model.components.DataMemory;
 import model.components.InstrMemory;
 import model.components.RegisterBank;

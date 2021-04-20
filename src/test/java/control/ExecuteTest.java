@@ -5,7 +5,7 @@ import _test.TestLogs;
 import _test.providers.InstrProvider;
 import org.junit.jupiter.api.*;
 
-import model.*;
+import model.instr.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;

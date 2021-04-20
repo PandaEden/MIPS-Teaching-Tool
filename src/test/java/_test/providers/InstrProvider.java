@@ -4,7 +4,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.ArgumentsProvider;
 
-import model.Instruction;
+import model.instr.Instruction;
 import model.components.DataMemory;
 import model.components.InstrMemory;
 

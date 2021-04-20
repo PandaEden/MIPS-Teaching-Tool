@@ -1,4 +1,4 @@
-package model;
+package model.instr;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -15,8 +15,8 @@ import java.util.HashMap;
 public class R_Type extends Instruction {
 	
 	/**{@link InstructionValidation#R_TYPE}*/
-	public R_Type (@NotNull String ins, int RS, int RT, int RD) {
-		super( Type.REGISTER, InstructionValidation.R_RD_RS_RT, ins, RS, RT, RD, 0, null );
+	public R_Type (@NotNull String opcode, int RS, int RT, int RD) {
+		super( Type.REGISTER, InstructionValidation.R_RD_RS_RT, opcode, RS, RT, RD, 0, null );
 	}	// TODO - Make a different constructor for Shift instructions
 	
 	@Override
@@ -28,7 +28,7 @@ public class R_Type extends Instruction {
 		
 		executionLog.append( "\tCalculating Result:" );
 		int rdVal;
-		rdVal=Component.ALU( rsVal, rtVal, opcode, executionLog);
+		rdVal=Component.ALU( rsVal, rtVal, Component.searchALUCode( opcode ), executionLog);
 		dataMem.noAction( );
 		regBank.write( RD, rdVal );
 	}

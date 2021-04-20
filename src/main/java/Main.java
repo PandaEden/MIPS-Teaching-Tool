@@ -1,6 +1,6 @@
 import control.Execute;
 
-import model.Instruction;
+import model.instr.Instruction;
 import model.MemoryBuilder;
 import model.components.DataMemory;
 import model.components.RegisterBank;
