@@ -3,10 +3,14 @@ package model.components;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import model.instr.I_Type;
 import model.instr.Instruction;
+import model.instr.J_Type;
+import model.instr.R_Type;
 
 import util.logs.ExecutionLog;
 
+import java.util.Arrays;
 import java.util.Map;
 
 public class Component {
@@ -93,7 +97,42 @@ public class Component {
 	 </ul>
 	 */
 	public static Integer[] DECODE(Instruction ins, ExecutionLog log){
-		return new Integer[]{};
+		Integer[] ctrl = new Integer[7];
+		String[] name = new String[7];
+		Arrays.fill( name, "-" );
+		
+		if ( ins instanceof R_Type || ins instanceof I_Type){
+			ctrl =new Integer[] { 1, 0, 0, 2, null, 0, 0 };
+			name = new String[] {"RD","AIR1","AIR2","ADD","-","No:AOR","NPC"};
+			if ( ins.getOpcode().equals( "sub" ) ){
+				ctrl[3]=6;  	name[3]="SUB";
+			} else if (ins instanceof I_Type){
+				ctrl[0]=0;  	name[0]="RT";
+				ctrl[2]=1;  	name[2]="IMM";
+				if ( ins.getOpcode().equals( "lw" ) ){
+					ctrl[4]=0;	name[4]="READ->LMDR";
+					ctrl[5]=1;	name[5]="Yes:LMDR";
+				}else if ( ins.getOpcode().equals( "sw" ) ){
+					ctrl[0]=null;	name[0]="-";
+					ctrl[4]=1;  	name[4]="WRITE<-SVR";
+					ctrl[5]=null;	name[5]="-";
+				}
+			}
+		} else if ( ins instanceof J_Type ){
+			ctrl[6]=1;  	name[6]="IMM";
+			
+			if ( ins.getOpcode().equals( "jal" ) ){
+				ctrl[0]=2;  	name[0]="$ReturnAddress:31";
+				ctrl[1]=1;  	name[1]="NPC";
+				ctrl[3]=-1;  	name[3]="NOP";
+				ctrl[5]=0;  	name[5]="No:AOR";
+			}
+		}
+		
+		log.append( "Decoded Control_Signals:\tRegisterBank:Destination["+name[0]+"]" +
+					"\tALU:ALUSrc1["+name[1]+"], ALUSrc2["+name[2]+"], ALUOp["+name[3]+"]" );
+		log.append( "\t\tMemoryBank:Memory["+name[4]+"], MemToReg["+name[5]+"], PC:PCWrite["+name[6]+"]" );
+		
+		return ctrl;
 	}
-	
 }

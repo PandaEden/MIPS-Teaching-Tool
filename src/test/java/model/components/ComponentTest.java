@@ -3,15 +3,11 @@ package model.components;
 import _test.TestLogs;
 import org.junit.jupiter.api.*;
 
-import model.instr.I_Type;
-import model.instr.J_Type;
-import model.instr.MemAccess;
-import model.instr.R_Type;
+import model.instr.*;
 
 import util.logs.ExecutionLog;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ComponentTest {
 	private static TestLogs testLogs;
@@ -186,67 +182,75 @@ class ComponentTest {
 	
 	@Nested
 	class Decode {	// Should this be merged with Instruction Tests ?
+		
+		private void arraysEqual(Integer[] arr1, Integer[] arr2){
+			for ( int i=0; i<arr1.length; i++ ) {
+				assertEquals(arr1[i],arr2[i] );
+			}
+		}
+		
 		@Test
 		void R_Add ( ) {
 			Integer[] ctrl = Component.DECODE( new R_Type( "add", 1,1,1 ), log );
-			expected.append( "Decoded Control_Signals: RegisterBank:Destination[RD]" );
-			expected.append( "\t\tALU:ALUSrc1[AIR1], ALUSrc2[AIR2], ALUOp[ADD]" );
+			expected.append( "Decoded Control_Signals:\tRegisterBank:Destination[RD]\tALU:ALUSrc1[AIR1], ALUSrc2[AIR2], ALUOp[ADD]" );
 			expected.append( "\t\tMemoryBank:Memory[-], MemToReg[No:AOR], PC:PCWrite[NPC]" );
-			assertEquals(new Integer[]{1, 0,0,2 ,null,0, 0}, ctrl);
+			arraysEqual(new Integer[]{1, 0,0,2 ,null,0, 0}, ctrl);
 		}
 		
 		@Test
 		void R_Sub ( ) {
 			Integer[] ctrl = Component.DECODE( new R_Type( "sub", 1,1,1 ), log );
-			expected.append( "Decoded Control_Signals: RegisterBank:Destination[RD]" );
-			expected.append( "\t\tALU:ALUSrc1[AIR1], ALUSrc2[AIR2], ALUOp[SUB]" );
+			expected.append( "Decoded Control_Signals:\tRegisterBank:Destination[RD]\tALU:ALUSrc1[AIR1], ALUSrc2[AIR2], ALUOp[SUB]" );
 			expected.append( "\t\tMemoryBank:Memory[-], MemToReg[No:AOR], PC:PCWrite[NPC]" );
-			assertEquals(new Integer[]{1, 0,0,6, null,0, 0}, ctrl);
+			arraysEqual(new Integer[]{1, 0,0,6, null,0, 0}, ctrl);
 		}
 		
 		@Test
 		void I_Addi ( ) {
 			Integer[] ctrl = Component.DECODE( new I_Type( "addi", 1, 1, 20 ), log );
-			expected.append( "Decoded Control_Signals: RegisterBank:Destination[RT]" );
-			expected.append( "\t\tALU:ALUSrc1[AIR1], ALUSrc2[IMM], ALUOp[ADD]" );
+			expected.append( "Decoded Control_Signals:\tRegisterBank:Destination[RT]\tALU:ALUSrc1[AIR1], ALUSrc2[IMM], ALUOp[ADD]" );
 			expected.append( "\t\tMemoryBank:Memory[-], MemToReg[No:AOR], PC:PCWrite[NPC]" );
-			assertEquals(new Integer[]{0, 0,1,2, null,0, 0}, ctrl);
+			arraysEqual(new Integer[]{0, 0,1,2, null,0, 0}, ctrl);
 		}
 		
 		@Test
 		void Mem_Lw ( ) {
 			Integer[] ctrl = Component.DECODE( new MemAccess( "lw", 2, "panda"), log );
-			expected.append( "Decoded Control_Signals: RegisterBank:Destination[RT]" );
-			expected.append( "\t\tALU:ALUSrc1[AIR1], ALUSrc2[IMM], ALUOp[ADD]" );
+			expected.append( "Decoded Control_Signals:\tRegisterBank:Destination[RT]\tALU:ALUSrc1[AIR1], ALUSrc2[IMM], ALUOp[ADD]" );
 			expected.append( "\t\tMemoryBank:Memory[READ->LMDR], MemToReg[Yes:LMDR], PC:PCWrite[NPC]" );
-			assertEquals(new Integer[]{0, 0,1,2, 0,1, 0}, ctrl);
+			arraysEqual(new Integer[]{0, 0,1,2, 0,1, 0}, ctrl);
 		}
 		
 		@Test
 		void Mem_Sw ( ) {
 			Integer[] ctrl = Component.DECODE( new MemAccess( "sw", 2, "panda"), log );
-			expected.append( "Decoded Control_Signals: RegisterBank:Destination[-]" );
-			expected.append( "\t\tALU:ALUSrc1[AIR1], ALUSrc2[IMM], ALUOp[ADD]" );
+			expected.append( "Decoded Control_Signals:\tRegisterBank:Destination[-]\tALU:ALUSrc1[AIR1], ALUSrc2[IMM], ALUOp[ADD]" );
 			expected.append( "\t\tMemoryBank:Memory[WRITE<-SVR], MemToReg[-], PC:PCWrite[NPC]" );
-			assertEquals(new Integer[]{null, 0,1,2, 1,1, 0}, ctrl);
+			arraysEqual(new Integer[]{null, 0,1,2, 1,null, 0}, ctrl);
 		}
 		
 		@Test
 		void J_J ( ) {
 			Integer[] ctrl = Component.DECODE( new J_Type( "j", "panda"), log );
-			expected.append( "Decoded Control_Signals: RegisterBank:Destination[-]" );
-			expected.append( "\t\tALU:ALUSrc1[-], ALUSrc2[-], ALUOp[-]" );
+			expected.append( "Decoded Control_Signals:\tRegisterBank:Destination[-]\tALU:ALUSrc1[-], ALUSrc2[-], ALUOp[-]" );
 			expected.append( "\t\tMemoryBank:Memory[-], MemToReg[-], PC:PCWrite[IMM]" );
-			assertEquals(new Integer[]{null, null,null,-1 ,null,null, 1}, ctrl);
+			arraysEqual(new Integer[]{null, null,null,null,null,null, 1}, ctrl);
 		}
 		
 		@Test
 		void J_Jal ( ) {
 			Integer[] ctrl = Component.DECODE( new J_Type( "jal", "panda"), log );
-			expected.append( "Decoded Control_Signals: RegisterBank:Destination[$ReturnAddress:31]" );
-			expected.append( "\t\tALU:ALUSrc1[NPC], ALUSrc2[-], ALUOp[NOP]" );
+			expected.append( "Decoded Control_Signals:\tRegisterBank:Destination[$ReturnAddress:31]\tALU:ALUSrc1[NPC], ALUSrc2[-], ALUOp[NOP]" );
 			expected.append( "\t\tMemoryBank:Memory[-], MemToReg[No:AOR], PC:PCWrite[IMM]" );
-			assertEquals(new Integer[]{2, 1,null,-1 ,null,0, 1}, ctrl);
+			arraysEqual(new Integer[]{2, 1,null,-1 ,null,0, 1}, ctrl);
+		}
+		
+		@Test
+		void Nop_Exit ( ) {
+			Integer[] ctrl = Component.DECODE( new Nop( "exit"), log );
+			expected.append( "Decoded Control_Signals:\tRegisterBank:Destination[-]\tALU:ALUSrc1[-], ALUSrc2[-], ALUOp[-]" );
+			expected.append( "\t\tMemoryBank:Memory[-], MemToReg[-], PC:PCWrite[-]" );
+			arraysEqual(new Integer[]{null, null,null,null ,null,null, null}, ctrl);
 		}
 	}
 }

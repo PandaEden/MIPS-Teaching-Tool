@@ -153,6 +153,10 @@ public abstract class Instruction {
 		return IMM;
 	}
 	
+	public String getOpcode ( ) {
+		return opcode;
+	}
+	
 	@Override public String toString ( ) {
 		return "Instruction{" +
 			   " opcode= '" + opcode + '\'' +
