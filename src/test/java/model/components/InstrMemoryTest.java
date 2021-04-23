@@ -12,6 +12,7 @@ import model.instr.Instruction;
 import model.instr.Nop;
 import model.instr.R_Type;
 
+import util.Convert;
 import util.logs.ExecutionLog;
 
 import java.util.ArrayList;
@@ -59,7 +60,7 @@ class InstrMemoryTest {
 			i.assemble(testLogs.actualErrors, new HashMap<>( ) );
 			
 			ins = instrMemory.InstructionFetch(PC);
-			testLogs.expectedExecution.append( TestLogs.FMT_MSG._Execution._fetch(PC) );
+			testLogs.expectedExecution.append( "Fetching Instruction At Address [" + Convert.int2Hex( PC ) + "]" );
 			assertEquals( i, ins );
 			PC = ins.execute( PC, dm, rm, lg );
 		}
@@ -77,7 +78,7 @@ class InstrMemoryTest {
 		// Expected Pre Assembled Exit Instruction
 		Instruction expected = new Nop("exit");
 		expected.assemble( testLogs.expectedErrors, new HashMap<>() );
-		testLogs.expectedExecution.append( TestLogs.FMT_MSG._Execution._fetch(0x00500000 ) );
+		testLogs.expectedExecution.append( "Fetching Instruction At Address [0x00500000]" );
 		testLogs.expectedExecution.appendEx( "\tRun Over Provided Instructions" );
 		expected.execute(0x00500000, dm, rm, testLogs.expectedExecution );
 	}

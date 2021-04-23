@@ -37,7 +37,7 @@ public class MemAccess extends I_Type {
 	
 	private void lw(DataMemory dataMem, RegisterBank regBank, ExecutionLog executionLog)
 			throws IndexOutOfBoundsException, IllegalArgumentException{
-		int rsVal=regBank.read( RS );
+		int rsVal=regBank.read( RS, null )[0];
 		int ADDRESS=calculateDataAddress( executionLog, rsVal );
 		int data=dataMem.readData( ADDRESS );
 		regBank.write( RT, data );

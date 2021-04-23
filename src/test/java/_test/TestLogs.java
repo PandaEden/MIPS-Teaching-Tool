@@ -1,5 +1,7 @@
 package _test;
 
+import control.Execution;
+
 import model.instr.Instruction;
 import model.components.DataMemory;
 import model.components.RegisterBank;
@@ -168,73 +170,126 @@ public class TestLogs {
 			private final DataMemory actualDataMemory;
 			private final ExecutionLog actualExLog;
 			private final ExecutionLog expectedExLog;
+			private final ArrayList<Instruction> instructions;
+			private final Execution execution;
 			public _Execution (int[] values, HashMap<Integer, Double> data, ExecutionLog actual, ExecutionLog expected) {
 				this.actualRegisterBank=new RegisterBank( values,actual );
 				this.actualDataMemory=new DataMemory( data, actual );
 				this.actualExLog=actual;
 				this.expectedExLog=expected;
+				instructions = new ArrayList<>();
+				execution= new Execution( actual, data, values, instructions);
 			}
 			
-			public Integer execute(Integer PC, Instruction instruction){
-				return instruction.execute( PC, actualDataMemory, actualRegisterBank, actualExLog );
+			public Integer pipeline(Instruction instruction){
+				instructions.add(0, instruction );
+				execution.reset();
+				return execution.pipeline();
 			}
-			public static String _fetch (int pc){
-				return "Fetching Instruction At Address [" + Convert.int2Hex(pc) + "]";
+			public void _fetching(int pc){
+				expectedExLog.append("Fetching: Instruction At Address [" + Convert.int2Hex( pc ) + "]");
 			}
-			private void rb_noAct (){ expectedExLog.appendEx( "RegisterBank:\tNo Action"); }
-			private void rb_noRead (){ expectedExLog.appendEx( "RegisterBank:\tNo Read"); }
-			private void rb_noWrite (){ expectedExLog.appendEx( "RegisterBank:\tNo Write"); }
-			
-			private void dm_noAct(){ expectedExLog.appendEx( "DataMemory:\tNo Action"); }
-			public void decode (String hexPC, String opcode, String type){
-				expectedExLog.append( "\n\t ---- " + hexPC + " ---- " + type + " Type Instruction >> \"" + opcode + "\":");
-			}
-			private void storeNPC(int npc){
-				expectedExLog.append( "Storing Next Program Counter! : "+Convert.int2Hex(npc) );
+			public void _fetch (int pc){
+				_fetching(pc);
+				expectedExLog.append("\tIncrement_PC: NPC = PC + 4 === " + Convert.int2Hex( pc+4 ));
 			}
 			
-			public void rb_read(int val, int reg){
-				expectedExLog.appendEx( "RegisterBank:\tReading Value[" + val + "]\tFrom Register Index[R" + reg + "]");
+			public static String _control_RType (String opcode, String ALUOp){
+				return "Decoding: ---- REGISTER Instruction :: "+opcode
+					   + "\n\t\tALUSrc1[AIR1], ALUSrc2[AIR2], ALUOp["+ALUOp+"]"
+					   + "\n\t\tMemOp[-], MemToReg[No:AOR]"
+					   + "\n\t\tRegDest[RD], PCWrite[NPC]";
 			}
-			public void rb_read_Modified(int val, int reg){
-				expectedExLog.appendEx( "RegisterBank:\tReading Value[" + val + "]\tFrom Register Index[*R" + reg + "]");
+			public static String _control_IType (String opcode, String ALUOp){
+				return "Decoding: ---- IMMEDIATE Instruction :: "+opcode
+					   + "\n\t\tALUSrc1[AIR1], ALUSrc2[IMM], ALUOp["+ALUOp+"]"
+					   + "\n\t\tMemOp[-], MemToReg[No:AOR]"
+					   + "\n\t\tRegDest[RT], PCWrite[NPC]";
+			}
+			public static String _control_Load (){
+				return "Decoding: ---- IMMEDIATE Instruction :: lw"
+					   + "\n\t\tALUSrc1[AIR1], ALUSrc2[IMM], ALUOp[ADD]"
+					   + "\n\t\tMemOp[READ->LMDR], MemToReg[Yes:LMDR]"
+					   + "\n\t\tRegDest[RT], PCWrite[NPC]";
+			}
+			public static String _control_Store (){
+				return "Decoding: ---- IMMEDIATE Instruction :: sw"
+					   + "\n\t\tALUSrc1[AIR1], ALUSrc2[IMM], ALUOp[ADD]"
+					   + "\n\t\tMemOp[WRITE<-SVR], MemToReg[-]"
+					   + "\n\t\tRegDest[-], PCWrite[NPC]";
+			}
+			public static String _control_Jump (){
+				return "Decoding: ---- JUMP Instruction :: j"
+					   + "\n\t\tALUSrc1[-], ALUSrc2[-], ALUOp[-]"
+					   + "\n\t\tMemOp[-], MemToReg[-]"
+					   + "\n\t\tRegDest[-], PCWrite[IMM]";
+			}public static String _control_JumpAndLink (){
+				return "Decoding: ---- JUMP Instruction :: jal"
+					   + "\n\t\tALUSrc1[NPC], ALUSrc2[-], ALUOp[NOP]"
+					   + "\n\t\tMemOp[-], MemToReg[No:AOR]"
+					   + "\n\t\tRegDest[$31:ReturnAddress], PCWrite[IMM]";
+			}
+			
+			public static String _control_Nop (String opcode, String PCWrite){
+				return "Decoding: ---- NOP Instruction :: "+opcode
+					   + "\n\t\tALUSrc1[-], ALUSrc2[-], ALUOp[-]"
+					   + "\n\t\tMemOp[-], MemToReg[-]"
+					   + "\n\t\tRegDest[-], PCWrite["+PCWrite+"]";
+			}
+			
+			@Deprecated
+			private void _fetch (String hexPC) { _fetch( Convert.hex2uInt( hexPC ) ); }
+			private void _read () { expectedExLog.append("Reading Operands:"); }
+			private void _execute () { expectedExLog.append("Execution:"); }
+			private void _memory () { expectedExLog.append("Memory Access:"); }
+			private void _write_back () { expectedExLog.append("Write Back:"); }
+			private void __ () { expectedExLog.append("--------------------------------" ); }
+			
+			private void rb_read(int val, int reg){
+				expectedExLog.appendEx( "\tRegisterBank:\tReading Value[" + val + "]\tFrom Register Index[R" + reg + "]");
+			}
+			private void rb_read_Modified(int val, int reg){
+				expectedExLog.appendEx( "\tRegisterBank:\tReading Value[" + val + "]\tFrom Register Index[*R" + reg + "]");
 			}
 			private void rb_write(int val, int reg){
-				expectedExLog.appendEx( "RegisterBank:\tWriting Value[" + val + "]\tTo Register Index[*R" + reg + "]");
+				expectedExLog.appendEx( "\tRegisterBank:\tWriting Value[" + val + "]\tTo Register Index[*R" + reg + "]");
 			}
-			private void IMM(int imm){ expectedExLog.append( "[IMMEDIATE: " + imm + "]"); }
-			public void cal_result(String aluAction){
-				expectedExLog.append( "\tCalculating Result:" );
-				expectedExLog.append( "\t"+aluAction );
+			private void IMM(int imm){ expectedExLog.append( "[IMMEDIATE: " + imm +" === " + Convert.int2Hex(imm) + "]"); }
+			private void ALU (String aluAction){
+				expectedExLog.append( "\tALU Result = "+aluAction );
 			}
 			
-			public void imm_cal_addr (int imm, int rs_val, int addr){
-				expectedExLog.append( "[IMMEDIATE: " + imm + " === " + Convert.int2Hex(imm) + "]");
-				expectedExLog.append( "\tCalculating Address:" );
-				expectedExLog.append( "\tResult = "+rs_val+" + "+imm+" ==> "+addr );
-				
-				expectedExLog.append( "\t[Result: "+addr+" === "+Convert.int2Hex(addr)+"]" );
+			private void imm_add (int imm, int rs_val, int addr){
+				IMM( imm );
+				_execute();
+				ALU( rs_val+" + "+imm+" ==> "+addr);
 			}
 			private void shift_imm(int imm, int addr){
 				expectedExLog.append( "\tLeft Shifting IMMEDIATE By 2 = "+Convert.int2Hex(imm)
 										+" << 2 ==> ["+addr+" === "+Convert.int2Hex(addr)+"]");
 			}
 			private void dm_read(int val, int addr){
-				expectedExLog.appendEx( "DataMemory:\tReading Value[" + val + "]\tFrom Memory Address["
+				expectedExLog.appendEx( "\tDataMemory:\tReading Value[" + val + "]\tFrom Memory Address["
 										+Convert.int2Hex(addr) +"]");
 			}
 			private void dm_write(int val, int addr){
-				expectedExLog.appendEx( "DataMemory:\tWriting Value[" + val + "]\tTo Memory Address["
+				expectedExLog.appendEx( "\tDataMemory:\tWriting Value[" + val + "]\tTo Memory Address["
 										+Convert.int2Hex(addr) +"]");
 			}
 			private void rtn_addr(int addr){
 				expectedExLog.appendEx( "Returning Jump Address: "+ Convert.int2Hex(addr) );
 			}
 			
-			public void exit_output (String hexPc, String opcode){
-				decode( hexPc, opcode, "NOP" );
-				rb_noAct();
-				dm_noAct();
+			//TODO RENAME hexPC
+			
+			public void exit_output (String hexPC, String opcode){
+				_fetch( hexPC );
+				expectedExLog.append(_control_Nop( opcode, "-" ));
+				_read();
+				_execute();
+				_memory();
+				_write_back();
+				__();
 			}
 			
 			public void R_output(String hexPC, String opcode, int RS, int rs_val, int RT, int rt_val, int RD, int rd_val){
@@ -243,78 +298,133 @@ public class TestLogs {
 					case "add": sign = " + "; break;
 					case "sub": sign = " - "; break;
 				}
-				decode( hexPC, opcode, "REGISTER" );
+				_fetch(hexPC );
+				expectedExLog.append(_control_RType( opcode, opcode.toUpperCase() ));
+				_read();
 				rb_read( rs_val, RS );
-				rb_read( rt_val, RT);
-				cal_result( "Result = "+rs_val+sign+rt_val+" ==> "+rd_val );
-				dm_noAct( );
+				rb_read( rt_val, RT );
+				_execute();
+				ALU( rs_val + sign + rt_val + " ==> " + rd_val );
+				_memory();
+				_write_back();
 				rb_write( rd_val, RD );
+				__();
 			}
 			public void I_output (String hexPC, String opcode, int RS, int rs_val, int RT, int rt_val, int IMM){
 				String sign="   ";
 				switch ( opcode ){
 					case "addi": sign = " + "; break;
 				}
-				decode( hexPC, opcode, "IMMEDIATE" );
+				_fetch(hexPC );
+				expectedExLog.append(_control_IType( opcode, opcode.substring(0,3).toUpperCase() ));
+				_read();
 				rb_read( rs_val, RS );
 				IMM( IMM );
-				cal_result( "Result = "+rs_val+sign+IMM+" ==> "+rt_val );
-				dm_noAct( );
+				_execute();
+				ALU( rs_val + sign + IMM + " ==> " + rt_val );
+				_memory();
+				_write_back();
 				rb_write( rt_val, RT );
+				__();
 			}
 			
 			public void load_output(String hexPC, int RS, int rs_val, int IMM, int RT, int rt_val){
-				decode( hexPC, "lw", "IMMEDIATE" );
+				_fetch( hexPC );
+				expectedExLog.append(_control_Load());
+				_read();
 				rb_read( rs_val, RS );
-				imm_cal_addr( IMM, rs_val, IMM+rs_val );
+				imm_add( IMM, rs_val, IMM+rs_val );
+				_memory();
 				dm_read( rt_val, IMM+rs_val );
+				_write_back();
 				rb_write( rt_val, RT );
+				__();
 			}
 			public void store_output(String hexPC, int RS, int rs_val, int IMM, int RT, int rt_val){
-				decode( hexPC, "sw", "IMMEDIATE" );
+				_fetch( hexPC );
+				expectedExLog.append(_control_Store());
+				_read();
 				rb_read( rs_val, RS );
 				rb_read( rt_val, RT );
-				imm_cal_addr( IMM, rs_val, IMM+rs_val );
+				imm_add( IMM, rs_val, IMM+rs_val );
+				_memory();
 				dm_write( rt_val, IMM+rs_val );
-				rb_noWrite( );
+				_write_back();
+				__();
 			}
 			//TODO - implement the modified versions a bit better,   perhaps changing the int RS/RT/RD inputs to String
 			public void load_output_modified(String hexPC, int RS, int rs_val, int IMM, int RT, int rt_val){
-				decode( hexPC, "lw", "IMMEDIATE" );
+				_fetch( hexPC );
+				expectedExLog.append(_control_Load());
+				_read();
 				rb_read_Modified( rs_val, RS );
-				imm_cal_addr( IMM, rs_val, IMM+rs_val );
+				imm_add( IMM, rs_val, IMM+rs_val );
+				_memory();
 				dm_read( rt_val, IMM+rs_val );
+				_write_back();
 				rb_write( rt_val, RT );
+				__();
 			}
 			public void store_output_modified(String hexPC, int RS, int rs_val, int IMM, int RT, int rt_val){
-				decode( hexPC, "sw", "IMMEDIATE" );
+				_fetch( hexPC );
+				expectedExLog.append(_control_Store());
+				_read();
 				rb_read_Modified( rs_val, RS );
 				rb_read( rt_val, RT );
-				imm_cal_addr( IMM, rs_val, IMM+rs_val );
+				imm_add( IMM, rs_val, IMM+rs_val );
+				_memory();
 				dm_write( rt_val, IMM+rs_val );
-				rb_noWrite();
+				_write_back();
+				__();
 			}
 			
 			public void J_output (String hexPC, int imm){
-				decode( hexPC, "j", "JUMP" );
-				rb_noAct( );
+				_fetch( hexPC );
+				expectedExLog.append(_control_Jump());
+				_read();
+				IMM( imm );
+				_execute();
 				shift_imm( imm, imm*4 );
-				dm_noAct( );
-				rtn_addr( imm*4 );
+				_memory();
+				_write_back();
+				__();
 			}
 			
 			public void jal_output(String hexPC, int imm){
 				int npc = Convert.hex2uInt(hexPC)+4;
-				decode( hexPC, "jal", "JUMP" );
-				rb_noRead();
-				storeNPC( npc );
-				rb_write( npc, 31 );
+				_fetch( hexPC );
+				expectedExLog.append(_control_JumpAndLink());
+				_read();
+				IMM( imm );
+				_execute();
 				shift_imm( imm, imm*4 );
-				dm_noAct( );
-				rtn_addr( imm*4 );
+				ALU( npc+ " ==> "+ npc );
+				_memory();
+				_write_back();
+				rb_write( npc, 31 );
+				__();
 			}
+			
 			public void run_over(){
 				expectedExLog.append( "\tRun Over Provided Instructions!" );
+			}
+			
+			public void load_output_before_exception(String hexPC, int RS, int rs_val, int IMM, int ADDR){
+				_fetch( hexPC );
+				expectedExLog.append(_control_Load());
+				_read();
+				rb_read( rs_val, RS );
+				imm_add( IMM, rs_val, ADDR );
+				_memory();
+			}
+			public void store_output_before_exception(String hexPC, int RS, int rs_val, int IMM, int RT, int rt_val, int ADDR){
+				_fetch( hexPC );
+				expectedExLog.append(_control_Store());
+				_read();
+				rb_read( rs_val, RS );
+				rb_read( rt_val, RT );
+				imm_add( IMM, rs_val, IMM+rs_val );
+				_memory();
 			}
 		}
 		

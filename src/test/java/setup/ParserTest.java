@@ -7,7 +7,7 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import control.Execute;
+import control.Execution;
 
 import model.instr.Instruction;
 import model.MemoryBuilder;
@@ -385,7 +385,7 @@ class ParserTest {
 		// TODO ToString not implemented in Instruction, so I can't check the order of instructions
 		
 		StringBuilder output = new StringBuilder();
-		Execute.execute( dataMemory, new RegisterBank( values, ignored ), ins, ignored, output);
+		Execution.RunToEnd( dataMemory, new RegisterBank( values, ignored ), ins, ignored, output);
 		
 		// Post Execution Results
 		

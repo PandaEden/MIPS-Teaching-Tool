@@ -24,21 +24,21 @@ import java.util.List;
  <p> - it presumes the immediate stores the address shifted 2 bits right.
  */
 public abstract class Instruction {
-	private final Type type;
+	private final Type type;	// refactor out type in-favour of instanceOf
 	protected final String opcode;
 	protected Integer NPC;
-	protected final int RD;
-	protected final int RS;
-	protected final int RT;
+	protected Integer RD;
+	protected Integer RS;
+	protected Integer RT;
 	protected Integer IMM;
 	protected final String label;
 	// TODO Add lineNo
 	
 	/**No Validation is performed, assumed all input to be valid. {@link #assemble(ErrorLog, HashMap)} needs to be ran before execution.
 	 <p>Errors with format may be caught during assembly.</p>
-	 <p>Trying to Execute an instruction where assembly has failed will throw an exception.</p>*/
+	 <p>Trying to Execution an instruction where assembly has failed will throw an exception.</p>*/
 	protected Instruction (@NotNull Type type, @NotNull List<String> codes, @NotNull String opcode,
-						   int RS, int RT, int RD, @Nullable Integer IMM, @Nullable String label)
+						   Integer RS, Integer RT, Integer RD, @Nullable Integer IMM, @Nullable String label)
 	throws IllegalArgumentException{
 		this.type=type;	// TODO is the Type Enum Necessary ?
 		this.opcode=opcode;
@@ -48,13 +48,10 @@ public abstract class Instruction {
 		this.IMM=IMM;
 		this.label=label;
 		
-		if ( !codes.contains( opcode ) ) // TODO - rename to InstructionValidation
+		if ( !codes.contains( opcode ) ) // TODO - move to InstructionValidation
 			throw new IllegalArgumentException("Instruction ["+opcode+"], Has not been defined in InstructionValidation");
-		regNotInRange( RD );
-		regNotInRange( RS );
-		regNotInRange( RT );
 	}
-	private void regNotInRange (int reg){
+	protected void regNotInRange_Register (int reg){
 		if (!Util.notNullAndInRange( reg, 0, 31 ))
 			throw new IllegalArgumentException("Registers not in range!, "+toString());
 	}
@@ -67,6 +64,7 @@ public abstract class Instruction {
 	 
 	 @throws IllegalStateException if not Assembled/ Assembly failed!
 	 */
+	@Deprecated
 	public Integer execute(int PC, @NotNull DataMemory dataMem, @NotNull RegisterBank regBank,
 						   @NotNull ExecutionLog executionLog) throws IndexOutOfBoundsException, IllegalArgumentException {
 		if ( IMM==null )
@@ -82,6 +80,7 @@ public abstract class Instruction {
 	protected abstract void action(@NotNull DataMemory dataMem, @NotNull RegisterBank regBank, @NotNull ExecutionLog executionLog);
 	
 	/** Uses {@link Convert#imm2Address(Integer)} on {@link #IMM} */
+	@Deprecated
 	protected Integer shiftImm(ExecutionLog executionLog){
 		int ADDR = Convert.imm2Address(IMM);
 		executionLog.append( "\tLeft Shifting IMMEDIATE By 2 = " +  Convert.int2Hex( IMM )
@@ -149,15 +148,33 @@ public abstract class Instruction {
 		return (this.IMM!=null); // returns True if Immediate has been set.
 	}
 	
-	public Integer getImmediate( ) {
+	@Nullable
+	public Integer getImmediate() {
 		return IMM;
 	}
 	
-	public String getOpcode ( ) {
+	@Nullable
+	public String getOpcode() {
 		return opcode;
 	}
+	@Nullable
+	public Integer getRD() {
+		return RD;
+	}
+	@Nullable
+	public Integer getRS() {
+		return RS;
+	}
+	@Nullable
+	public Integer getRT() {
+		return RT;
+	}
 	
-	@Override public String toString ( ) {
+	public Type getType() {
+		return type;
+	}
+	
+	@Override public String toString() {
 		return "Instruction{" +
 			   " opcode= '" + opcode + '\'' +
 			   ", type= " + type +

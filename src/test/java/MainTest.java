@@ -42,13 +42,13 @@ class MainTest {
 	}
 	
 	@Test
-	@DisplayName ( "Test : Parse -> Assemble --> Execute :: Success" )
+	@DisplayName ( "Test : Parse -> Assemble --> Execution :: Success" )
 	void Successful_Parse_Assemble_Execute ( ) {
 		//Setup
 		HashMap<Integer, Double> data = new HashMap<>();
 		ExecutionLog log = new ExecutionLog( new ArrayList<>() );
 		FMT_MSG._Execution _ex = new FMT_MSG._Execution( new int[32], data, log, log);
-		//Parse->Assemble->Execute
+		//Parse->Assemble->Execution
 		Main.main( new String[] { TEST_RESOURCES_DIR + "Execution_NoBranches.s" } );
 		
 		// Output
@@ -65,7 +65,6 @@ class MainTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line5  [0x00400000] LW R8, Y			==> Addr[0x10010008],  value [268500992]
-		log.append(FMT_MSG._Execution._fetch(0x00400000));
 		_ex.load_output("0x00400000" ,0,0,268501000, 8, 268500992);
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append(
@@ -77,7 +76,6 @@ class MainTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line7  [0x00400004] LW R16, 0(R8)		==> Addr[0x10010000], value [50]
-		log.append(FMT_MSG._Execution._fetch(0x00400004));
 		_ex.load_output_modified("0x00400004" ,8,268500992,0, 16, 50);
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append(
@@ -89,7 +87,6 @@ class MainTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line9  [0x00400008] LW R20, 0x290(R8)	==> Addr[0x10010290], value [-900]
-		log.append(FMT_MSG._Execution._fetch(0x00400008));
 		_ex.load_output("0x00400008" ,8,268500992,0x290, 20, -900);
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append(
@@ -101,7 +98,6 @@ class MainTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line18 [0x0040000C] ADDI R10, R8, 16	 => 268500992+16 = [268501008]
-		log.append(FMT_MSG._Execution._fetch(0x0040000C));
 		_ex.I_output( "0x0040000C" , "addi", 8, 268500992, 10, 268501008, 16 );
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append(
@@ -113,7 +109,6 @@ class MainTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line19 [0x00400010] SW R20, 0(R10)	==> Addr[0x10010010], value [-900]
-		log.append(FMT_MSG._Execution._fetch(0x00400010));
 		_ex.store_output_modified("0x00400010" ,10,0x10010010,0, 20, -900);
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append(
@@ -125,7 +120,6 @@ class MainTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line20 [0x00400014] ADD R22, R20, R0	 => val+0, [-900] //Move
-		log.append(FMT_MSG._Execution._fetch(0x00400014));
 		_ex.R_output("0x00400014" ,"add",20, -900, 0, 0, 22, -900);
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append(
@@ -137,7 +131,6 @@ class MainTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line21 [0x00400018] SUB R24, R20, R16	 => (-900 - 50) == [-950]
-		log.append(FMT_MSG._Execution._fetch(0x00400018));
 		_ex.R_output("0x00400018" ,"sub",20, -900, 16, 50, 24, -950);
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append(
@@ -149,7 +142,6 @@ class MainTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line24 [0x0040001C] ADD R18, R16, R16	 => (50+50) == [100]
-		log.append(FMT_MSG._Execution._fetch(0x0040001C));
 		_ex.R_output("0x0040001C" ,"add",16, 50, 16, 50, 18, 100);
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append(
@@ -161,7 +153,6 @@ class MainTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line26 [0x00400020] J del				--> Addr[0x0040002C]
-		log.append(FMT_MSG._Execution._fetch(0x00400020));
 		_ex.J_output( "0x00400020" , 0x0010000B);
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append(
@@ -177,7 +168,6 @@ class MainTest {
 		// line29 [0x0040028] _skipped_ Always !
 		
 		// Line31 [0x0040002C] ADD R20, R18, R22 (100 + -900) = [-800]
-		log.append(FMT_MSG._Execution._fetch(0x0040002C));
 		_ex.R_output("0x0040002C" ,"add",18, 100, 22, -900, 20, -800);
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append(
@@ -189,7 +179,6 @@ class MainTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line-1 [0x00400030] autoExit
-		log.append(FMT_MSG._Execution._fetch(0x00400030));
 		_ex.run_over();
 		_ex.exit_output( "0x00400030", "exit");
 		expectedOutput.append(log); log.clear();
@@ -199,14 +188,14 @@ class MainTest {
 	}
 	
 	@Test
-	@DisplayName ( "Parse -> Assemble -> Execute => Error" )
+	@DisplayName ( "Parse -> Assemble -> Execution => Error" )
 	void Execute_Error ( ) {
 		// Ex error, Loading from non Valid data Addr
 		// Setup
 		HashMap<Integer, Double> data = new HashMap<>();
 		ExecutionLog log = new ExecutionLog( new ArrayList<>() );
 		FMT_MSG._Execution _ex = new FMT_MSG._Execution( new int[32], data, log, log);
-		//Parse->Assemble->Execute
+		//Parse->Assemble->Execution
 		Main.main( new String[] { TEST_RESOURCES_DIR + "_Execution_Error.s" } );
 		//Output
 		StringBuilder expectedOutput=new StringBuilder();
@@ -222,11 +211,7 @@ class MainTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line1 [0x00400000] SW R1, -20(R2)
-		log.append(FMT_MSG._Execution._fetch(0x00400000));
-		_ex.decode( "0x00400000", "sw", "IMMEDIATE" );
-		_ex.rb_read( 0, 2 );
-		_ex.rb_read( 0, 1 );
-		_ex.imm_cal_addr( -20, 0, -20 );
+		_ex.store_output_before_exception("0x00400000", 2,0,-20,1,0, -20);
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append( "ERROR: Data Address [0xFFFFFFEC, -20] Must Be >=0x10010000 and <=0x100107F8!" );
 		expectedOutput.append( "\n" ).append( END_WITH_ERRORS );
@@ -244,7 +229,7 @@ class MainTest {
 		ExecutionLog ignored = new ExecutionLog( new ArrayList<>() );
 		FMT_MSG._Execution _ex = new FMT_MSG._Execution( new int[32], new HashMap<>(), ignored, ignored);
 		ErrorLog errors = new ErrorLog( new ArrayList<>() );
-		//Parse->Assemble->Execute
+		//Parse->Assemble->Execution
 		Main.main( new String[] { TEST_RESOURCES_DIR + "_Assembly_Error.s" } );
 		//Output
 		StringBuilder expectedOutput=new StringBuilder();
@@ -266,7 +251,7 @@ class MainTest {
 		ExecutionLog log = new ExecutionLog( new ArrayList<>() );
 		FMT_MSG._Execution _ex = new FMT_MSG._Execution( new int[32], new HashMap<>(), log, log);
 		ErrorLog errors = new ErrorLog( new ArrayList<>() );
-		//Parse->Assemble->Execute
+		//Parse->Assemble->Execution
 		Main.main( new String[] { TEST_RESOURCES_DIR + "_Parse_Error.s" } );
 		StringBuilder expectedOutput=new StringBuilder();
 		errors.appendEx( FMT_MSG.xAddressNot( "Instruction",  "0x00000010",  "Valid"));

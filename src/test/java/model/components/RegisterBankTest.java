@@ -18,7 +18,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tag( _test.Tags.Pkg.COM )
 @DisplayName ( _test.Tags.Pkg.MOD + " : " + Tags.Pkg.COM + " :  RegisterBank Test")
 class RegisterBankTest {
-	private static final String PREFIX="Execution:\n\tRegisterBank:\t";
+	private static final String NAME="\n\t\tRegisterBank:\t";
+	private static final String PREFIX="Execution:"+NAME;
 	private static final String NO_ACTION=PREFIX + "No Action!\n";
 	private final Random random=new Random( );
 	private final ExecutionLog log=new ExecutionLog( new ArrayList<>( ) );
@@ -197,8 +198,8 @@ class RegisterBankTest {
 						() -> assertEquals( regs[ 10 ], temp[ 0 ] ),
 						() -> assertEquals( regs[ 20 ], temp[ 1 ] ),
 						//() -> assertEquals( PREFIX + "Reading Values[" + regs[ 10 ] + ", " + regs[ 20 ] + "]\tFrom Register Indexes[R10, R20]!\n", log.toString( ) )
-						() -> assertEquals( PREFIX + "Reading Value[" + regs[ 10 ] + "]\tFrom Register Index[R10]!\n" +
-											"\tRegisterBank:\tReading Value[" + regs[ 20 ] + "]\tFrom Register Index[R20]!\n", log.toString( ) )
+						() -> assertEquals( PREFIX + "Reading Value[" + regs[ 10 ] + "]\tFrom Register Index[R10]!" +
+											NAME+"Reading Value[" + regs[ 20 ] + "]\tFrom Register Index[R20]!\n", log.toString( ) )
 				);
 			}
 			

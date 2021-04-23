@@ -8,6 +8,7 @@ import model.instr.Instruction;
 import model.instr.J_Type;
 import model.instr.R_Type;
 
+import util.ansi_codes.Color;
 import util.logs.ExecutionLog;
 
 import java.util.Arrays;
@@ -27,13 +28,14 @@ public class Component {
 	
 	/** Integer Multiplexer::Forwards the index matching the control signal, Or null*/
 	@Nullable
-	public static Integer MUX(@Nullable Integer control_signal,Integer... input){
-		if ( control_signal==null )
+	public static Integer MUX(@Nullable Integer sig, String name ,Integer... input){
+		System.out.print( name+" :: " );
+		if ( sig==null ) {
 			return null;
-		else if ( control_signal < input.length)
-			return input[control_signal];
-		else
-			throw new IndexOutOfBoundsException("Control Signal["+control_signal+"] Invalid for Mux["+input+"]");
+		}else if ( sig < input.length) {
+			return input[ sig ];
+		}else
+			throw new IndexOutOfBoundsException("Control Signal["+sig+"] Invalid for Mux["+Arrays.toString(input)+"]");
 	}
 	
 	/** Logs the message {@link util.logs.Logger#appendEx(String)} and returns result of adding the two inputs.
@@ -44,7 +46,7 @@ public class Component {
 		if ( input0==null || input1==null )
 			return null;
 		
-		log.appendEx(message);
+		log.append(message);
 		return input0+input1;
 	}
 	
@@ -56,14 +58,20 @@ public class Component {
 	   <li>110:[3] - SUB - Subtraction (Binvert Addition)</li>
 	   <li>111:[4] - SLT - Set On Less Than</li>
 	 </ui>*/
-	public static int ALU(@NotNull Integer input0, @NotNull Integer input1, Integer ALUCtrl, @NotNull ExecutionLog log){
-		int output; // TODO remove null
-		// BInvert is determined by bit[0], SUB/SLT
+	public static Integer ALU(Integer input0, Integer input1, Integer ALUCtrl, @NotNull ExecutionLog log){
+		int output;
 		
+		// BInvert is determined by bit[0], SUB/SLT
 		String ALU_OP = ALU_codes.get( ALUCtrl==null?-1:ALUCtrl );
 		String sign;
+		
+		if ( !ALU_OP.equals( "NOP" ) && ( input0==null || input1 ==null ))
+			throw new IllegalArgumentException("ALU Inputs["+input0+","+input1+"] are null when ALUOp is not NOP");
+		
 		switch (ALU_OP.toUpperCase()){
 			case "NOP": // -- do nothing, for Nop & Exit
+				if ( input0!=null )
+					log.append( "\tALU Result = " + input0 + " ==> " + Color.fmtUnder( ""+input0 ) );
 				return input0;
 			case "ADD": // ADD
 				output=input0 + input1; sign = " + ";
@@ -83,55 +91,75 @@ public class Component {
 			default:
 				throw new IllegalStateException("ALU_OP ["+ALU_OP+"] Not Implemented!");
 		}
-		log.append( "\tResult = " + input0 + sign + input1 + " ==> " + output );
+		
+		log.append( "\tALU Result = " + input0 + sign + input1 + " ==> " + Color.fmtUnder( ""+output ) );
 		return output;
 	}
 	
+	private static final String DECODE =Color.fmtTitle( Color.YELLOW, "Decoding" ) + ":";
+	
 	/**
-	 <ul><li>[0]Destination: 0-RT, 1-RD, 2-$RA</li>
-	 <li>[1]ALUSrc1: 0-AIR1, 1-NPC</li>
-	 <li>[2]ALUSrc2: 0-AIR2, 1-IMM</li>
-	 <li>[3]ALUOpp: {@link #ALU_codes}, {@link #searchALUCode(String)}</li>
-	 <li>[4]MemAction: 0-Read, 1-Write</li>
-	 <li>[5]MemToReg: 0-AOR, 1-LMDR</li>
-	 </ul>
-	 */
-	public static Integer[] DECODE(Instruction ins, ExecutionLog log){
+	 <ul><li>[0] Destination: 0-RT, 1-RD, 2-$RA</li>
+	 <li>[1] ALUSrc1: 0-AIR1, 1-NPC</li>
+	 <li>[2] ALUSrc2: 0-AIR2, 1-IMM</li>
+	 <li>[3] ALUOp: {@link #ALU_codes}, {@link #searchALUCode(String)}</li>
+	 <li>[4] MemAction: 0-Read, 1-Write</li>
+	 <li>[5] MemToReg: 0-AOR, 1-LMDR</li>
+	 <li>[6] PCWrite: 0-No, 1-Yes</li>
+	 </ul>*/
+	public static Integer[] DECODER(Instruction ins, ExecutionLog log){
+		log.append( DECODE + " ---- " + ins.getType() + " Instruction :: " + ins.getOpcode() );
+		log.append( "" );
 		Integer[] ctrl = new Integer[7];
 		String[] name = new String[7];
 		Arrays.fill( name, "-" );
-		
-		if ( ins instanceof R_Type || ins instanceof I_Type){
-			ctrl =new Integer[] { 1, 0, 0, 2, null, 0, 0 };
-			name = new String[] {"RD","AIR1","AIR2","ADD","-","No:AOR","NPC"};
-			if ( ins.getOpcode().equals( "sub" ) ){
-				ctrl[3]=6;  	name[3]="SUB";
-			} else if (ins instanceof I_Type){
-				ctrl[0]=0;  	name[0]="RT";
-				ctrl[2]=1;  	name[2]="IMM";
-				if ( ins.getOpcode().equals( "lw" ) ){
-					ctrl[4]=0;	name[4]="READ->LMDR";
-					ctrl[5]=1;	name[5]="Yes:LMDR";
-				}else if ( ins.getOpcode().equals( "sw" ) ){
-					ctrl[0]=null;	name[0]="-";
-					ctrl[4]=1;  	name[4]="WRITE<-SVR";
-					ctrl[5]=null;	name[5]="-";
+		if ( ins.getOpcode()!=null ) {
+			if ( ins instanceof R_Type || ins instanceof I_Type ) {
+				ctrl=new Integer[] { 1, 0, 0, 2, null, 0, 0 };
+				name=new String[] { "RD", "AIR1", "AIR2", "-", "-", "No:AOR", "NPC" };
+				if ( ins instanceof R_Type ) {
+					ctrl[ 3 ]=searchALUCode(ins.getOpcode());
+				} else {//ins instanceof I_Type
+					ctrl[ 0 ]=0;
+					name[ 0 ]="RT";
+					ctrl[ 2 ]=1;
+					name[ 2 ]="IMM";
+					ctrl[ 3 ]=2;
+					if ( ins.getOpcode( ).equals( "lw" ) ) {
+						ctrl[ 4 ]=0;
+						name[ 4 ]="READ->LMDR";
+						ctrl[ 5 ]=1;
+						name[ 5 ]="Yes:LMDR";
+					} else if ( ins.getOpcode( ).equals( "sw" ) ) {
+						ctrl[ 0 ]=null;
+						name[ 0 ]="-";
+						ctrl[ 4 ]=1;
+						name[ 4 ]="WRITE<-SVR";
+						ctrl[ 5 ]=null;
+						name[ 5 ]="-";
+					}
+				}
+			} else if ( ins instanceof J_Type ) {
+				ctrl[ 6 ]=1;
+				name[ 6 ]="IMM";
+				
+				if ( ins.getOpcode( ).equals( "jal" ) ) {
+					ctrl[ 0 ]=2;
+					name[ 0 ]="$31:ReturnAddress";
+					ctrl[ 1 ]=1;
+					name[ 1 ]="NPC";
+					ctrl[ 3 ]=-1;
+					ctrl[ 5 ]=0;
+					name[ 5 ]="No:AOR";
 				}
 			}
-		} else if ( ins instanceof J_Type ){
-			ctrl[6]=1;  	name[6]="IMM";
-			
-			if ( ins.getOpcode().equals( "jal" ) ){
-				ctrl[0]=2;  	name[0]="$ReturnAddress:31";
-				ctrl[1]=1;  	name[1]="NPC";
-				ctrl[3]=-1;  	name[3]="NOP";
-				ctrl[5]=0;  	name[5]="No:AOR";
-			}
 		}
+		if ( ctrl[3]!=null )
+			name[ 3 ]=ALU_codes.get( ctrl[3] );
 		
-		log.append( "Decoded Control_Signals:\tRegisterBank:Destination["+name[0]+"]" +
-					"\tALU:ALUSrc1["+name[1]+"], ALUSrc2["+name[2]+"], ALUOp["+name[3]+"]" );
-		log.append( "\t\tMemoryBank:Memory["+name[4]+"], MemToReg["+name[5]+"], PC:PCWrite["+name[6]+"]" );
+		log.append( "\tALUSrc1["+name[1]+"], ALUSrc2["+name[2]+"], ALUOp["+name[3]+"]" );
+		log.append( "\tMemOp["+name[4]+"], MemToReg["+name[5]+"]" );
+		log.append( "\tRegDest["+name[0]+"], PCWrite["+name[6]+"]" );
 		
 		return ctrl;
 	}

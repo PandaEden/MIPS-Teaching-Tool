@@ -1,4 +1,4 @@
-import control.Execute;
+import control.Execution;
 
 import model.instr.Instruction;
 import model.MemoryBuilder;
@@ -36,13 +36,13 @@ public class Main {
 			ArrayList<Instruction> instructions=MEMORY_BUILDER.assembleInstr( errorLog );
 			if ( instructions!=null ) {
 				System.out.println( "Assembly Complete!" );
-				//Execute
+				//Execution
 				// Setup Components
 				ExecutionLog executionLog=new ExecutionLog( new ArrayList<>( ) );
 				DataMemory dm=parser.getMem( executionLog );
 				RegisterBank rb=new RegisterBank( new int[ 32 ], executionLog );
 				// Execution
-				Execute.execute( dm, rb, instructions, executionLog, output );
+				Execution.RunToEnd( dm, rb, instructions, executionLog, output );
 				
 				// Output
 				// Print Results

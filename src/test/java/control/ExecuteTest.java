@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class ExecuteTest {
 	private static TestLogs logs;
 	private static TestLogs.FMT_MSG._Execution testLogs_ex;
-	private static Execute execute;
+	private static Execution execution;
 	private static final HashMap<Integer, Double> data=new HashMap<>( );
 	private static final ArrayList<Instruction> instr_list= new ArrayList<>();
 	private static final int[] values=new int[ 32 ];
@@ -26,7 +26,7 @@ class ExecuteTest {
 		logs = new TestLogs();
 		testLogs_ex = new TestLogs.FMT_MSG._Execution( values, data, logs.actualExecution, logs.expectedExecution );
 		
-		execute = new Execute(logs.actualExecution, data, values);
+		execution= new Execution( logs.actualExecution, data, values, instr_list);
 	}
 	@AfterEach
 	void tearDown ( ) {
@@ -66,7 +66,6 @@ class ExecuteTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Add [0x00400000] Add $2, $1, $1
-		logs.expectedExecution.append(TestLogs.FMT_MSG._Execution._fetch(0x00400000));
 		testLogs_ex.R_output("0x00400000", "add",1,4 , 1, 4, 2, 8);
 		appendExpectedOutput_AndClear(expectedOutput);
 		expectedOutput.append(
@@ -78,7 +77,6 @@ class ExecuteTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Jump [0x00400004] Jump -> 0x0040000C
-		logs.expectedExecution.append(TestLogs.FMT_MSG._Execution._fetch(0x00400004));
 		testLogs_ex.J_output("0x00400004", 0x00100003);
 		appendExpectedOutput_AndClear(expectedOutput);
 		expectedOutput.append(
@@ -90,7 +88,6 @@ class ExecuteTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Addi [0x0040000C] Addi $1, $1, -40
-		logs.expectedExecution.append(TestLogs.FMT_MSG._Execution._fetch(0x0040000C));
 		testLogs_ex.I_output( "0x0040000C", "addi", 1, 4, 1, -36, -40 );
 		appendExpectedOutput_AndClear(expectedOutput);
 		expectedOutput.append(
@@ -102,15 +99,14 @@ class ExecuteTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Exit [0x00400010] autoExit
-		logs.expectedExecution.append(TestLogs.FMT_MSG._Execution._fetch(0x00400010));
 		testLogs_ex.run_over();
 		testLogs_ex.exit_output( "0x00400010", "exit");
 		appendExpectedOutput_AndClear(expectedOutput);
 		// Collect Expected Output
 		
-		// Execute -> Run To
+		// Execution -> Run To
 		StringBuilder actualOutput = new StringBuilder();
-		execute.execute(instr_list, actualOutput);
+		execution.RunToEnd( instr_list, actualOutput);
 		actualOutput.append(logs.actualErrors);
 		actualOutput.append(logs.actualWarnings);
 		assertEquals(expectedOutput.toString(), actualOutput.toString());
@@ -136,18 +132,15 @@ class ExecuteTest {
 				"|R3: 0\tR7: 0\tR11: 0\tR15: 0\t\tR19: 0\tR23: 0\tR27: 0\tR31: 0|\n" +
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
-		logs.expectedExecution.append(TestLogs.FMT_MSG._Execution._fetch(0x00400000));
-		testLogs_ex.decode( "0x00400000", "lw", "IMMEDIATE" );
-		testLogs_ex.rb_read( values[ 30 ], 30 );
-		testLogs_ex.imm_cal_addr( 40, values[ 30 ], 0x1001002D );
+		testLogs_ex.load_output_before_exception("0x00400000", 30, values[30], 40,0x1001002D );
 		expectedOutput.append(logs.expectedExecution); // Due to the interrupt, the ExLog is not cleared as it doesn't finish execution
 		expectedOutput.append( "ERROR: Data Address [0x1001002D, 268501037] Must Be DoubleWord Aligned!" );
 		
-		//Execute -> Run To
+		//Execution -> Run To
 		StringBuilder actualOutput = new StringBuilder();
-		execute.execute(instr_list, actualOutput);
+		execution.RunToEnd( instr_list, actualOutput);
 		assertEquals(expectedOutput.toString(), actualOutput.toString());
 	}
 	
-	//TODO - add Jump to invalid Instr Addr
+	//TODO - add   [Jump to invalid Instr Addr]
 }
