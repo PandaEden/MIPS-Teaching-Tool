@@ -3,13 +3,9 @@ package model.instr;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import model.components.DataMemory;
-import model.components.RegisterBank;
-
 import util.Convert;
 import util.Util;
 import util.logs.ErrorLog;
-import util.logs.ExecutionLog;
 import util.validation.AddressValidation;
 import util.validation.InstructionValidation;
 
@@ -54,38 +50,6 @@ public abstract class Instruction {
 	protected void regNotInRange_Register (int reg){
 		if (!Util.notNullAndInRange( reg, 0, 31 ))
 			throw new IllegalArgumentException("Registers not in range!, "+toString());
-	}
-	
-	/**
-	 Executes the {@link Instruction}, and returns an Incremented Program Counter
-	 or , NULL if the instruction is "EXIT".
-	 <p>
-	 Executing instructions using BASE+Offset addresses may throw an InvalidArgumentException.
-	 
-	 @throws IllegalStateException if not Assembled/ Assembly failed!
-	 */
-	@Deprecated
-	public Integer execute(int PC, @NotNull DataMemory dataMem, @NotNull RegisterBank regBank,
-						   @NotNull ExecutionLog executionLog) throws IndexOutOfBoundsException, IllegalArgumentException {
-		if ( IMM==null )
-			throw new IllegalStateException( opcode + " must be Assembled before Execution " + Convert.int2Hex( PC ) );
-		
-		String dash=" ---- ";
-		executionLog.append( "\n\t" + dash + Convert.int2Hex( PC ) + dash + type.name( ) + " Type Instruction >> \"" + opcode + "\":" );
-		NPC=PC + 4;
-		action( dataMem, regBank, executionLog );
-		return NPC;
-	}
-	
-	protected abstract void action(@NotNull DataMemory dataMem, @NotNull RegisterBank regBank, @NotNull ExecutionLog executionLog);
-	
-	/** Uses {@link Convert#imm2Address(Integer)} on {@link #IMM} */
-	@Deprecated
-	protected Integer shiftImm(ExecutionLog executionLog){
-		int ADDR = Convert.imm2Address(IMM);
-		executionLog.append( "\tLeft Shifting IMMEDIATE By 2 = " +  Convert.int2Hex( IMM )
-							 + " << " + 2 + " ==> ["+ADDR+" === " + Convert.int2Hex( ADDR ) +"]");
-		return ADDR;
 	}
 	
 	/**

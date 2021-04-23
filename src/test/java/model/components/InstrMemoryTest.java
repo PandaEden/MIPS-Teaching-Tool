@@ -48,7 +48,7 @@ class InstrMemoryTest {
 	@Test
 	@Tag( Tags.OUT )
 	void InstructionFetch() {
-		Integer PC = 0x00400000;
+		int PC = 0x00400000;
 		Instruction ins;
 		
 		instr_list.add( new R_Type( "add", 1, 1, 1 ));//0 -> 4
@@ -62,9 +62,8 @@ class InstrMemoryTest {
 			ins = instrMemory.InstructionFetch(PC);
 			testLogs.expectedExecution.append( "Fetching Instruction At Address [" + Convert.int2Hex( PC ) + "]" );
 			assertEquals( i, ins );
-			PC = ins.execute( PC, dm, rm, lg );
+			PC+=4;
 		}
-		assertNull(PC);
 	}
 	
 	@Test

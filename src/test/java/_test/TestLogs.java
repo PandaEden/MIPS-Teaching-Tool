@@ -3,8 +3,6 @@ package _test;
 import control.Execution;
 
 import model.instr.Instruction;
-import model.components.DataMemory;
-import model.components.RegisterBank;
 
 import util.Convert;
 import util.ansi_codes.Color;
@@ -17,7 +15,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  Shared Testing Variables/ Methods.
@@ -166,16 +165,10 @@ public class TestLogs {
 		public static final String FailedAssemble = "Failed To Assemble Instructions";
 		
 		public static class _Execution {
-			private final RegisterBank actualRegisterBank;
-			private final DataMemory actualDataMemory;
-			private final ExecutionLog actualExLog;
 			private final ExecutionLog expectedExLog;
 			private final ArrayList<Instruction> instructions;
 			private final Execution execution;
 			public _Execution (int[] values, HashMap<Integer, Double> data, ExecutionLog actual, ExecutionLog expected) {
-				this.actualRegisterBank=new RegisterBank( values,actual );
-				this.actualDataMemory=new DataMemory( data, actual );
-				this.actualExLog=actual;
 				this.expectedExLog=expected;
 				instructions = new ArrayList<>();
 				execution= new Execution( actual, data, values, instructions);
@@ -237,8 +230,6 @@ public class TestLogs {
 					   + "\n\t\tRegDest[-], PCWrite["+PCWrite+"]";
 			}
 			
-			@Deprecated
-			private void _fetch (String hexPC) { _fetch( Convert.hex2uInt( hexPC ) ); }
 			private void _read () { expectedExLog.append("Reading Operands:"); }
 			private void _execute () { expectedExLog.append("Execution:"); }
 			private void _memory () { expectedExLog.append("Memory Access:"); }
@@ -282,8 +273,8 @@ public class TestLogs {
 			
 			//TODO RENAME hexPC
 			
-			public void exit_output (String hexPC, String opcode){
-				_fetch( hexPC );
+			public void exit_output (int pc, String opcode){
+				_fetch( pc );
 				expectedExLog.append(_control_Nop( opcode, "-" ));
 				_read();
 				_execute();
@@ -292,13 +283,13 @@ public class TestLogs {
 				__();
 			}
 			
-			public void R_output(String hexPC, String opcode, int RS, int rs_val, int RT, int rt_val, int RD, int rd_val){
+			public void R_output(int pc, String opcode, int RS, int rs_val, int RT, int rt_val, int RD, int rd_val){
 				String sign="   ";
 				switch ( opcode ){
 					case "add": sign = " + "; break;
 					case "sub": sign = " - "; break;
 				}
-				_fetch(hexPC );
+				_fetch( pc );
 				expectedExLog.append(_control_RType( opcode, opcode.toUpperCase() ));
 				_read();
 				rb_read( rs_val, RS );
@@ -310,12 +301,12 @@ public class TestLogs {
 				rb_write( rd_val, RD );
 				__();
 			}
-			public void I_output (String hexPC, String opcode, int RS, int rs_val, int RT, int rt_val, int IMM){
+			public void I_output (int pc, String opcode, int RS, int rs_val, int RT, int rt_val, int IMM){
 				String sign="   ";
 				switch ( opcode ){
 					case "addi": sign = " + "; break;
 				}
-				_fetch(hexPC );
+				_fetch( pc );
 				expectedExLog.append(_control_IType( opcode, opcode.substring(0,3).toUpperCase() ));
 				_read();
 				rb_read( rs_val, RS );
@@ -328,8 +319,8 @@ public class TestLogs {
 				__();
 			}
 			
-			public void load_output(String hexPC, int RS, int rs_val, int IMM, int RT, int rt_val){
-				_fetch( hexPC );
+			public void load_output(int pc, int RS, int rs_val, int IMM, int RT, int rt_val){
+				_fetch( pc );
 				expectedExLog.append(_control_Load());
 				_read();
 				rb_read( rs_val, RS );
@@ -340,8 +331,8 @@ public class TestLogs {
 				rb_write( rt_val, RT );
 				__();
 			}
-			public void store_output(String hexPC, int RS, int rs_val, int IMM, int RT, int rt_val){
-				_fetch( hexPC );
+			public void store_output(int pc, int RS, int rs_val, int IMM, int RT, int rt_val){
+				_fetch( pc );
 				expectedExLog.append(_control_Store());
 				_read();
 				rb_read( rs_val, RS );
@@ -353,8 +344,8 @@ public class TestLogs {
 				__();
 			}
 			//TODO - implement the modified versions a bit better,   perhaps changing the int RS/RT/RD inputs to String
-			public void load_output_modified(String hexPC, int RS, int rs_val, int IMM, int RT, int rt_val){
-				_fetch( hexPC );
+			public void load_output_modified(int pc, int RS, int rs_val, int IMM, int RT, int rt_val){
+				_fetch( pc );
 				expectedExLog.append(_control_Load());
 				_read();
 				rb_read_Modified( rs_val, RS );
@@ -365,8 +356,8 @@ public class TestLogs {
 				rb_write( rt_val, RT );
 				__();
 			}
-			public void store_output_modified(String hexPC, int RS, int rs_val, int IMM, int RT, int rt_val){
-				_fetch( hexPC );
+			public void store_output_modified(int pc, int RS, int rs_val, int IMM, int RT, int rt_val){
+				_fetch( pc );
 				expectedExLog.append(_control_Store());
 				_read();
 				rb_read_Modified( rs_val, RS );
@@ -378,8 +369,8 @@ public class TestLogs {
 				__();
 			}
 			
-			public void J_output (String hexPC, int imm){
-				_fetch( hexPC );
+			public void J_output (int pc, int imm){
+				_fetch( pc );
 				expectedExLog.append(_control_Jump());
 				_read();
 				IMM( imm );
@@ -390,9 +381,9 @@ public class TestLogs {
 				__();
 			}
 			
-			public void jal_output(String hexPC, int imm){
-				int npc = Convert.hex2uInt(hexPC)+4;
-				_fetch( hexPC );
+			public void jal_output(int pc, int imm){
+				int npc = pc+4;
+				_fetch( pc );
 				expectedExLog.append(_control_JumpAndLink());
 				_read();
 				IMM( imm );
@@ -409,16 +400,16 @@ public class TestLogs {
 				expectedExLog.append( "\tRun Over Provided Instructions!" );
 			}
 			
-			public void load_output_before_exception(String hexPC, int RS, int rs_val, int IMM, int ADDR){
-				_fetch( hexPC );
+			public void load_output_before_exception(int pc, int RS, int rs_val, int IMM, int ADDR){
+				_fetch( pc );
 				expectedExLog.append(_control_Load());
 				_read();
 				rb_read( rs_val, RS );
 				imm_add( IMM, rs_val, ADDR );
 				_memory();
 			}
-			public void store_output_before_exception(String hexPC, int RS, int rs_val, int IMM, int RT, int rt_val, int ADDR){
-				_fetch( hexPC );
+			public void store_output_before_exception(int pc, int RS, int rs_val, int IMM, int RT, int rt_val, int ADDR){
+				_fetch( pc );
 				expectedExLog.append(_control_Store());
 				_read();
 				rb_read( rs_val, RS );

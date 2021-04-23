@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tag ( Tags.OUT )
 @DisplayName ( Tags.Pkg.MOD + " : " +Tags.INSTR + " : " + Tags.EX + " Test " )
 class InstructionTest {
-	private static final String base_PC="0x00400000";
+	private static final int base_PC=InstrMemory.BASE_INSTR_ADDRESS;
 	private static final HashMap<Integer, Double> data=new HashMap<>( );
 	private static final HashMap<String, Integer> labelMap=InstrProvider.labelsMap;
 	private static final int[] values=new int[ 32 ];
@@ -203,7 +203,7 @@ class InstructionTest {
 			// Output
 			testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Data", addr, "Supported" ) );
 			testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Data" ) );
-			testLogs_ex._fetching( Convert.hex2uInt(base_PC) );
+			testLogs_ex._fetching( base_PC );
 		}
 		@ParameterizedTest ( name="[{index}] LW_Execution with Instr-Label" )
 		@ValueSource ( strings={ "instr", "instr_top" } )
@@ -218,7 +218,7 @@ class InstructionTest {
 			// Output
 			testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Data", addr, "Valid" ) );
 			testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Data" ) );
-			testLogs_ex._fetching( Convert.hex2uInt(base_PC) );
+			testLogs_ex._fetching( base_PC );
 		}
 		@Test
 		void Invalid_MEM_Execution_BassOffset_OutOfBounds ( ) {
@@ -319,7 +319,7 @@ class InstructionTest {
 			// Output
 			testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Instruction", addr, "Supported" ) );
 			testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Instruction" ) );
-			testLogs_ex._fetching( Convert.hex2uInt(base_PC) );
+			testLogs_ex._fetching( base_PC );
 		}
 		@ParameterizedTest ( name="[{index}] Jump_Execution with Data-Label" )
 		@ValueSource ( strings={ "data", "data_top" } )
@@ -334,7 +334,7 @@ class InstructionTest {
 			// Output
 			testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Instruction", addr, "Valid" ) );
 			testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Instruction" ) );
-			testLogs_ex._fetching( Convert.hex2uInt(base_PC) );
+			testLogs_ex._fetching( base_PC );
 		}
 		
 		@Test

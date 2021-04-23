@@ -5,7 +5,11 @@ import _test.TestLogs;
 import _test.providers.InstrProvider;
 import org.junit.jupiter.api.*;
 
+import model.components.DataMemory;
+import model.components.RegisterBank;
 import model.instr.*;
+
+import util.logs.ExecutionLog;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,9 +28,10 @@ class ExecuteTest {
 	@BeforeAll
 	static void beforeAll ( ) {
 		logs = new TestLogs();
-		testLogs_ex = new TestLogs.FMT_MSG._Execution( values, data, logs.actualExecution, logs.expectedExecution );
+		ExecutionLog actual = logs.actualExecution;
+		testLogs_ex = new TestLogs.FMT_MSG._Execution( values, data, actual, logs.expectedExecution );
 		
-		execution= new Execution( logs.actualExecution, data, values, instr_list);
+		execution= new Execution( actual, new DataMemory( data, actual ), new RegisterBank( values, actual ), instr_list);
 	}
 	@AfterEach
 	void tearDown ( ) {
@@ -66,7 +71,7 @@ class ExecuteTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Add [0x00400000] Add $2, $1, $1
-		testLogs_ex.R_output("0x00400000", "add",1,4 , 1, 4, 2, 8);
+		testLogs_ex.R_output(0x00400000, "add",1,4 , 1, 4, 2, 8);
 		appendExpectedOutput_AndClear(expectedOutput);
 		expectedOutput.append(
 				"-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n" +
@@ -77,7 +82,7 @@ class ExecuteTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Jump [0x00400004] Jump -> 0x0040000C
-		testLogs_ex.J_output("0x00400004", 0x00100003);
+		testLogs_ex.J_output(0x00400004, 0x00100003);
 		appendExpectedOutput_AndClear(expectedOutput);
 		expectedOutput.append(
 				"-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n" +
@@ -88,7 +93,7 @@ class ExecuteTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Addi [0x0040000C] Addi $1, $1, -40
-		testLogs_ex.I_output( "0x0040000C", "addi", 1, 4, 1, -36, -40 );
+		testLogs_ex.I_output( 0x0040000C, "addi", 1, 4, 1, -36, -40 );
 		appendExpectedOutput_AndClear(expectedOutput);
 		expectedOutput.append(
 				"-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n" +
@@ -100,7 +105,7 @@ class ExecuteTest {
 		);
 		// Exit [0x00400010] autoExit
 		testLogs_ex.run_over();
-		testLogs_ex.exit_output( "0x00400010", "exit");
+		testLogs_ex.exit_output( 0x00400010, "exit");
 		appendExpectedOutput_AndClear(expectedOutput);
 		// Collect Expected Output
 		
@@ -132,7 +137,7 @@ class ExecuteTest {
 				"|R3: 0\tR7: 0\tR11: 0\tR15: 0\t\tR19: 0\tR23: 0\tR27: 0\tR31: 0|\n" +
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
-		testLogs_ex.load_output_before_exception("0x00400000", 30, values[30], 40,0x1001002D );
+		testLogs_ex.load_output_before_exception(0x00400000, 30, values[30], 40,0x1001002D );
 		expectedOutput.append(logs.expectedExecution); // Due to the interrupt, the ExLog is not cleared as it doesn't finish execution
 		expectedOutput.append( "ERROR: Data Address [0x1001002D, 268501037] Must Be DoubleWord Aligned!" );
 		

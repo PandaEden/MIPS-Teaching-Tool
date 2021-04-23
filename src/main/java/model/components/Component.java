@@ -29,7 +29,6 @@ public class Component {
 	/** Integer Multiplexer::Forwards the index matching the control signal, Or null*/
 	@Nullable
 	public static Integer MUX(@Nullable Integer sig, String name ,Integer... input){
-		System.out.print( name+" :: " );
 		if ( sig==null ) {
 			return null;
 		}else if ( sig < input.length) {
