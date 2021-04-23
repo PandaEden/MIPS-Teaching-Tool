@@ -1,4 +1,4 @@
-package model;
+package model.instr;
 
 import _test.Tags;
 import _test.TestLogs;
@@ -26,8 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tag ( Tags.OUT )
 @DisplayName ( Tags.Pkg.MOD + " : " +Tags.INSTR + " : " + Tags.EX + " Test " )
 class InstructionTest {
-	private static final Integer PC=0x004000C8; // set PC to instr index #51
-	private static final String _PC=Convert.int2Hex( PC );
+	private static final int base_PC=InstrMemory.BASE_INSTR_ADDRESS;
 	private static final HashMap<Integer, Double> data=new HashMap<>( );
 	private static final HashMap<String, Integer> labelMap=InstrProvider.labelsMap;
 	private static final int[] values=new int[ 32 ];
@@ -52,16 +51,16 @@ class InstructionTest {
 	@ArgumentsSource(InstrProvider.NO_OPS.class)
 	void Exit_Execution (String opcode) {
 		// Build
-		Instruction ins=new Nop(opcode);
-		// Execute
+		Instruction ins=new Nop( opcode);
+		// Execution
 		Instr.assembleAndExecute_newPC(null, ins );
 		// Output
-		testLogs_ex.exit_output( _PC, opcode );
+		testLogs_ex.exit_output( base_PC, opcode );
 	}
 	
 	@Test
 	void Undefined_Instruction_ThrowsException_At_Runtime ( ) {
-		assertThrows(IllegalArgumentException.class, ()-> new R_Type("panda", 0,0,0 ));
+		assertThrows(IllegalArgumentException.class, ()-> new R_Type( "panda", 0, 0, 0 ));
 	}
 	
 	@Nested
@@ -75,12 +74,12 @@ class InstructionTest {
 			// - Expect after addition, Register # 5 will have the value 60 = (25+35)
 			// Build
 			Instruction ins=new R_Type( "add",6, 7, 5 );
-			//Execute
+			//Execution
 			Instr.assembleAndExecute_incPC( ins );
 			// Result
 			assertEquals( 60, values[ 5 ] );
 			// Output
-			testLogs_ex.R_output(_PC, "add", 6, 25, 7, 35, 5, 60);
+			testLogs_ex.R_output( base_PC, "add", 6, 25, 7, 35, 5, 60,"+");
 		}
 		
 		@Test
@@ -92,12 +91,12 @@ class InstructionTest {
 			// - Expect after subtraction, Register #16 will have the value -4750 = (5000-78)
 			// Build
 			Instruction ins=new R_Type("sub",20, 24, 16 );
-			// Execute
+			// Execution
 			Instr.assembleAndExecute_incPC( ins );
 			// Result
 			assertEquals( -4750, values[ 16 ] );
 			// Output
-			testLogs_ex.R_output(_PC, "sub", 20, 250, 24, 5000, 16, -4750);
+			testLogs_ex.R_output( base_PC, "sub", 20, 250, 24, 5000, 16, -4750,"-");
 			
 		}
 		
@@ -121,12 +120,12 @@ class InstructionTest {
 			// Build
 			Instruction ins=new I_Type( "addi", 30, 1, -400 );
 			assertNotNull( ins );
-			// Execute
+			// Execution
 			Instr.assembleAndExecute_incPC( ins );
 			// Result
 			assertEquals( -150, values[ 1 ] );
 			// Output
-			testLogs_ex.I_output( _PC, "addi", 30, 250, 1, -150, -400 );
+			testLogs_ex.I_output( base_PC, "addi", 30, 250, 1, -150, -400,"+");
 		}
 	}
 	
@@ -143,12 +142,12 @@ class InstructionTest {
 			// Build
 			Instruction ins=new MemAccess( "lw", 1, "data" );
 			assertNotNull( ins );
-			// Execute
+			// Execution
 			Instr.assembleAndExecute_incPC( ins );
 			// Result
 			assertEquals( 20, values[ 1 ] );
 			// Output
-			testLogs_ex.load_output( _PC, 0, 0, addr, 1, 20);
+			testLogs_ex.load_output( base_PC, 0, 0, addr, 1, 20);
 		}
 		
 		@Test
@@ -164,12 +163,12 @@ class InstructionTest {
 			Instruction ins=new MemAccess( "lw", 30, 1, imm );
 			// RS_val + Imm should give the correct address.
 			assertNotNull( ins );
-			// Execute
+			// Execution
 			Instr.assembleAndExecute_incPC( ins );
 			// Result
 			assertEquals( 200, values[ 1 ] );
 			// Output
-			testLogs_ex.load_output( _PC, 30, values[ 30 ], imm, 1, 200);
+			testLogs_ex.load_output( base_PC, 30, values[ 30 ], imm, 1, 200);
 			
 		}
 		
@@ -183,12 +182,12 @@ class InstructionTest {
 			// Build
 			Instruction ins=new MemAccess( "sw", 30, "data" );
 			assertNotNull( ins );
-			// Execute
+			// Execution
 			Instr.assembleAndExecute_incPC( ins );
 			// Results
 			assertEquals( 250, data.get( 0 ) ); // value at address has changed to expected value
 			// Output
-			testLogs_ex.store_output( _PC, 0, 0, addr, 30, 250);
+			testLogs_ex.store_output( base_PC, 0, 0, addr, 30, 250);
 			
 		}
 		@Test
@@ -199,11 +198,12 @@ class InstructionTest {
 			// Build
 			Instruction ins=new MemAccess( "lw", 1, label );
 			assertNotNull( ins );
-			// Execute -> Errors
+			// Execution -> Errors
 			Instr.failAssemble_andExecuteThrows( ins );
 			// Output
 			testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Data", addr, "Supported" ) );
 			testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Data" ) );
+			testLogs_ex._fetching( base_PC );
 		}
 		@ParameterizedTest ( name="[{index}] LW_Execution with Instr-Label" )
 		@ValueSource ( strings={ "instr", "instr_top" } )
@@ -213,11 +213,12 @@ class InstructionTest {
 			// Build
 			Instruction ins=new MemAccess( "lw", 1, label );
 			assertNotNull( ins );
-			// Execute -> Errors
+			// Execution -> Errors
 			Instr.failAssemble_andExecuteThrows( ins );
 			// Output
 			testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Data", addr, "Valid" ) );
 			testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Data" ) );
+			testLogs_ex._fetching( base_PC );
 		}
 		@Test
 		void Invalid_MEM_Execution_BassOffset_OutOfBounds ( ) {
@@ -232,14 +233,12 @@ class InstructionTest {
 			Instruction ins=new MemAccess( "lw",  30, 1, imm );
 			// RS_val + Imm should give the correct address.
 			assertNotNull( ins );
-			// Execute
+			// Execution
 			Instr.assembleAndExecute_Throws(IndexOutOfBoundsException.class, ins);
 			// Result
 			assertEquals( 0, values[ 1 ] );	// Not Modified
 			// Output
-			testLogs_ex.decode( _PC, "lw", "IMMEDIATE" );
-			testLogs_ex.rb_read( values[ 30 ], 30 );
-			testLogs_ex.imm_cal_addr( imm, values[ 30 ], addr );
+			testLogs_ex.load_output_before_exception( base_PC, 30, values[30], imm, addr );
 			// Output cut off by exception
 		}
 		@Test
@@ -255,14 +254,12 @@ class InstructionTest {
 			Instruction ins=new MemAccess( "lw", 30, 1, imm  );
 			// RS_val + Imm should give the correct address.
 			assertNotNull( ins );
-			// Execute
+			// Execution
 			Instr.assembleAndExecute_Throws(IllegalArgumentException.class, ins);
 			// Result
 			assertEquals( 0, values[ 1 ] );	// Not Modified
 			// Output
-			testLogs_ex.decode( _PC, "lw", "IMMEDIATE" );
-			testLogs_ex.rb_read( values[ 30 ], 30 );
-			testLogs_ex.imm_cal_addr( imm, values[ 30 ], addr );
+			testLogs_ex.load_output_before_exception( base_PC, 30, values[30], imm, addr);
 			// Output cut off by exception
 		}
 		
@@ -278,10 +275,10 @@ class InstructionTest {
 			// Build
 			Instruction ins=new J_Type( "j", "instr" );
 			assertNotNull( ins );
-			// Execute & Result
+			// Execution & Result
 			Instr.assembleAndExecute_newPC( addr, ins );
 			// Output
-			testLogs_ex.J_output( _PC, addr/4);
+			testLogs_ex.J_output( base_PC, addr/4);
 		}
 		
 		@Test
@@ -290,24 +287,23 @@ class InstructionTest {
 			int addr=0x00400014; // index 21
 			Instruction ins=new J_Type( "j", addr/4 );
 			assertNotNull( ins );
-			// Execute & Result
+			// Execution & Result
 			Instr.assembleAndExecute_newPC( addr, ins );
 			// Output
-			testLogs_ex.J_output( _PC, addr/4);
+			testLogs_ex.J_output( base_PC, addr/4);
 		}
 		@Test
-		@DisplayName ( "Instruction JumpAndLink" )
-		void instructionTestJumpAndLink ( ) {
+		void JumpAndLink_Execution_Label  ( ) {
 			// Setup
 			String label="instr";
 			int addr=labelMap.get( label );
 			// Build
 			Instruction ins=new J_Type( "jal",  label );
 			assertNotNull( ins );
-			// Execute & Result
+			// Execution & Result
 			Instr.assembleAndExecute_newPC( addr, ins );
 			// Output
-			testLogs_ex.jal_output( _PC, addr/4);
+			testLogs_ex.jal_output( base_PC, addr/4);
 		}
 		
 		@Test
@@ -318,11 +314,12 @@ class InstructionTest {
 			// Build
 			Instruction ins=new J_Type( "j",  label );
 			assertNotNull( ins );
-			// Execute -> Errors
+			// Execution -> Errors
 			Instr.failAssemble_andExecuteThrows( ins );
 			// Output
 			testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Instruction", addr, "Supported" ) );
 			testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Instruction" ) );
+			testLogs_ex._fetching( base_PC );
 		}
 		@ParameterizedTest ( name="[{index}] Jump_Execution with Data-Label" )
 		@ValueSource ( strings={ "data", "data_top" } )
@@ -332,11 +329,12 @@ class InstructionTest {
 			// Build
 			Instruction ins=new J_Type( "j", label );
 			assertNotNull( ins );
-			// Execute -> Errors
+			// Execution -> Errors
 			Instr.failAssemble_andExecuteThrows( ins );
 			// Output
 			testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Instruction", addr, "Valid" ) );
 			testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Instruction" ) );
+			testLogs_ex._fetching( base_PC );
 		}
 		
 		@Test
@@ -346,10 +344,10 @@ class InstructionTest {
 			// Build
 			Instruction ins=new J_Type( "jal", addr/4 );
 			assertNotNull( ins );
-			// Execute & Result
+			// Execution & Result
 			Instr.assembleAndExecute_newPC( addr, ins );	// NPC = Addr
 			// Output
-			testLogs_ex.jal_output( _PC, addr/4 );
+			testLogs_ex.jal_output( base_PC, addr/4 );
 			// Exception is thrown when trying to retrieve the address from the InstrMemory
 			InstrMemory instrMemory = new InstrMemory( new ArrayList<>(), testLogs.actualExecution);
 			assertThrows(IndexOutOfBoundsException.class, ()->instrMemory.InstructionFetch(addr) );
@@ -362,7 +360,7 @@ class InstructionTest {
 		 <p> and the returned PC, matches the PC+4
 		 */
 		private static void assembleAndExecute_incPC (Instruction ins) {
-			assembleAndExecute_newPC( PC + 4, ins );    //NPC = PC+4
+			assembleAndExecute_newPC( 0x00400004, ins );    //NPC = PC+4
 		}
 		/**
 		 For a given instruction, Tests: It assembles -> Then Executes without errors.
@@ -370,7 +368,7 @@ class InstructionTest {
 		 */
 		private static void assembleAndExecute_newPC (Integer newPC, Instruction ins) {
 			assertTrue( ins.assemble( errors, labelMap ) );
-			assertEquals( newPC, testLogs_ex.execute( PC, ins) );
+			assertEquals( newPC, testLogs_ex.pipeline( ins) );
 		}
 		/**
 		 For a given instruction, Tests: It Fails assembly ->
@@ -378,7 +376,7 @@ class InstructionTest {
 		 */
 		private static void failAssemble_andExecuteThrows (Instruction ins) {
 			assertFalse( ins.assemble( errors, labelMap ) );
-			assertThrows( IllegalStateException.class, ( ) -> testLogs_ex.execute( PC, ins ) );
+			assertThrows( IllegalStateException.class, ( ) -> testLogs_ex.pipeline( ins ) );
 		}
 		/**
 		 For a given instruction, Tests: It assembles ->
@@ -387,7 +385,7 @@ class InstructionTest {
 		 */
 		private static <T extends Throwable> void assembleAndExecute_Throws (Class<T> exception, Instruction ins) {
 			assertTrue( ins.assemble( errors, labelMap ) );
-			assertThrows( exception, ( ) -> testLogs_ex.execute( PC, ins) );
+			assertThrows( exception, ( ) -> testLogs_ex.pipeline( ins ) );
 		}
 	}
 	

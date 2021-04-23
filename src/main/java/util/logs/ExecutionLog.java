@@ -7,5 +7,11 @@ public class ExecutionLog extends Logger {
 		super( "Execution", logs );
 	}
 	
+	public String toStringAndClear(){
+		String temp = toString();
+		clear();
+		return temp;
+	}
+	
 	// TODO Add Line Information
 }

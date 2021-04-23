@@ -3,13 +3,12 @@ package model.components;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import util.Convert;
 import util.Util;
 import util.ansi_codes.Color;
-import util.validation.AddressValidation;
-import util.Convert;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
-import util.validation.InstructionValidation;
+import util.validation.AddressValidation;
 
 import java.util.HashMap;
 
@@ -31,7 +30,7 @@ public class DataMemory {
 	public static final int BASE_DATA_ADDRESS=0x10010000;
 	public static final int OVER_SUPPORTED_DATA_ADDRESS=BASE_DATA_ADDRESS + (MAX_DATA_ITEMS)*DATA_ALIGN;
 	public static final int OVER_DATA_ADDRESS=0x10040000;
-	private final String NAME= Color.fmt( Color.DM, "DataMemory");
+	private final String NAME= "\t"+Color.fmt( Color.DM, "DataMemory");
 	private final HashMap<Integer, Double> data;
 	private final ExecutionLog executionLog;
 	

@@ -7,6 +7,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 import model.MemoryBuilder;
 import model.components.DataMemory;
 import model.components.InstrMemory;
+import model.instr.Instruction;
 
 import util.Convert;
 import util.Util;
@@ -176,7 +177,6 @@ public class Parser {
 		}
 		
 		errorFn="File: \"" + filename + "\", ";
-		File rtn=null;
 		try {
 			File temp=new File( filename );
 			
@@ -191,12 +191,20 @@ public class Parser {
 			if ( !temp.exists( ) ) this.errorLog.appendEx( errorFn + "Does Not Exist" );
 			else if ( !temp.isFile( ) ) this.errorLog.appendEx( errorFn + "Is Not a File" );
 			else if ( !temp.canRead( ) ) this.errorLog.appendEx( errorFn + "Can Not Be Read" );
-			else rtn=temp;
+			else { // Check file Extension
+				if ( filename.contains( "." ) ) {
+					String[] split=filename.split( "\\." );
+					String ext=split[ 1 ];
+					if ( ext!=null && (ext.equals( "s" ) || ext.equals( "asm" ) || ext.equals( "txt" )) )
+						return temp;
+				}
+				this.errorLog.appendEx( errorFn + "Not Valid File Extension (needs to be one of *.s|*.asm|*.txt)" );
+			}
 		} catch ( IOException e ) {
-			errorLog.appendEx( errorFn + "Not Valid FileName" );
+			this.errorLog.appendEx( errorFn + "Not Valid FileName" );
 			// File is invalid,   rtn is null by default
 		}
-		return rtn;
+		return null;
 	}
 	
 	/**
@@ -323,7 +331,7 @@ public class Parser {
 	 
 	 @return success of assembly.
 	 */
-	public ArrayList<model.Instruction> assemble() {
+	public ArrayList<Instruction> assemble() {
 		return mb.assembleInstr( errorLog );
 	}
 	

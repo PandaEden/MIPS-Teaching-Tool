@@ -28,6 +28,7 @@ public class Color {    // Static Class Constructor preventing 100% Coverage
 	public static final String RB_WRITE=csi(BLUE);
 	public static final String DATA_READ=csi(GREEN);
 	public static final String DATA_WRITE=csi(BLUE);
+	
 	public static final String DM=underline(csi(BLUE));
 	public static final String RB=underline(csi(GREEN));
 	
@@ -48,6 +49,17 @@ public class Color {    // Static Class Constructor preventing 100% Coverage
 		return string.isBlank( ) ? string :
 			   ((Color.colorSupport) ? (ansi + string + RESET) : string);
 	}
+	public static String fmt (int color, @NotNull String string) {
+		return string.isBlank( ) ? string :
+			   ((Color.colorSupport) ? (csi( color ) + string + RESET) : string);
+	}
+	public static String fmtTitle(int color, String txt){
+		return Color.fmt(Color.doubleUnderline( Color.bold(Color.csi(Color.bright(color)))), txt );
+	}
+	public static String fmtUnder(String txt){
+		return Color.fmt(Color.underline( Color.RESET ), txt );
+	}
+	
 	// Bright & Bold are often displayed the same
 	
 	/**ANSI Color Code Modifier: BackGround*/
@@ -100,5 +112,6 @@ public class Color {    // Static Class Constructor preventing 100% Coverage
 			}
 		}
 		System.out.print( fmt( ERR_LOG, " ERR" ) + fmt( WARN_LOG, " WARN" ) + fmt( RB, " RB" ) + fmt( DM, " DM" ) );
+		System.out.print( fmtTitle( RED,"\nTitle" )+fmtUnder( "Under" ));
 	}
 }

@@ -5,16 +5,21 @@ import _test.Tags.Pkg;
 import _test.TestLogs;
 import _test.TestLogs.FMT_MSG;
 import _test.providers.*;
-import _test.providers.InstrProvider.*;
+import _test.providers.InstrProvider.I;
+import _test.providers.InstrProvider.J;
+import _test.providers.InstrProvider.NO_OPS;
+import _test.providers.InstrProvider.RD_RS_RT;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import model.*;
-import model.Instruction.Type;
+import model.DataType;
+import model.instr.Instruction;
+import model.instr.Instruction.Type;
+import model.instr.J_Type;
+import model.instr.Nop;
 
-import util.Util;
 import util.logs.ErrorLog;
 
 import java.util.Arrays;
@@ -35,8 +40,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tag ( Pkg.UTIL )
 @Tag ( Pkg.VALID )
 @Tag ( Tags.INSTR )
-@DisplayName ( Pkg.UTIL + " : " + Pkg.VALID + " : " + Tags.INSTR + " Test" )
-public class ValidateInstructionsTest {
+@DisplayName ( Pkg.UTIL + " : " + Tags.INSTR + " : " + Pkg.VALID + " Test" )
+public class InstructionValidationTest {
 	
 	private static final TestLogs testLogs=new TestLogs( );
 	private static ErrorLog expectedErrs;
@@ -139,7 +144,7 @@ public class ValidateInstructionsTest {
 				assertNotNull(ins);
 				assertAll(
 						( ) -> assertTrue( ins.assemble( errLog, LABELS_MAP ) ),
-						( ) -> assertEquals( ins.getImmediate( ), postAssembleAddr )
+						( ) -> assertEquals( postAssembleAddr, ins.getImmediate() )
 				);
 			}
 			
@@ -167,24 +172,29 @@ public class ValidateInstructionsTest {
 			
 			/** {@link IllegalArgumentException} */
 			private void assertIMMEDIATE_Equals_AndAssembles (Instruction ins, String opcode,
-															  Integer imm, int rs, int rt) {
-				assertNotNull_InsEquals( ins, opcode, Type.IMMEDIATE, imm, 0, rs, rt);
+															  Integer imm, Integer rs, Integer rt) {
+				assertNotNull_InsEquals( ins, opcode, Type.IMMEDIATE, imm, null, rs, rt);
 				assertAssemblesSuccessfully(ins, imm);
 			}
 			/** {@link IllegalStateException} */
-			private void assertREGISTER_Equals_AndAssembles (Instruction ins, String opcode, int rd, int rs, int rt) {
-				assertNotNull_InsEquals( ins, opcode, Type.REGISTER, 0, rd, rs, rt );
-				assertAssemblesSuccessfully(ins, 0);
+			private void assertREGISTER_Equals_AndAssembles (Instruction ins, String opcode, Integer rd, Integer rs, Integer rt) {
+				assertNotNull_InsEquals( ins, opcode, Type.REGISTER, null, rd, rs, rt );
+				assertAssemblesSuccessfully(ins, null);
 			}
 			
-			private void assertNotNull_InsEquals (Instruction ins, String opcode, Type type, Integer imm, int rd, int rs, int rt) {
+			private void assertNotNull_InsEquals (Instruction ins, String opcode, Type type, Integer imm, Integer rd, Integer rs, Integer rt) {
 				assertNotNull( ins );
 				assertEquals( "Instruction{ opcode= '"+opcode+"', type= " + type + ", RD= " + rd + ", RS= " + rs + ", RT= " + rt +
 							 ", IMM= " + imm+" }", ins.toString() );
 			}
-			private void assertNotNull_InsEquals (Instruction ins, String opcode, Type type, int rt, String label) {
+			private void assertNotNull_InsEquals_Jump (Instruction ins, String opcode, Type type, String label) {
 				assertNotNull( ins );
-				assertEquals( "Instruction{ opcode= '" + opcode + "', type= " + type + ", RD= 0, RS= 0, RT= "+rt
+				assertEquals( "Instruction{ opcode= '" + opcode + "', type= " + type + ", RD= null, RS= null, RT= null"
+							  +", IMM= null, label= '" + label + "' }", ins.toString() );
+			}
+			private void assertNotNull_InsEquals_Mem (Instruction ins, String opcode, Type type, Integer rt, String label) {
+				assertNotNull( ins );
+				assertEquals( "Instruction{ opcode= '" + opcode + "', type= " + type + ", RD= null, RS= 0, RT= "+rt
 							  +", IMM= null, label= '" + label + "' }", ins.toString() );
 			}
 				/** asserts the list of registers are not Recognised */
@@ -323,8 +333,8 @@ public class ValidateInstructionsTest {
 			@ArgumentsSource ( NO_OPS.class )
 			void assemble_ValidOperands (String opcode) {
 				Instruction ins=ValidateInstr.splitValidOperands( 12, opcode, " " );
-				expect.assertNotNull_InsEquals( ins, opcode, Type.NOP, 0, 0, 0, 0 );
-				expect.assertAssemblesSuccessfully(ins, 0);
+				expect.assertNotNull_InsEquals( ins, opcode, Type.NOP, null, null,null, null );
+				expect.assertAssemblesSuccessfully(ins, null);
 			}
 			
 			@Test
@@ -461,11 +471,11 @@ public class ValidateInstructionsTest {
 					@ArgumentsSource ( I.RT_MEM.class )
 					void assemble_ValidOperands_Label (String opcode) {
 						Instruction ins=ValidateInstr.splitValidOperands( 12, opcode, "$9, data" );
-						expect.assertNotNull_InsEquals( ins, opcode, Type.IMMEDIATE, 9, "data" );
+						expect.assertNotNull_InsEquals_Mem( ins, opcode, Type.IMMEDIATE, 9, "data" );
 						expect.assertAssemblesSuccessfully( ins, 0x10010000 );
 						//MAX
 						Instruction ins1=ValidateInstr.splitValidOperands( 12, opcode, "r2, data_top" );
-						expect.assertNotNull_InsEquals( ins1, opcode, Type.IMMEDIATE, 2, "data_top" );
+						expect.assertNotNull_InsEquals_Mem( ins1, opcode, Type.IMMEDIATE, 2, "data_top" );
 						expect.assertAssemblesSuccessfully( ins1, 0x100107F8 );
 					}
 					
@@ -543,7 +553,7 @@ public class ValidateInstructionsTest {
 					void NonData_Label (String opcode) {
 						for ( String label : InstrProvider.KeysExcluding( "data","data_top" ) ) {
 							Instruction ins=ValidateInstr.splitValidOperands( 12, opcode, "$2," + label );
-							expect.assertNotNull_InsEquals( ins, opcode, Type.IMMEDIATE, 2, label );
+							expect.assertNotNull_InsEquals_Mem( ins, opcode, Type.IMMEDIATE, 2, label );
 							expect.assertFailAssemble_LabelPtr( ins, label );
 						}
 					}
@@ -553,7 +563,7 @@ public class ValidateInstructionsTest {
 					void LabelNotFound_ZWW (String opcode) {
 						Instruction ins=ValidateInstr.splitValidOperands( 30, opcode, "$0, panda" );
 						
-						expect.assertNotNull_InsEquals( ins, opcode, Type.IMMEDIATE, 0, "panda" );
+						expect.assertNotNull_InsEquals_Mem( ins, opcode, Type.IMMEDIATE, 0, "panda" );
 						expect.assertFailAssemble_LabelPtr( ins, "panda" );
 						if ( InstructionValidation.I_MEM_WRITE.contains( opcode ) )
 							testLogs.zeroWarning( 30, "$0" );
@@ -702,7 +712,7 @@ public class ValidateInstructionsTest {
 				@ArgumentsSource ( J.class )
 				void assemble_ValidOperands_Label (String opcode) {
 					Instruction ins=ValidateInstr.splitValidOperands( 60, opcode, "instr" );
-					expect.assertNotNull_InsEquals( ins, opcode, Type.JUMP, 0, "instr");
+					expect.assertNotNull_InsEquals_Jump( ins, opcode, Type.JUMP, "instr");
 					expect.assertAssemblesSuccessfully( ins, 0x00400000/4);
 					//MAX
 					Instruction ins1=ValidateInstr.splitValidOperands( 60, opcode, "instr_top" );
@@ -716,19 +726,19 @@ public class ValidateInstructionsTest {
 					@ArgumentsSource ( J.class )
 					void assemble_ValidOperands_Imm (String opcode) {
 						Instruction ins=ValidateInstr.splitValidOperands( 0, opcode, "1048576" );
-						expect.assertNotNull_InsEquals( ins, opcode, Type.JUMP, 1048576,0,0,0);
+						expect.assertNotNull_InsEquals( ins, opcode, Type.JUMP, 1048576,null,null, null);
 						//MAX
 						Instruction ins1=ValidateInstr.splitValidOperands( 0, opcode, "1310720" );
-						expect.assertNotNull_InsEquals( ins1, opcode, Type.JUMP, 1310720,0,0,0);
+						expect.assertNotNull_InsEquals( ins1, opcode, Type.JUMP, 1310720,null,null, null);
 					}
 					@ParameterizedTest ( name="Valid {index} - opcode\"{0}\", Jump_Type :: Hex" + TA )
 					@ArgumentsSource ( J.class )
 					void assemble_ValidOperands_Hex (String opcode) {
 						Instruction ins=ValidateInstr.splitValidOperands( 0, opcode, "0x00100000" );
-						expect.assertNotNull_InsEquals( ins, opcode, Type.JUMP, 1048576, 0,0, 0);
+						expect.assertNotNull_InsEquals( ins, opcode, Type.JUMP, 1048576, null,null, null);
 						//MAX
 						Instruction ins1=ValidateInstr.splitValidOperands( 0, opcode, "0x00140000" );
-						expect.assertNotNull_InsEquals( ins1, opcode, Type.JUMP, 1310720, 0,0, 0);
+						expect.assertNotNull_InsEquals( ins1, opcode, Type.JUMP, 1310720, null,null, null);
 					}
 					
 				}
@@ -778,7 +788,7 @@ public class ValidateInstructionsTest {
 				void NonData_Label (String opcode) {
 					for ( String label : InstrProvider.KeysExcluding( "instr","instr_top" ) ) {
 						Instruction ins=ValidateInstr.splitValidOperands( 12, opcode, label );
-						expect.assertNotNull_InsEquals( ins, opcode, Type.JUMP, 0, label );
+						expect.assertNotNull_InsEquals_Jump( ins, opcode, Type.JUMP, label );
 						expect.assertFailAssemble_LabelPtr( ins, label );
 					}
 				}

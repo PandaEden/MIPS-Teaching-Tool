@@ -6,6 +6,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import util.Convert;
+import util.ansi_codes.Color;
 import util.logs.ExecutionLog;
 
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ class DataMemoryTest {
 	
 	@BeforeAll
 	static void setUp() {
+		Color.colorSupport=false;
 		data=new HashMap<>( );
 		dataMemory=new DataMemory( data, log );
 		random=new Random( );
@@ -39,6 +41,7 @@ class DataMemoryTest {
 		log.clear( );
 	}
 	
+	private static final String PREFIX="Execution:\n\t\tDataMemory:\t" ;
 	//TODO change Get&Set to float, and test with margin of error
 	//TODO make Covert helper method for converting between float/int
 	
@@ -60,7 +63,7 @@ class DataMemoryTest {
 		
 		assertAll(
 				() -> assertTrue( dataMemory.writeData( address, inputData ) ),
-				() -> assertEquals( "Execution:\n\tDataMemory:\t" + "Writing Value[" + inputData
+				() -> assertEquals( PREFIX + "Writing Value[" + inputData
 									+ "]\tTo Memory Address[" + Convert.int2Hex( address ) + "]!\n", log.toString( ) ),
 				//check set index has changed.
 				() -> assertEquals( inputData, data.get( index ), DELTA ),
@@ -70,7 +73,7 @@ class DataMemoryTest {
 		log.clear( );
 		
 		assertEquals( inputData, dataMemory.readData( address ) );
-		assertEquals( "Execution:\n\tDataMemory:\t" + "Reading Value[" + inputData
+		assertEquals( PREFIX+ "Reading Value[" + inputData
 					  + "]\tFrom Memory Address[" + Convert.int2Hex( address ) + "]!\n", log.toString( ) );
 		
 		//check other indexes are not changed.
@@ -89,7 +92,7 @@ class DataMemoryTest {
 		assertAll(
 				//writeData null value	-> NoAction
 				() -> assertFalse( dataMemory.writeData( (int) 0x10000000L, null ) ),
-				() -> assertEquals( "Execution:\n\tDataMemory:\tNo Action!\n", log.toString( ) ),
+				() -> assertEquals( PREFIX+"No Action!\n", log.toString( ) ),
 				
 				// Invalid Address Range
 				//Below valid data address, writeData
@@ -164,7 +167,7 @@ class DataMemoryTest {
 	@Tag( Tags.OUT )
 	void No_Action () {
 		dataMemory.noAction( );	// Also clears the previously, last written/read
-		assertEquals( "Execution:\n\tDataMemory:\t" + "No Action!\n", log.toString( ) );
+		assertEquals( PREFIX+ "No Action!\n", log.toString( ) );
 	}
 
 

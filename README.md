@@ -221,6 +221,22 @@ The current build executes a very basic model and Jump instructions update the P
 
 >  **! This behaviour is expected to change in the next build!**
 
+## Control Signals
+
+| **Destination** {0-2} | If RD/ RT or fixed value $31 is selected to write to         |
+| --------------------- | ------------------------------------------------------------ |
+| **ALUSrc1** {0-1}     | AIR1 or NPC                                                  |
+| **ALUSrc2** {0-1}     | AIR2  or Immediate Value                                     |
+| ALUOp {0-7}           | Arithmetic Operation to perform.   NOP - No Operation, passes Input1 through |
+| **Memory** {0-1}      | Memory Action: Read/Write  {Load to LMDR/ Store from SVR}    |
+| **MemToReg** {0-1}    | If Memory Output (LMDR) or AOR is forwarded to Register Bank Write (Data) |
+| **PCWrite** {0-1}     | Value PC is updated to, NPC or Immediate Value (Left Shifted 2) |
+
+- **AIR**: ALU Input Register == RegisterBank Output
+- **LMDR**: Load Memory Data Register
+- **SVR**: Store Value Register (Data from RT)
+- **NPC**: Next Program Counter (PC+4)
+
 # End of User Manual
 
 ## Error/Warning messages:

@@ -20,7 +20,7 @@ public class RegisterBank {
 	public static boolean fmtUpperCase=true;
 	private final int[] registers;
 	private final ExecutionLog executionLog;
-	private final String NAME=Color.fmt( Color.RB, "RegisterBank" );
+	private final String NAME="\t"+Color.fmt( Color.RB, "RegisterBank" );
 	private Integer LAST_READ0=null;
 	private Integer LAST_READ1=null;
 	
@@ -40,9 +40,10 @@ public class RegisterBank {
 	/**
 	 Reads the data of the register at the given index, Returns 0 for null input.
 	 
-	 @see #read(Integer, Integer) 
+	 @see #read(Integer, Integer)
 	 @throws IndexOutOfBoundsException if register index out of bounds.
 	 */
+	@Deprecated
 	public int read (@Nullable Integer index) throws IndexOutOfBoundsException {
 		return read( index, null )[0];
 	}
