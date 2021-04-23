@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ParserTest {
 	private static final String TEST_RESOURCES_DIR="src" + File.separator + "test" + File.separator + "resources" + File.separator;
+	private static final String TEST_RESOURCES_FILE_DIR=TEST_RESOURCES_DIR + "file" + File.separator;
 	
 	private static Parser parser;
 	private static MemoryBuilder mb;
@@ -58,8 +59,7 @@ class ParserTest {
 	}
 	
 	@Test
-	@DisplayName ( "static variables are correct" )
-	void staticVars ( ) {
+	void static_Vars_are_correct ( ) {
 		assertAll(    // Alt+F7 : Find Usages
 					  //Data
 					  ( ) -> assertEquals( 512, Parser.MAX_LINES ),
@@ -97,12 +97,10 @@ class ParserTest {
 	}
 	
 	@Nested
-	@DisplayName ( "File Tests" )
-	class FileTests {
+	class File_Tests {
 		
 		@Test
-		@DisplayName ( "File Does Not Exist!" )
-		void fileDoesNotExist ( ) {
+		void File_Does_Not_Exist ( ) {
 			File temp=new File( TEST_RESOURCES_DIR + "Not_Actual_File" );
 			assertFalse( temp.exists( ) ); // If the File exists, test is invalid
 			
@@ -111,18 +109,23 @@ class ParserTest {
 		}
 		
 		@Test
-		@DisplayName ( "Default Filename For Blank FileName" )
-		void defaultFilenameForBlankFileName ( ) {
+		void Default_Filename_For_Blank_FileName ( ) {
 			assertEquals( "FileInput.s", parser.loadFile( " " ).getName( ) );
 			testLogs.expectedWarnings.append( "Filename Not Provided, Using Default File: \"FileInput.s\"" );
 		}
 		
 		@SuppressWarnings ( "SpellCheckingInspection" )
 		@Test
-		@DisplayName ( "File Over MAX Lines" )
-		void fileOverMaxLines ( ) {
-			assertFalse( parser.parseFile( parser.loadFile( TEST_RESOURCES_DIR + "FileOver30Klines.s" ) ) );
+		void File_Over_MaxLines ( ) {
+			assertFalse( parser.parseFile( parser.loadFile( TEST_RESOURCES_FILE_DIR + "FileOver30Klines.s" ) ) );
 			expected.appendEx( "File: \"FileOver30Klines.s\", Has Too Many Lines!, Max Lines = [512]" );
+		}
+		
+		@ParameterizedTest ( name="[{index}] FileName[{arguments}] Not Valid Extension" )
+		@ValueSource ( strings={ "file.panda", "file.jpeg", "file.pdf", "file.tar.s" } )
+		void Invalid_FileExtension (String text) {
+			nullObjectErrors( parser.loadFile( TEST_RESOURCES_FILE_DIR+text ),
+							  "File: \"" + text + "\", Not Valid File Extension (needs to be one of *.s|*.asm|*.txt)" );
 		}
 		
 		@ParameterizedTest ( name="[{index}] FileName[{arguments}] Not Valid" )
@@ -135,7 +138,6 @@ class ParserTest {
 		
 		@Test
 		@Disabled	// Manually Tested on Ubuntu (WSL)
-		@DisplayName ( "File Not Accessible /NotReadable" )
 		void File_NotAccessible ( ) {
 			// Tried creating a file on the system without Read Permission, This made it think it was a non-valid file?
 			// Run test if platform is not Windows
