@@ -69,7 +69,7 @@ public class InstrMemory {
 		} else { // index >256
 			executionLog.appendEx(
 					Color.fmt( Color.WARN_LOG,
-							   "\tRun Over Provided Instructions -- Auto Exit "  )
+							   "\tRun Over Provided Instructions -- Auto Exit"  )
 			);
 			return autoExit;
 		}

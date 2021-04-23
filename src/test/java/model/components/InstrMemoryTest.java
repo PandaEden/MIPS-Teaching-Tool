@@ -71,15 +71,12 @@ class InstrMemoryTest {
 	void InstructionFetch_Supported_OverBounds() {
 		// Actual
 		Instruction ins = instrMemory.InstructionFetch(0x00500000 );
-		// Pre-Assembled
-		ins.execute(0x00500000, dm, rm, testLogs.actualExecution );
-		
-		// Expected Pre Assembled Exit Instruction
+		// Pre-Assembled // Expected Pre Assembled Exit Instruction
 		Instruction expected = new Nop("exit");
 		expected.assemble( testLogs.expectedErrors, new HashMap<>() );
-		testLogs.expectedExecution.append( "Fetching Instruction At Address [0x00500000]" );
-		testLogs.expectedExecution.appendEx( "\tRun Over Provided Instructions" );
-		expected.execute(0x00500000, dm, rm, testLogs.expectedExecution );
+		testLogs.expectedExecution.append( "Fetching: Instruction At Address [0x00500000]" );
+		testLogs.expectedExecution.appendEx( "\tRun Over Provided Instructions -- Auto Exit" );
+		assertEquals(ins, expected);
 	}
 	
 	@ParameterizedTest (name = "[{index}] == InstructionFetch - Invalid Address[{arguments}] :: Not Supported")

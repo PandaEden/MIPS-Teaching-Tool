@@ -1,17 +1,18 @@
-import org.junit.jupiter.api.*;
 import _test.TestLogs.FMT_MSG;
+import _test.TestSysOut;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 
-import util.ansi_codes.Color;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class MainTest {
 	private static final String TEST_RESOURCES_DIR="src" + File.separator + "test" + File.separator + "resources" + File.separator;
@@ -20,25 +21,21 @@ class MainTest {
 	private static final String EX_COMPLETE = "Execution Complete!\n";
 	private static final String END_WITH_ERRORS = "Execution Ended With Errors!\n";
 	
-	// Setup - redirecting Standard Output
-	private static final PrintStream standardOut=System.out;
-	private static final ByteArrayOutputStream outputStreamCaptor=new ByteArrayOutputStream( );
+	private static TestSysOut sysOut;
 	
 	@BeforeEach
 	void setUp ( ) {
-		Color.colorSupport=false;
-		System.setOut( new PrintStream( outputStreamCaptor ) );
+		sysOut = new TestSysOut();
 	}
 	@AfterEach
 	void tearDown ( ) {
-		// Restore original System.Out
-		System.setOut( standardOut );
+		sysOut.close();
 	}
 	
 	void compareWithSystemOut(StringBuilder sb){
-		String actual = outputStreamCaptor.toString( ).trim().replace("\r","")+"\n";
+		String actual =sysOut.toString().trim().replace( "\r", "") + "\n";
 		assertEquals( sb.toString(), actual );
-		outputStreamCaptor.reset();
+		sysOut.close();
 	}
 	
 	@Test
@@ -48,6 +45,7 @@ class MainTest {
 		HashMap<Integer, Double> data = new HashMap<>();
 		ExecutionLog log = new ExecutionLog( new ArrayList<>() );
 		FMT_MSG._Execution _ex = new FMT_MSG._Execution( new int[32], data, log, log);
+		
 		//Parse->Assemble->Execution
 		Main.main( new String[] { TEST_RESOURCES_DIR + "Execution_NoBranches.s" } );
 		
@@ -65,7 +63,7 @@ class MainTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line5  [0x00400000] LW R8, Y			==> Addr[0x10010008],  value [268500992]
-		_ex.load_output("0x00400000" ,0,0,268501000, 8, 268500992);
+		_ex.load_output(0x00400000 ,0,0,268501000, 8, 268500992);
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append(
 				"-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n" +
@@ -76,7 +74,7 @@ class MainTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line7  [0x00400004] LW R16, 0(R8)		==> Addr[0x10010000], value [50]
-		_ex.load_output_modified("0x00400004" ,8,268500992,0, 16, 50);
+		_ex.modified_load_output( 0x00400004 , 8, 268500992, 0, 16, 50);
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append(
 				"-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n" +
@@ -87,7 +85,7 @@ class MainTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line9  [0x00400008] LW R20, 0x290(R8)	==> Addr[0x10010290], value [-900]
-		_ex.load_output("0x00400008" ,8,268500992,0x290, 20, -900);
+		_ex.load_output(0x00400008 ,8,268500992,0x290, 20, -900);
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append(
 				"-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n" +
@@ -98,7 +96,7 @@ class MainTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line18 [0x0040000C] ADDI R10, R8, 16	 => 268500992+16 = [268501008]
-		_ex.I_output( "0x0040000C" , "addi", 8, 268500992, 10, 268501008, 16 );
+		_ex.I_output( 0x0040000C , "addi", 8, 268500992, 10, 268501008, 16, "+");
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append(
 				"-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n" +
@@ -109,18 +107,18 @@ class MainTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line19 [0x00400010] SW R20, 0(R10)	==> Addr[0x10010010], value [-900]
-		_ex.store_output_modified("0x00400010" ,10,0x10010010,0, 20, -900);
+		_ex.modified_store_output( 0x00400010 , 10, 0x10010010, 0, 20, -900, 0);
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append(
 				"-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n" +
 				"|R0: 0\tR4: 0\tR8: 268500992\tR12: 0\t\tR16: 50\tR20: -900\tR24: 0\tR28: 0|\n" +
 				"|R1: 0\tR5: 0\tR9: 0\tR13: 0\t\tR17: 0\tR21: 0\tR25: 0\tR29: 0|\n" +
-				"|R2: 0\tR6: 0\tR10: 268501008\tR14: 0\t\tR18: 0\tR22: 0\tR26: 0\tR30: 0|\n" +
+				"|R2: 0\tR6: 0\t*R10: 268501008\tR14: 0\t\tR18: 0\tR22: 0\tR26: 0\tR30: 0|\n" +
 				"|R3: 0\tR7: 0\tR11: 0\tR15: 0\t\tR19: 0\tR23: 0\tR27: 0\tR31: 0|\n" +
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line20 [0x00400014] ADD R22, R20, R0	 => val+0, [-900] //Move
-		_ex.R_output("0x00400014" ,"add",20, -900, 0, 0, 22, -900);
+		_ex.R_output(0x00400014 ,"add",20, -900, 0, 0, 22, -900, "+");
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append(
 				"-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n" +
@@ -131,7 +129,7 @@ class MainTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line21 [0x00400018] SUB R24, R20, R16	 => (-900 - 50) == [-950]
-		_ex.R_output("0x00400018" ,"sub",20, -900, 16, 50, 24, -950);
+		_ex.R_output(0x00400018 ,"sub",20, -900, 16, 50, 24, -950,"-");
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append(
 				"-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n" +
@@ -142,7 +140,7 @@ class MainTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line24 [0x0040001C] ADD R18, R16, R16	 => (50+50) == [100]
-		_ex.R_output("0x0040001C" ,"add",16, 50, 16, 50, 18, 100);
+		_ex.R_output(0x0040001C ,"add",16, 50, 16, 50, 18, 100,"+");
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append(
 				"-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n" +
@@ -153,13 +151,13 @@ class MainTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line26 [0x00400020] J del				--> Addr[0x0040002C]
-		_ex.J_output( "0x00400020" , 0x0010000B);
+		_ex.J_output( 0x00400020 , 0x0010000B);
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append(
 				"-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n" +
 				"|R0: 0\tR4: 0\tR8: 268500992\tR12: 0\t\tR16: 50\tR20: -900\tR24: -950\tR28: 0|\n" +
 				"|R1: 0\tR5: 0\tR9: 0\tR13: 0\t\tR17: 0\tR21: 0\tR25: 0\tR29: 0|\n" +
-				"|R2: 0\tR6: 0\tR10: 268501008\tR14: 0\t\tR18: 100\tR22: -900\tR26: 0\tR30: 0|\n" +
+				"|R2: 0\tR6: 0\tR10: 268501008\tR14: 0\t\t*R18: 100\tR22: -900\tR26: 0\tR30: 0|\n" +
 				"|R3: 0\tR7: 0\tR11: 0\tR15: 0\t\tR19: 0\tR23: 0\tR27: 0\tR31: 0|\n" +
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
@@ -168,7 +166,7 @@ class MainTest {
 		// line29 [0x0040028] _skipped_ Always !
 		
 		// Line31 [0x0040002C] ADD R20, R18, R22 (100 + -900) = [-800]
-		_ex.R_output("0x0040002C" ,"add",18, 100, 22, -900, 20, -800);
+		_ex.modified_R_output(0x0040002C ,"add",18, 100, 22, -900, 20, -800, "+", 0);
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append(
 				"-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n" +
@@ -179,11 +177,9 @@ class MainTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line-1 [0x00400030] autoExit
-		_ex.run_over();
-		_ex.exit_output( "0x00400030", "exit");
+		_ex.auto_exit_output( 0x00400030);
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append( "\n" ).append( EX_COMPLETE );
-		
 		compareWithSystemOut(expectedOutput);
 	}
 	
@@ -195,6 +191,7 @@ class MainTest {
 		HashMap<Integer, Double> data = new HashMap<>();
 		ExecutionLog log = new ExecutionLog( new ArrayList<>() );
 		FMT_MSG._Execution _ex = new FMT_MSG._Execution( new int[32], data, log, log);
+		
 		//Parse->Assemble->Execution
 		Main.main( new String[] { TEST_RESOURCES_DIR + "_Execution_Error.s" } );
 		//Output
@@ -211,7 +208,7 @@ class MainTest {
 				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
 		);
 		// Line1 [0x00400000] SW R1, -20(R2)
-		_ex.store_output_before_exception("0x00400000", 2,0,-20,1,0, -20);
+		_ex.store_output_before_exception(0x00400000, 2,0,-20,1,0, -20);
 		expectedOutput.append(log); log.clear();
 		expectedOutput.append( "ERROR: Data Address [0xFFFFFFEC, -20] Must Be >=0x10010000 and <=0x100107F8!" );
 		expectedOutput.append( "\n" ).append( END_WITH_ERRORS );
@@ -253,6 +250,7 @@ class MainTest {
 		ErrorLog errors = new ErrorLog( new ArrayList<>() );
 		//Parse->Assemble->Execution
 		Main.main( new String[] { TEST_RESOURCES_DIR + "_Parse_Error.s" } );
+		//Output
 		StringBuilder expectedOutput=new StringBuilder();
 		errors.appendEx( FMT_MSG.xAddressNot( "Instruction",  "0x00000010",  "Valid"));
 		errors.append( 1, FMT_MSG._opsForOpcodeNotValid("j","0x04"  ) );

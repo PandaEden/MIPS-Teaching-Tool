@@ -2,7 +2,10 @@ package _test;
 
 import control.Execution;
 
+import model.components.DataMemory;
+import model.components.RegisterBank;
 import model.instr.Instruction;
+import model.instr.R_Type;
 
 import util.Convert;
 import util.ansi_codes.Color;
@@ -168,10 +171,27 @@ public class TestLogs {
 			private final ExecutionLog expectedExLog;
 			private final ArrayList<Instruction> instructions;
 			private final Execution execution;
+			
 			public _Execution (int[] values, HashMap<Integer, Double> data, ExecutionLog actual, ExecutionLog expected) {
 				this.expectedExLog=expected;
 				instructions = new ArrayList<>();
-				execution= new Execution( actual, data, values, instructions);
+				execution= new Execution( actual, new DataMemory( data, actual ), new RegisterBank( values, actual ),
+										  instructions);
+			}
+			public static void _pipeline(Instruction ins, int PC, DataMemory dm, RegisterBank rb, ExecutionLog lg){
+				int index= Convert.instrAddr2Index( PC );
+				ArrayList<Instruction> instrs = new ArrayList<>();
+				
+				Instruction nop = new R_Type( "add",0,0,0 );
+				for ( int i=0; i<=index;i++ ){ instrs.add( nop ); }
+				
+				Execution ex = new Execution(lg,dm,rb, instrs);
+				instrs.add( Convert.instrAddr2Index( PC ), ins );
+				StringBuilder out = new StringBuilder();
+				for ( int p=0; p<index; p++ ){
+					ex.runStep(out);
+				}
+				ex.pipeline();
 			}
 			
 			public Integer pipeline(Instruction instruction){
@@ -179,6 +199,10 @@ public class TestLogs {
 				execution.reset();
 				return execution.pipeline();
 			}
+			public void runToEnd(ArrayList<Instruction> instructions, StringBuilder out){
+				execution.RunToEnd(instructions, out );
+			}
+			
 			public void _fetching(int pc){
 				expectedExLog.append("Fetching: Instruction At Address [" + Convert.int2Hex( pc ) + "]");
 			}
@@ -222,7 +246,6 @@ public class TestLogs {
 					   + "\n\t\tMemOp[-], MemToReg[No:AOR]"
 					   + "\n\t\tRegDest[$31:ReturnAddress], PCWrite[IMM]";
 			}
-			
 			public static String _control_Nop (String opcode, String PCWrite){
 				return "Decoding: ---- NOP Instruction :: "+opcode
 					   + "\n\t\tALUSrc1[-], ALUSrc2[-], ALUOp[-]"
@@ -245,7 +268,7 @@ public class TestLogs {
 			private void rb_write(int val, int reg){
 				expectedExLog.appendEx( "\tRegisterBank:\tWriting Value[" + val + "]\tTo Register Index[*R" + reg + "]");
 			}
-			private void IMM(int imm){ expectedExLog.append( "[IMMEDIATE: " + imm +" === " + Convert.int2Hex(imm) + "]"); }
+			private void IMM(int imm){ expectedExLog.append( "\t[IMMEDIATE: " + imm +" === " + Convert.int2Hex(imm) + "]"); }
 			private void ALU (String aluAction){
 				expectedExLog.append( "\tALU Result = "+aluAction );
 			}
@@ -271,8 +294,6 @@ public class TestLogs {
 				expectedExLog.appendEx( "Returning Jump Address: "+ Convert.int2Hex(addr) );
 			}
 			
-			//TODO RENAME hexPC
-			
 			public void exit_output (int pc, String opcode){
 				_fetch( pc );
 				expectedExLog.append(_control_Nop( opcode, "-" ));
@@ -282,13 +303,20 @@ public class TestLogs {
 				_write_back();
 				__();
 			}
+			public void auto_exit_output (int pc){
+				_fetching( pc );
+				expectedExLog.append( "\tRun Over Provided Instructions -- Auto Exit!" );
+				expectedExLog.append("\tIncrement_PC: NPC = PC + 4 === " + Convert.int2Hex( pc+4 ));
+				expectedExLog.append(_control_Nop( "exit", "-" ));
+				_read();
+				_execute();
+				_memory();
+				_write_back();
+				__();
+			}
 			
-			public void R_output(int pc, String opcode, int RS, int rs_val, int RT, int rt_val, int RD, int rd_val){
-				String sign="   ";
-				switch ( opcode ){
-					case "add": sign = " + "; break;
-					case "sub": sign = " - "; break;
-				}
+			public void R_output(int pc, String opcode, int RS, int rs_val, int RT, int rt_val, int RD, int rd_val, String sign){
+				sign=" "+sign+" ";
 				_fetch( pc );
 				expectedExLog.append(_control_RType( opcode, opcode.toUpperCase() ));
 				_read();
@@ -301,11 +329,33 @@ public class TestLogs {
 				rb_write( rd_val, RD );
 				__();
 			}
-			public void I_output (int pc, String opcode, int RS, int rs_val, int RT, int rt_val, int IMM){
-				String sign="   ";
-				switch ( opcode ){
-					case "addi": sign = " + "; break;
+			
+			/** 0-RS modifies, 1-RT modified, else- both*/
+			public void modified_R_output(int pc, String opcode, int RS, int rs_val, int RT, int rt_val, int RD, int rd_val,
+										  String sign, int modified){
+				sign=" "+sign+" ";
+				_fetch( pc );
+				expectedExLog.append(_control_RType( opcode, opcode.toUpperCase() ));
+				_read();
+				if ( modified == 0) {
+					rb_read_Modified( rs_val, RS );
+					rb_read( rt_val, RT );
+				} else if (modified == 1){
+					rb_read( rs_val, RS );
+					rb_read_Modified( rt_val, RT );
+				} else{
+					rb_read_Modified( rs_val, RS );
+					rb_read_Modified( rt_val, RT );
 				}
+				_execute();
+				ALU( rs_val + sign + rt_val + " ==> " + rd_val );
+				_memory();
+				_write_back();
+				rb_write( rd_val, RD );
+				__();
+			}
+			public void I_output (int pc, String opcode, int RS, int rs_val, int RT, int rt_val, int IMM, String sign){
+				sign=" "+sign+" ";
 				_fetch( pc );
 				expectedExLog.append(_control_IType( opcode, opcode.substring(0,3).toUpperCase() ));
 				_read();
@@ -344,7 +394,7 @@ public class TestLogs {
 				__();
 			}
 			//TODO - implement the modified versions a bit better,   perhaps changing the int RS/RT/RD inputs to String
-			public void load_output_modified(int pc, int RS, int rs_val, int IMM, int RT, int rt_val){
+			public void modified_load_output(int pc, int RS, int rs_val, int IMM, int RT, int rt_val){
 				_fetch( pc );
 				expectedExLog.append(_control_Load());
 				_read();
@@ -356,12 +406,21 @@ public class TestLogs {
 				rb_write( rt_val, RT );
 				__();
 			}
-			public void store_output_modified(int pc, int RS, int rs_val, int IMM, int RT, int rt_val){
+			/** 0-RS modifies, 1-RT modified, else- both*/
+			public void modified_store_output(int pc, int RS, int rs_val, int IMM, int RT, int rt_val, int modified){
 				_fetch( pc );
 				expectedExLog.append(_control_Store());
 				_read();
-				rb_read_Modified( rs_val, RS );
-				rb_read( rt_val, RT );
+				if ( modified == 0) {
+					rb_read_Modified( rs_val, RS );
+					rb_read( rt_val, RT );
+				} else if (modified ==1){
+					rb_read( rs_val, RS );
+					rb_read_Modified( rt_val, RT );
+				} else{
+					rb_read_Modified( rs_val, RS );
+					rb_read_Modified( rt_val, RT );
+				}
 				imm_add( IMM, rs_val, IMM+rs_val );
 				_memory();
 				dm_write( rt_val, IMM+rs_val );
@@ -394,10 +453,6 @@ public class TestLogs {
 				_write_back();
 				rb_write( npc, 31 );
 				__();
-			}
-			
-			public void run_over(){
-				expectedExLog.append( "\tRun Over Provided Instructions!" );
 			}
 			
 			public void load_output_before_exception(int pc, int RS, int rs_val, int IMM, int ADDR){

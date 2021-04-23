@@ -79,7 +79,7 @@ class InstructionTest {
 			// Result
 			assertEquals( 60, values[ 5 ] );
 			// Output
-			testLogs_ex.R_output( base_PC, "add", 6, 25, 7, 35, 5, 60);
+			testLogs_ex.R_output( base_PC, "add", 6, 25, 7, 35, 5, 60,"+");
 		}
 		
 		@Test
@@ -96,7 +96,7 @@ class InstructionTest {
 			// Result
 			assertEquals( -4750, values[ 16 ] );
 			// Output
-			testLogs_ex.R_output( base_PC, "sub", 20, 250, 24, 5000, 16, -4750);
+			testLogs_ex.R_output( base_PC, "sub", 20, 250, 24, 5000, 16, -4750,"-");
 			
 		}
 		
@@ -125,7 +125,7 @@ class InstructionTest {
 			// Result
 			assertEquals( -150, values[ 1 ] );
 			// Output
-			testLogs_ex.I_output( base_PC, "addi", 30, 250, 1, -150, -400 );
+			testLogs_ex.I_output( base_PC, "addi", 30, 250, 1, -150, -400,"+");
 		}
 	}
 	

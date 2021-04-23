@@ -56,13 +56,4 @@ public class Main {
 		errorLog.println();
 	}
 	
-	@SuppressWarnings ("UnusedReturnValue")
-	public static String waitForInput(@Nullable String msg) {
-		if ( msg==null ) {
-			msg+="Press ENTER to continue . . .";
-		}
-		System.out.print( Logger.Color.fmtColored( Logger.Color.WHITE_ANSI, msg ) );
-		return new Scanner( System.in ).nextLine( );
-	}
-	
 }

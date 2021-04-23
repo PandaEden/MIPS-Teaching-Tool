@@ -7,14 +7,17 @@ import model.components.Component;
 import model.components.DataMemory;
 import model.components.InstrMemory;
 import model.components.RegisterBank;
-import model.instr.*;
+import model.instr.Instruction;
+import model.instr.J_Type;
+import model.instr.MemAccess;
+import model.instr.Nop;
 
 import util.Convert;
 import util.ansi_codes.Color;
 import util.logs.ExecutionLog;
+import util.validation.InstructionValidation;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class Execution {
 	private final ExecutionLog exLog;
@@ -28,14 +31,13 @@ public class Execution {
 	private static final String MEM_ACC =Color.fmtTitle( Color.MAGENTA, "Memory Access" ) + ":";
 	private static final String WRITE_BACK =Color.fmtTitle( Color.WHITE, "Write Back" ) + ":";
 	
-	public Execution (@NotNull ExecutionLog exLog, @NotNull HashMap<Integer, Double> data, int[] values, @NotNull ArrayList<Instruction> instructions) {
+	public Execution (@NotNull ExecutionLog exLog, DataMemory dataMem, RegisterBank regBank, @NotNull ArrayList<Instruction> instructions) {
 		this.exLog=exLog;
-		this.dataMem=new DataMemory( data, exLog );
-		this.regBank=new RegisterBank( values, exLog );
+		this.dataMem=dataMem;
+		this.regBank=regBank;
 		this.instrMemory=new InstrMemory( instructions, exLog );
 		reset();
 	}
-	
 	/** Instanced Version of {@link #RunToEnd(DataMemory, RegisterBank, ArrayList, ExecutionLog, StringBuilder)} */
 	@VisibleForTesting
 	public void RunToEnd (ArrayList<Instruction> instructions, StringBuilder output) {
@@ -48,27 +50,34 @@ public class Execution {
 	@VisibleForTesting
 	public static void RunToEnd (DataMemory dataMem, RegisterBank regBank,
 								 ArrayList<Instruction> instructions, ExecutionLog exLog,
-								 StringBuilder output)
-			throws IndexOutOfBoundsException, IllegalArgumentException {
-		Instruction ins;
-		InstrMemory instrMemory = new InstrMemory( instructions, exLog );
+								 StringBuilder output){
+		Execution ex = new Execution( exLog, dataMem, regBank, instructions);
+		for ( Integer PC=InstrMemory.BASE_INSTR_ADDRESS;
+			  PC!=null;
+		) {
+			output.append( regBank.format( ) ); // Register Bank
+			output.append( "\n" );
+			PC = ex.runStep(output);
+		}
+	}
+	
+	/**Returns Next on Error . or Exit Instruction Completed WB*/
+	public Integer runStep(StringBuilder output){
 		try {
-			for ( Integer PC=InstrMemory.BASE_INSTR_ADDRESS;
-				  PC!=null;
-			) {
-				output.append( regBank.format( ) ); // Register Bank
-				output.append( "\n" );
-				ins=instrMemory.InstructionFetch( PC );
-				PC=ins.execute( PC, dataMem, regBank, exLog );
-				output.append( exLog.toString( ) ); //  ExecutionLog
-				exLog.clear();
-			}
-		}catch ( IndexOutOfBoundsException | IllegalArgumentException e ){
+			pipeline();
+			output.append( exLog.toStringAndClear() ); //  ExecutionLog
+		} catch ( IndexOutOfBoundsException | IllegalArgumentException e ) {
+			this.NPC=this.PC=null; // Signal to exit
+			
 			// catch Exception -> Calling method should print the ErrLog/ WarningLog
 			// after Execution Finishes to see what went wrong
-			output.append( exLog.toString( ) );
+			output.append( exLog.toStringAndClear() );
 			output.append( Color.fmt( Color.ERR_LOG, "ERROR: " + e.getMessage() ) );
+		} catch ( IllegalStateException e ) { // Not Pre-Assembled /successfully
+			exLog.clear();
+			throw e;
 		}
+		return this.PC; // == Null ∴ Exit
 	}
 	
 	private String toHex(Integer val){
@@ -82,12 +91,11 @@ public class Execution {
 	
 	// TODO create wrapper ? to hold all the values?
 	private Integer PC, NPC, IMM, RR1, RR2, AOR, LMDR, ARR;
-	private StringBuilder out;
 	private Instruction ins;
 	
 	public void reset(){
 		this.PC=InstrMemory.BASE_INSTR_ADDRESS;
-		this.out=new StringBuilder();
+		exLog.clear();
 	}
 	
 	private void fetch(Integer ProgramCounter){
@@ -119,7 +127,7 @@ public class Execution {
 		}
 		this.IMM= instruction.getImmediate();
 		if (IMM!=null)
-			exLog.append( "[IMMEDIATE: " + IMM + " === "+toHex(IMM)+"]" );
+			exLog.append( "\t[IMMEDIATE: " + IMM + " === "+toHex(IMM)+"]" );
 	}
 	
 	private void execute (Integer RegisterResult1, Integer ProgramCounter, Integer RegisterResult2, Integer ImmediateRegister,
@@ -160,7 +168,7 @@ public class Execution {
 		Integer WB_Data = Component.MUX( _MemToReg, "WriteBack", AluResultRegister, LoadDataMemoryRegister );
 		Integer DestinationRegister = Component.MUX( _Destination, "RegDest", ins.getRT(), ins.getRD(), 31 );
 		
-		if (ins instanceof Nop) // Might be redundant
+		if ( ins instanceof Nop && InstructionValidation.NO_OPERANDS_OPCODE.contains( ins.getOpcode() ) ) // Might be redundant
 			this.NPC= null;
 		else if ( DestinationRegister!=null )
 			regBank.write( DestinationRegister, WB_Data );
@@ -169,23 +177,6 @@ public class Execution {
 		exLog.append( "--------------------------------" );
 	}
 	
-	/**Returns Next on Error . or Exit Instruction Completed WB*/
-	public Integer cycle(){
-		try {
-			pipeline();
-		}catch ( IndexOutOfBoundsException | IllegalArgumentException e ){
-			this.NPC=this.PC=null; // Signal to exit
-			
-			// catch Exception -> Calling method should print the ErrLog/ WarningLog
-			// after Execution Finishes to see what went wrong
-			out.append( exLog.toString( ) );
-			out.append( Color.fmt( Color.ERR_LOG, "ERROR: " + e.getMessage() ) );
-		}catch ( IllegalStateException e ){ // Not Pre-Assembled /successfully
-			exLog.clear();
-			throw e;
-		}
-		return this.PC; // == Null ∴ Exit
-	}
 	@VisibleForTesting
 	public Integer pipeline(){
 		Integer[] control = new Integer[7];
