@@ -1,5 +1,7 @@
 package util.logs;
 
+import util.ansi_codes.Color;
+
 import java.util.ArrayList;
 
 public class WarningsLog extends Logger {
@@ -9,7 +11,7 @@ public class WarningsLog extends Logger {
 	
 	@Override
 	public String toString() {
-		return Color.fmtColored( Color.WARN_LOG, super.toString( ) );
+		return Color.fmt( Color.WARN_LOG, super.toString( ) );
 	}
 	
 }

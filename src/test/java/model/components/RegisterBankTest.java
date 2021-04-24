@@ -6,8 +6,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import util.ansi_codes.Color;
 import util.logs.ExecutionLog;
-import util.logs.Logger;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -18,7 +18,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tag( _test.Tags.Pkg.COM )
 @DisplayName ( _test.Tags.Pkg.MOD + " : " + Tags.Pkg.COM + " :  RegisterBank Test")
 class RegisterBankTest {
-	private static final String PREFIX="Execution:\n\tRegisterBank:\t";
+	private static final String NAME="\n\t\tRegisterBank:\t";
+	private static final String PREFIX="Execution:"+NAME;
 	private static final String NO_ACTION=PREFIX + "No Action!\n";
 	private final Random random=new Random( );
 	private final ExecutionLog log=new ExecutionLog( new ArrayList<>( ) );
@@ -27,7 +28,10 @@ class RegisterBankTest {
 	
 	@BeforeEach
 	void setUp() {
-		Logger.Color.colorSupport=false;
+		Color.colorSupport=false;
+		RegisterBank.regFormat=RegisterBank.RegFormat.R;
+		RegisterBank.fmtUpperCase=true;
+		
 		regs=new int[ 32 ];        // Setup Register values to any random integer
 		for ( int i=1; i<32; i++ ) {    // skip index 0. that should always be ==0;
 			int r=random.nextInt( );
@@ -151,7 +155,7 @@ class RegisterBankTest {
 	@Tag ("Accessing")
 	@DisplayName ("SingleWord")
 	class Read {
-		
+		private static final String NO_READ = PREFIX + "No Read!\n";
 		@Test
 		@DisplayName ("Read RegisterBank_Length")
 		void read() {
@@ -170,11 +174,10 @@ class RegisterBankTest {
 		}
 		
 		@Test
-		@DisplayName ("Read Null")
-		void nullValue() {
+		void Read_Null() {
 			assertAll(
 					() -> assertEquals( 0, rb.read( null ) ),
-					() -> assertEquals( NO_ACTION, log.toString( ) )
+					() -> assertEquals( NO_READ, log.toString( ) )
 			);
 		}
 		
@@ -187,17 +190,16 @@ class RegisterBankTest {
 		}
 		
 		@Nested
-		@DisplayName ("DoubleWord")
 		class DoubleWord {
 			@Test
-			@DisplayName ("DoubleWord Read")
-			void doubleRead() { // Reading 2 operands
+			void DoubleWord_Read() { // Reading 2 operands
 				int[] temp=rb.read( 10, 20 );
 				assertAll(
 						() -> assertEquals( regs[ 10 ], temp[ 0 ] ),
 						() -> assertEquals( regs[ 20 ], temp[ 1 ] ),
-						() -> assertEquals( PREFIX + "Reading Values[" + regs[ 10 ] + ", " + regs[ 20 ]
-											+ "]\tFrom Register Indexes[R10, R20]!\n", log.toString( ) )
+						//() -> assertEquals( PREFIX + "Reading Values[" + regs[ 10 ] + ", " + regs[ 20 ] + "]\tFrom Register Indexes[R10, R20]!\n", log.toString( ) )
+						() -> assertEquals( PREFIX + "Reading Value[" + regs[ 10 ] + "]\tFrom Register Index[R10]!" +
+											NAME+"Reading Value[" + regs[ 20 ] + "]\tFrom Register Index[R20]!\n", log.toString( ) )
 				);
 			}
 			
@@ -230,7 +232,7 @@ class RegisterBankTest {
 				assertAll(
 						() -> assertEquals( 0, temp[ 0 ] ),
 						() -> assertEquals( 0, temp[ 1 ] ),
-						() -> assertEquals( NO_ACTION, log.toString( ) )
+						() -> assertEquals( NO_READ, log.toString( ) )
 				);
 			}
 			
@@ -250,6 +252,8 @@ class RegisterBankTest {
 	@Tag ("Mutating")
 	@DisplayName ("Store")
 	class Store {
+		private static final String NO_WRITE=PREFIX + "No Write!\n";
+		
 		@Test
 		void store() {
 			// Validate initial state
@@ -277,7 +281,7 @@ class RegisterBankTest {
 			rb.write( 0, 57 );
 			assertAll(
 					() -> assertEquals( 0, regs[ 0 ] ),
-					() -> assertEquals( NO_ACTION, log.toString( ) ),
+					() -> assertEquals( NO_WRITE, log.toString( ) ),
 					() -> assertEquals( 0, rb.read( 0 ) )
 			);
 		}
@@ -288,7 +292,7 @@ class RegisterBankTest {
 			rb.write( null, 57 );
 			assertAll(
 					() -> assertEquals( 0, regs[ 0 ] ),
-					() -> assertEquals( NO_ACTION, log.toString( ) ),
+					() -> assertEquals( NO_WRITE, log.toString( ) ),
 					() -> assertEquals( 0, rb.read( 0 ) )
 			);
 		}
@@ -299,7 +303,7 @@ class RegisterBankTest {
 			rb.write( 20, null );
 			assertAll(
 					() -> assertEquals( 0, regs[ 0 ] ),
-					() -> assertEquals( NO_ACTION, log.toString( ) ),
+					() -> assertEquals( NO_WRITE, log.toString( ) ),
 					() -> assertEquals( 0, rb.read( 0 ) )
 			);
 		}
@@ -310,11 +314,16 @@ class RegisterBankTest {
 			rb.write( null, null );
 			assertAll(
 					() -> assertEquals( 0, regs[ 0 ] ),
-					() -> assertEquals( NO_ACTION, log.toString( ) ),
+					() -> assertEquals( NO_WRITE, log.toString( ) ),
 					() -> assertEquals( 0, rb.read( 0 ) )
 			);
 		}
 		
+	}
+	
+	@Test
+	void InvalidRange() {
+		assertThrows(IndexOutOfBoundsException.class, ()-> rb.inRange( 400 ));
 	}
 	
 }

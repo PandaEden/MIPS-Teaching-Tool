@@ -2,17 +2,15 @@ package util.logs;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  Provides logging capacity for the application.
  Use with <b>System.out.print()</b>
  */
 public class Logger {
-	private final String name;
+	protected String name;
 	private final ArrayList<String> logs;
 	private String prefix;
 	
@@ -102,40 +100,6 @@ public class Logger {
 	
 	public String getName ( ) {
 		return name;
-	}
-	
-	public static class Color {	// Static Class Constructor preventing 100% Coverage
-		public static final String ANSI_RESET="\u001B[0m";
-		public static final String BLACK_ANSI="\u001B[30m";
-		public static final String RED_ANSI="\u001B[31m";    //Reserve for Error Log
-		public static final String GREEN_ANSI="\u001B[32m";    // RegisterBank - Read
-		public static final String YELLOW_ANSI="\u001B[33m";    //Reserve for Warnings Log
-		public static final String BLUE_ANSI="\u001B[34m";    // Data Write
-		public static final String PURPLE_ANSI="\u001B[35m";    // Data Read
-		public static final String CYAN_ANSI="\u001B[36m";    // RegisterBank - Write
-		public static final String WHITE_ANSI="\u001B[37m";
-		//----
-		public static final String ERR_LOG=RED_ANSI;
-		public static final String WARN_LOG=YELLOW_ANSI;
-		public static final String RB_READ=GREEN_ANSI;
-		public static final String RB_WRITE=CYAN_ANSI;
-		public static final String DATA_READ=PURPLE_ANSI;
-		public static final String DATA_WRITE=BLUE_ANSI;
-		
-		public static boolean colorSupport=true;
-		private static int nextColCounter=0;
-		@VisibleForTesting
-		public static String next ( ) {    // Excluding Purple & Black
-			List<String> temp=List.of( RED_ANSI, BLUE_ANSI, GREEN_ANSI, YELLOW_ANSI, CYAN_ANSI, WHITE_ANSI, ANSI_RESET );
-			return temp.get( nextColCounter++%temp.size( ) );
-		}
-		
-		@NotNull
-		public static String fmtColored (@NotNull String ansi, @NotNull String string) {
-			return string.isBlank()? string:
-				   ((Color.colorSupport) ? (ansi + string + ANSI_RESET) : string);
-		}
-		
 	}
 	
 }

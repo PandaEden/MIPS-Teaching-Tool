@@ -7,9 +7,9 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import control.Execute;
+import control.Execution;
 
-import model.Instruction;
+import model.instr.Instruction;
 import model.MemoryBuilder;
 import model.components.DataMemory;
 import model.components.InstrMemory;
@@ -29,6 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ParserTest {
 	private static final String TEST_RESOURCES_DIR="src" + File.separator + "test" + File.separator + "resources" + File.separator;
+	private static final String TEST_RESOURCES_FILE_DIR=TEST_RESOURCES_DIR + "file" + File.separator;
 	
 	private static Parser parser;
 	private static MemoryBuilder mb;
@@ -40,7 +41,7 @@ class ParserTest {
 		testLogs=new TestLogs( );
 		expected=testLogs.expectedErrors;
 		
-		mb=new MemoryBuilder( );
+		mb=new MemoryBuilder( testLogs.actualErrors, testLogs.actualWarnings );
 		parser=new Parser( mb, testLogs.actualErrors, testLogs.actualWarnings );
 	}
 	
@@ -58,8 +59,7 @@ class ParserTest {
 	}
 	
 	@Test
-	@DisplayName ( "static variables are correct" )
-	void staticVars ( ) {
+	void static_Vars_are_correct ( ) {
 		assertAll(    // Alt+F7 : Find Usages
 					  //Data
 					  ( ) -> assertEquals( 512, Parser.MAX_LINES ),
@@ -97,12 +97,10 @@ class ParserTest {
 	}
 	
 	@Nested
-	@DisplayName ( "File Tests" )
-	class FileTests {
+	class File_Tests {
 		
 		@Test
-		@DisplayName ( "File Does Not Exist!" )
-		void fileDoesNotExist ( ) {
+		void File_Does_Not_Exist ( ) {
 			File temp=new File( TEST_RESOURCES_DIR + "Not_Actual_File" );
 			assertFalse( temp.exists( ) ); // If the File exists, test is invalid
 			
@@ -111,18 +109,23 @@ class ParserTest {
 		}
 		
 		@Test
-		@DisplayName ( "Default Filename For Blank FileName" )
-		void defaultFilenameForBlankFileName ( ) {
+		void Default_Filename_For_Blank_FileName ( ) {
 			assertEquals( "FileInput.s", parser.loadFile( " " ).getName( ) );
 			testLogs.expectedWarnings.append( "Filename Not Provided, Using Default File: \"FileInput.s\"" );
 		}
 		
 		@SuppressWarnings ( "SpellCheckingInspection" )
 		@Test
-		@DisplayName ( "File Over MAX Lines" )
-		void fileOverMaxLines ( ) {
-			assertFalse( parser.parseFile( parser.loadFile( TEST_RESOURCES_DIR + "FileOver30Klines.s" ) ) );
+		void File_Over_MaxLines ( ) {
+			assertFalse( parser.parseFile( parser.loadFile( TEST_RESOURCES_FILE_DIR + "FileOver30Klines.s" ) ) );
 			expected.appendEx( "File: \"FileOver30Klines.s\", Has Too Many Lines!, Max Lines = [512]" );
+		}
+		
+		@ParameterizedTest ( name="[{index}] FileName[{arguments}] Not Valid Extension" )
+		@ValueSource ( strings={ "file.panda", "file.jpeg", "file.pdf", "file.tar.s" } )
+		void Invalid_FileExtension (String text) {
+			nullObjectErrors( parser.loadFile( TEST_RESOURCES_FILE_DIR+text ),
+							  "File: \"" + text + "\", Not Valid File Extension (needs to be one of *.s|*.asm|*.txt)" );
 		}
 		
 		@ParameterizedTest ( name="[{index}] FileName[{arguments}] Not Valid" )
@@ -135,7 +138,6 @@ class ParserTest {
 		
 		@Test
 		@Disabled	// Manually Tested on Ubuntu (WSL)
-		@DisplayName ( "File Not Accessible /NotReadable" )
 		void File_NotAccessible ( ) {
 			// Tried creating a file on the system without Read Permission, This made it think it was a non-valid file?
 			// Run test if platform is not Windows
@@ -171,13 +173,13 @@ class ParserTest {
 	@Nested
 			// TODO - Refactor To Parametrized
 	class Split_Line_Test {
-		List<String> comments=Arrays.asList(
+		private final List<String> comments=Arrays.asList(
 				"   #  HashOnly_  Text    1233 addi $r0   ",
 				"   ;  SemiOnly_ Random Text 2",
 				"#   HashFirst_ Random ;Text  ",
 				"   ;  SemiFirst_ Random #Text  "
 		);
-		List<String> labels=Arrays.asList( "panda :   ", "_notAPanda:", "  :", " not a valid label :" );
+		private final List<String> labels=Arrays.asList( "panda :   ", "_notAPanda:", "  :", " not a valid label :" );
 		
 		@Test
 		void Split_CommentOnly ( ) {
@@ -233,6 +235,8 @@ class ParserTest {
 			assertNull( split[ 2 ] );
 			assertNull( split[ 3 ] );
 			
+			//TODO: atm, it thinks everything unto ':' is part of a label. It does not check if the first space separated word
+			//  is a valid directive/ opcode.   (labels can't start with a dot. and )
 			//assertEquals( "addi", split[ 1 ] );
 			//assertEquals( "$r0, . 87 not va:lid", split[ 2 ] );
 		}
@@ -383,7 +387,7 @@ class ParserTest {
 		// TODO ToString not implemented in Instruction, so I can't check the order of instructions
 		
 		StringBuilder output = new StringBuilder();
-		Execute.execute( dataMemory, new RegisterBank( values, ignored ), ins, ignored, output);
+		Execution.RunToEnd( dataMemory, new RegisterBank( values, ignored ), ins, ignored, output);
 		
 		// Post Execution Results
 		

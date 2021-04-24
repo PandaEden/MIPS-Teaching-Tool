@@ -111,9 +111,9 @@ class ValidateTest {
 			void notValid(String hexAddr, int address) {
 				boolean aligned=address%8==0;
 				
-				assertFalse( isSupportedDataAddr( (int) address, errLog ) );
+				assertFalse( isSupportedDataAddr( address, errLog ) );
 				assertNotValidNotAligned( hexAddr, aligned );
-				assertNull( dataAddr2index( (int) address, errLog ) );
+				assertNull( dataAddr2index( address, errLog ) );
 				assertNotValidNotAligned( hexAddr, aligned );
 			}
 			

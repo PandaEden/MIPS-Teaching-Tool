@@ -7,10 +7,10 @@ import org.jetbrains.annotations.VisibleForTesting;
 import model.MemoryBuilder;
 import model.components.DataMemory;
 import model.components.InstrMemory;
-import model.instr.Operands;
+import model.instr.Instruction;
 
 import util.Convert;
-import util.validation.OperandsValidation;
+import util.Util;
 import util.validation.Validate;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
@@ -46,7 +46,6 @@ public class Parser {
 	private final WarningsLog warningsLog;
 	private final MemoryBuilder mb;
 	private final Validate val;
-	private final OperandsValidation opsVal;
 	
 	private String errorFn; // This should not be returned!, Error Messages should be meaningful!
 	private boolean dataLimit, instrLimit;
@@ -70,8 +69,6 @@ public class Parser {
 		loadParseFile( filepath );
 	}
 	
-	public static boolean isNullOrBlank (@Nullable String s){ return (s==null || s.isBlank()); }
-	
 	/**
 	 Initializes the setup.Parser with an empty model. Either Load a file {@link #loadFile(String)}, and parse it {@link
 	#loadParseFile(String)} Which will also automatically assemble the models ready for execution.
@@ -89,7 +86,6 @@ public class Parser {
 		this.errorLog=errorLog;
 		this.warningsLog=warningsLog;
 		this.val=new Validate( errorLog );
-		this.opsVal=new OperandsValidation( errorLog,warningsLog );
 	}
 	
 	/** Resets Internal State, Use before re-running modified file */
@@ -175,13 +171,12 @@ public class Parser {
 	public File loadFile(String filename) {
 		clear(); // Reset State
 		// Check fileName
-		if ( isNullOrBlank( filename ) ) {
+		if ( Util.isNullOrBlank( filename ) ) {
 			warningsLog.append( "Filename Not Provided, Using Default File: \"" + DEFAULT_FILENAME + "\"" );
 			filename=DEFAULT_FILENAME;
 		}
 		
 		errorFn="File: \"" + filename + "\", ";
-		File rtn=null;
 		try {
 			File temp=new File( filename );
 			
@@ -196,12 +191,20 @@ public class Parser {
 			if ( !temp.exists( ) ) this.errorLog.appendEx( errorFn + "Does Not Exist" );
 			else if ( !temp.isFile( ) ) this.errorLog.appendEx( errorFn + "Is Not a File" );
 			else if ( !temp.canRead( ) ) this.errorLog.appendEx( errorFn + "Can Not Be Read" );
-			else rtn=temp;
+			else { // Check file Extension
+				if ( filename.contains( "." ) ) {
+					String[] split=filename.split( "\\." );
+					String ext=split[ 1 ];
+					if ( ext!=null && (ext.equals( "s" ) || ext.equals( "asm" ) || ext.equals( "txt" )) )
+						return temp;
+				}
+				this.errorLog.appendEx( errorFn + "Not Valid File Extension (needs to be one of *.s|*.asm|*.txt)" );
+			}
 		} catch ( IOException e ) {
-			errorLog.appendEx( errorFn + "Not Valid FileName" );
+			this.errorLog.appendEx( errorFn + "Not Valid FileName" );
 			// File is invalid,   rtn is null by default
 		}
-		return rtn;
+		return null;
 	}
 	
 	/**
@@ -222,13 +225,10 @@ public class Parser {
 		String label=this.val.isValidLabel( lineNo, split[ 0 ] );
 		if ( label!=null )
 			mb.pushLabel( label );
-//
-//		if ( errLength<errorLog.toString( ).length( ) )    // caused by Invalid Label
-//			errorLog.append( "_" );
 		
 		String arg1=split[ 1 ];
 		String arg2=split[ 2 ];
-		if ( !isNullOrBlank( arg1 ) ) {
+		if ( !Util.isNullOrBlank( arg1 ) ) {
 			// first character is a dot '.'
 			if ( arg1.matches( "\\..*" ) ) {
 				// validate directive
@@ -245,14 +245,11 @@ public class Parser {
 				// validate opcode
 				// validate arg2 (operands)
 				// mb.addInstr
-				if ( this.opsVal.isValidOpCode( lineNo, arg1 ) ) {
-					Operands operands=this.opsVal.splitValidOperands( lineNo, arg1, arg2 );
-					if ( operands!=null && !mb.addInstruction( arg1, operands ) ) {
-						warningsLog.appendEx( lineNo,"Reached MAX Instructions!, Further Instructions Will Not Be Parsed" );
-						warningsLog.append( "\t\t\tInstruction Limit == [" + InstrMemory.MAX_INSTR_COUNT + "]" );
-						instrLimit=true;
-					}// TODO Change to report Error
-				}
+				if ( !mb.addInstruction( lineNo, arg1, arg2 ) ) {
+					warningsLog.appendEx( lineNo,"Reached MAX Instructions!, Further Instructions Will Not Be Parsed" );
+					warningsLog.append( "\t\t\tInstruction Limit == [" + InstrMemory.MAX_INSTR_COUNT + "]" );
+					instrLimit=true;
+				}// TODO Change to report Error
 			}
 		}
 		return (errLength==errorLog.toString( ).length( ));
@@ -334,7 +331,7 @@ public class Parser {
 	 
 	 @return success of assembly.
 	 */
-	public ArrayList<model.Instruction> assemble() {
+	public ArrayList<Instruction> assemble() {
 		return mb.assembleInstr( errorLog );
 	}
 	

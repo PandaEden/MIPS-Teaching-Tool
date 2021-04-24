@@ -1,4 +1,5 @@
 apply plugin: "application"
+apply plugin: 'java-library'
 
 mainClassName = "Main"
 
@@ -6,10 +7,11 @@ sourceCompatibility = 11
 targetCompatibility = 11
 
 compileJava {
+    //noinspection SpellCheckingInspection
     options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
 }
 group 'github.com/EDEN786/MIPS-Teaching-Tool'
-version '1.0'
+version '1.1'
 
 repositories {
     mavenCentral()
@@ -37,6 +39,10 @@ jar {
     }
 
     from {
-        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+        //The compile configuration has been deprecated for resolution.
+        // This will fail with an error in Gradle 7.0. Please resolve the compileClasspath configuration instead.
+        // Consult the upgrading guide for further information:
+        // https://docs.gradle.org/6.3/userguide/upgrading_version_5.html#dependencies_should_no_longer_be_declared_using_the_compile_and_runtime_configurations
     }
 }

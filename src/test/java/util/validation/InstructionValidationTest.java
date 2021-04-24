@@ -5,16 +5,20 @@ import _test.Tags.Pkg;
 import _test.TestLogs;
 import _test.TestLogs.FMT_MSG;
 import _test.providers.*;
-import _test.providers.InstrProvider.*;
-import org.jetbrains.annotations.NotNull;
+import _test.providers.InstrProvider.I;
+import _test.providers.InstrProvider.J;
+import _test.providers.InstrProvider.NO_OPS;
+import _test.providers.InstrProvider.RD_RS_RT;
 import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import model.DataType;
-import model.instr.Operands;
-import model.instr.Operands.InstrType;
+import model.instr.Instruction;
+import model.instr.Instruction.Type;
+import model.instr.J_Type;
+import model.instr.Nop;
 
 import util.logs.ErrorLog;
 
@@ -29,44 +33,44 @@ import static org.junit.jupiter.api.Assertions.*;
  <ol>
  <li> - add it's configuration to {@link InstrProvider} </li>
  <li> - Invalid_SetOperands  </li>
- <li> - Add to appropriate Instruction_Type under {@link Validate_Operands} </li>
- <li> - See the Layout Instructions for {@link Validate_Operands} </li>
+ <li> - Add to appropriate Instruction_Type under {@link Split_Valid_Instruction} </li>
+ <li> - See the Layout Instructions for {@link Split_Valid_Instruction} </li>
  </ol>
  */
 @Tag ( Pkg.UTIL )
 @Tag ( Pkg.VALID )
 @Tag ( Tags.INSTR )
-@DisplayName ( Pkg.UTIL + " : " + Pkg.VALID + " : " + Tags.INSTR + " Test" )
-public class ValidateInstructionsTest {
+@DisplayName ( Pkg.UTIL + " : " + Tags.INSTR + " : " + Pkg.VALID + " Test" )
+public class InstructionValidationTest {
 	
 	private static final TestLogs testLogs=new TestLogs( );
 	private static ErrorLog expectedErrs;
-	private static OperandsValidation opsVal;
+	private static InstructionValidation ValidateInstr;
 	
 	@BeforeAll
 	static void beforeAll ( ) {
 		expectedErrs=testLogs.expectedErrors;
-		opsVal=new OperandsValidation( testLogs.actualErrors, testLogs.actualWarnings );
+		ValidateInstr=new InstructionValidation( testLogs.actualErrors, testLogs.actualWarnings );
 	}
 	
 	@AfterEach
 	void clear ( ) { testLogs.after( ); }
 	
 	@Nested	// Possibly Move to ValidateTest,
-	@DisplayName ( "isValidOpcode : Validate Operands" )
+	@DisplayName ( "isValidOpcode : Validate Instruction" )
 	class Validate_Opcode {
 		
 		@ParameterizedTest ( name="[{index}] Valid Opcode[{0}]" )
 		@ArgumentsSource ( InstrProvider.class )
 		void isValidOpcode_Valid (String opcode) {
-			assertTrue( opsVal.isValidOpCode( 1, opcode ) );
+			assertTrue( ValidateInstr.isValidOpCode( 1, opcode ) );
 		}
 		
 		@ParameterizedTest ( name="[{index}] Not Valid - Opcode[{0}]" )
 		@ArgumentsSource ( InstrProvider.Invalid.class )
 		@ArgumentsSource ( BlankProvider.class )
 		void isValidOpcode_Not_Valid (String opcode) {
-			assertFalse( opsVal.isValidOpCode( 230, opcode ) );
+			assertFalse( ValidateInstr.isValidOpCode( 230, opcode ) );
 			expectedErrs.appendEx( 230, FMT_MSG.Opcode_NotSupported( opcode ) );
 		}
 		
@@ -75,8 +79,8 @@ public class ValidateInstructionsTest {
 	/**
 	 <ul> <li> Type </li>
 	 <ul> <li> Register Formation/NumberOf </li>
-	 <ul><li> Valid -> Operands Split Successfully. [assemble_ValidOperands]
-	 <ul> Assembles -> Checking The Result or trying to Assemble ({@link Operands#setImmediate(ErrorLog, HashMap)})
+	 <ul><li> Valid -> Operands Split Successfully, to Create an Instruction. [ins then needs to be assembled]
+	 <ul> Assembles -> Checking The Result or trying to Assemble ({@link Instruction#assemble(ErrorLog, HashMap)})
 	 <ul><li> FailAssemble.</li>
 	 <li> ThrowsAssemble.</li></ul>
 	 </ul></li>
@@ -89,8 +93,8 @@ public class ValidateInstructionsTest {
 	 </ul>
 	 */
 	@Nested
-	@DisplayName ( "splitValidOperands : Validate Operands" )
-	class Validate_Operands {
+	@DisplayName ( "splitValidInstruction : Validate Instruction" )
+	class Split_Valid_Instruction {
 		
 		private final String FA=" -> Fail!Assemble";
 		private final String TA=" -> Throws!Assemble";
@@ -98,31 +102,24 @@ public class ValidateInstructionsTest {
 		private final HashMap<String, Integer> LABELS_MAP=InstrProvider.labelsMap;
 		private final Expect expect=new Expect( );
 		
-		// Wrapper / Helper Class for Expected Errors/Warnings ..  since there was so many
+		// Wrapper / Helper Class for Expected Errors/Warnings .. since there was so many
 		private class Expect {
 			private final ErrorLog errLog=testLogs.actualErrors;
-			/** {@link InstrProvider#type(String)} */
-			private InstrType type (String opcode) { return InstrProvider.type( opcode ); }
 			
-			/** {@link OperandsValidation#splitValidOperands(int, String, String)} */
-			private void operandsForOpcodeNotValid (int LineNo, String opcode, String operands) {
-				assertNull( opsVal.splitValidOperands( LineNo, opcode, operands ) );
+			/** {@link InstructionValidation#splitValidOperands(int, String, String)} */
+			private void invalidOperandsForOpcode (int LineNo, String opcode, String operands) {
+				assertNull( ValidateInstr.splitValidOperands( LineNo, opcode, operands ) );
 				expectedErrs.append( LineNo, _opsForOpcodeNotValid( opcode, operands ) );
 			}
 			
-			/** Uses Default LineNo of "-1",  use {@link OperandsValidation#setLineNo(int)} before this! */
-			private void operandsForOpcodeNotValid (String opcode, String operands) { operandsForOpcodeNotValid( -1, opcode, operands ); }
-			
-			/** Uses Default LineNo of "-1",  use {@link OperandsValidation#setLineNo(int)} before this! */
-			private void operandsForOpcodeNotValid (String opcode, String... operands) {
-				Arrays.stream( operands ).forEach( ops -> operandsForOpcodeNotValid( opcode, ops ) );
-			}
+			/** Use Default LineNo of "-1", use {@link InstructionValidation#setLineNo(int)} before this! */
+			private void invalidOperandsForOpcode (String opcode, String operands) { invalidOperandsForOpcode( -1, opcode, operands ); }
 			
 			/** Sets the LineNo to -1 automatically, then expects NO_OPS is an invalid operand for the opcode. */
 			private void NoOps_NotValid_AndSetLineNo (String opcode) {
-				opsVal.setLineNo( -1 );
+				ValidateInstr.setLineNo( -1 );
 				expectedErrs.append( -1, FMT_MSG._NO_OPS );
-				operandsForOpcodeNotValid( opcode, NO_OPS.OPS );
+				invalidOperandsForOpcode( opcode, NO_OPS.OPS );
 			}
 			
 			/**
@@ -134,34 +131,34 @@ public class ValidateInstructionsTest {
 				// This Needs a Rework
 				InstrProvider.OperandsList_ExcludingNoOps( )
 							 .filter( ops -> !Arrays.asList( runAfter ).contains( ops ) )
-							 .forEach( ops -> operandsForOpcodeNotValid( opcode, ops ) );
-				Arrays.stream( runAfter ).forEach( ops -> opsVal.splitValidOperands( -450, opcode, ops ) );
+							 .forEach( ops -> invalidOperandsForOpcode( opcode, ops ) );
+				Arrays.stream( runAfter ).forEach( ops -> ValidateInstr.splitValidOperands( -450, opcode, ops ) );
 			}
 			
 			/**
-			 (J/I_MEM) Tests Operands Assemble correctly.
+			 (J/I_MEM) Tests Instruction Assemble correctly.
 			 Setting the ops.Imm==Addr.
 			 <p> Then tests it throws on 2nd attempt to Assemble.
 			 */
-			private void assertAssembles_Label_Successfully (@NotNull Operands ops, Integer postAssembleAddr) {
+			private void assertAssemblesSuccessfully (Instruction ins, Integer postAssembleAddr) {
+				assertNotNull(ins);
 				assertAll(
-						( ) -> assertTrue( ops.setImmediate( errLog, LABELS_MAP ) ),
-						( ) -> assertEquals( ops.getImmediate( ), postAssembleAddr ),
-						( ) -> assertThrows( IllegalStateException.class, ( ) ->
-								ops.setImmediate( errLog, LABELS_MAP ) )
+						( ) -> assertTrue( ins.assemble( errLog, LABELS_MAP ) ),
+						( ) -> assertEquals( postAssembleAddr, ins.getImmediate() )
 				);
 			}
 			
 			/**
-			 Tests Operands Fail to Assemble, and Correct Err Msg Provided.
+			 Tests Instruction Fails to Assemble, and Correct Err Msg Provided.
 			 <p>Determines The error, based on if the Ops is a Jump Type
 			 <p>Or If the label is not in the {@link #LABELS_MAP}
 			 */
-			private void assertFailAssemble_LabelPtr (@NotNull Operands ops, String label) {
-				assertFalse( ops.setImmediate( errLog, LABELS_MAP ) );
+			private void assertFailAssemble_LabelPtr (Instruction ins, String label) {
+				assertNotNull(ins);
+				assertFalse( ins.assemble( errLog, LABELS_MAP ) );
 				if ( LABELS_MAP.containsKey( label ) ) {
 					int addr=LABELS_MAP.get( label );
-					if ( ops.getInstrType( )==Operands.InstrType.J ) {
+					if ( ins instanceof J_Type ) {
 						AddressValidation.isSupportedInstrAddr( addr, expectedErrs );
 						expectedErrs.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Instruction" ) );
 					} else {
@@ -173,37 +170,32 @@ public class ValidateInstructionsTest {
 				}
 			}
 			
-			/**
-			 Tests Operands Values Match Given. Then, Assembling will cause an Error to be Thrown.
-			 {@link Operands#setImmediate(ErrorLog,HashMap)} */
-			private <T extends Throwable> void assertNotNullOperandsEqual_And_Throws (Class<T> exception, Operands ops, InstrType type,
-																					  Integer imm, Integer rd, Integer rs, Integer rt) {
-				assertNotNullOperandsEqual( ops, type, null, imm, rd, rs, rt );
-				assertThrows( exception, ( ) -> ops.setImmediate( errLog, LABELS_MAP ) );
-			}
 			/** {@link IllegalArgumentException} */
-			private void assertNotNullOperandsEqual_And_Throws_IAE (Operands ops, InstrType type,
-																					  Integer imm, Integer rd, Integer rs, Integer rt) {
-				assertNotNullOperandsEqual_And_Throws(IllegalArgumentException.class, ops,type,imm,rd,rs,rt);
+			private void assertIMMEDIATE_Equals_AndAssembles (Instruction ins, String opcode,
+															  Integer imm, Integer rs, Integer rt) {
+				assertNotNull_InsEquals( ins, opcode, Type.IMMEDIATE, imm, null, rs, rt);
+				assertAssemblesSuccessfully(ins, imm);
 			}
 			/** {@link IllegalStateException} */
-			private void assertNotNullOperandsEqual_And_Throws_ISE (Operands ops, InstrType type,
-																	Integer imm, Integer rd, Integer rs, Integer rt) {
-				assertNotNullOperandsEqual_And_Throws(IllegalStateException.class, ops,type,imm,rd,rs,rt);
+			private void assertREGISTER_Equals_AndAssembles (Instruction ins, String opcode, Integer rd, Integer rs, Integer rt) {
+				assertNotNull_InsEquals( ins, opcode, Type.REGISTER, null, rd, rs, rt );
+				assertAssemblesSuccessfully(ins, null);
 			}
 			
-			private void assertNotNullOperandsEqual (Operands ops, Operands.InstrType type, String label, Integer imm, Integer rd, Integer rs, Integer rt) {
-				assertNotNull( ops );
-				assertEquals( type, ops.getInstrType( ) );
-				assertAll( ( ) -> assertEquals( label, ops.getLabel( ) ),
-						   ( ) -> assertEquals( imm, ops.getImmediate( ) ),
-						   ( ) -> assertEquals( rd, ops.getRd( ) ),
-						   ( ) -> assertEquals( rs, ops.getRs( ) ),
-						   ( ) -> assertEquals( rt, ops.getRt( ) )
-				);
+			private void assertNotNull_InsEquals (Instruction ins, String opcode, Type type, Integer imm, Integer rd, Integer rs, Integer rt) {
+				assertNotNull( ins );
+				assertEquals( "Instruction{ opcode= '"+opcode+"', type= " + type + ", RD= " + rd + ", RS= " + rs + ", RT= " + rt +
+							 ", IMM= " + imm+" }", ins.toString() );
 			}
-			private void assertNotNullOperandsEqual (Operands ops, String opcode, String label, Integer rt) {
-				assertNotNullOperandsEqual( ops, type( opcode ),label,null,null,null,rt );
+			private void assertNotNull_InsEquals_Jump (Instruction ins, String opcode, Type type, String label) {
+				assertNotNull( ins );
+				assertEquals( "Instruction{ opcode= '" + opcode + "', type= " + type + ", RD= null, RS= null, RT= null"
+							  +", IMM= null, label= '" + label + "' }", ins.toString() );
+			}
+			private void assertNotNull_InsEquals_Mem (Instruction ins, String opcode, Type type, Integer rt, String label) {
+				assertNotNull( ins );
+				assertEquals( "Instruction{ opcode= '" + opcode + "', type= " + type + ", RD= null, RS= 0, RT= "+rt
+							  +", IMM= null, label= '" + label + "' }", ins.toString() );
 			}
 				/** asserts the list of registers are not Recognised */
 			private void notRecognised (int lineNo, String... notRecognised) {
@@ -272,8 +264,8 @@ public class ValidateInstructionsTest {
 				expectedErrs.append( -450, _opsForOpcodeNotValid( opcode, I.BRANCH.OPS_IMM ) );
 				
 				// Branch Label	-> Fail Assembly
-				Operands operands=opsVal.splitValidOperands( -20, opcode, I.BRANCH.OPS_LABEL );
-				expect.assertFailAssemble_LabelPtr( operands, "instr" );
+				Instruction ins=ValidateInstr.splitValidOperands( -20, opcode, I.BRANCH.OPS_LABEL );
+				expect.assertFailAssemble_LabelPtr( ins, "instr" );
 			}
 			
 			@Tag ( "Invalid_Operands_Assemble" )
@@ -288,14 +280,15 @@ public class ValidateInstructionsTest {
 			@Test    // Null -> Does Nothing
 			@DisplayName ( "Null Opcode" )
 			void nullOpcode ( ) {
-				assertNull( opsVal.splitValidOperands( 230, null, null ) );
+				assertNull( ValidateInstr.splitValidOperands( 230, null, null ) );
 			}
 			@ParameterizedTest ( name="[{index}] Invalid Opcode[\"{0}\"] -> Returns Null" )
 			@ArgumentsSource ( InstrProvider.Invalid.Limit_Two.class )
 			@ArgumentsSource ( BlankProvider.class )
 			void invalidOpcode (String opcode) {
-				expectedErrs.append( 500, FMT_MSG._NO_OPS );
-				expect.operandsForOpcodeNotValid( 500, opcode, null );
+				assertNull( ValidateInstr.splitValidOperands( 500, opcode,null) );
+				expectedErrs.appendEx( 500, FMT_MSG.Opcode_NotSupported( opcode ) );
+				
 			}
 			
 			@Nested
@@ -308,26 +301,25 @@ public class ValidateInstructionsTest {
 				@Test
 				void R_Type__Leading_Trailing_And_Internal_Spaces ( ) {
 					expect.notRecognised( 42, " r1", "  r2", "r3 " );
-					expect.operandsForOpcodeNotValid( 42, "add", " r1,   r2 , r3 " );
+					expect.invalidOperandsForOpcode( 42, "add", " r1,   r2 , r3 " );
 					
 				}
 				
 				@Test
 				void SingleTabs_Valid ( ) {
-					Operands operands=opsVal.splitValidOperands( 12, "sub", "s8,\tr3,\t$8" );
-					expect.assertNotNullOperandsEqual_And_Throws_ISE( operands, Operands.InstrType.R,
-																		  null, 30, 3, 8 );
+					Instruction ins=ValidateInstr.splitValidOperands( 12, "sub", "s8,\tr3,\t$8" );
+					expect.assertREGISTER_Equals_AndAssembles( ins,"sub",30, 3, 8 );
 				}
 				@Test
 				void DoubleTabs_OrLeading_Trailing_Tabs_Invalid ( ) {
 					expect.notRecognised( 12, "\t$24", "\t$16" );
-					expect.operandsForOpcodeNotValid( 12, "sub", "\t$24,\tr20\t,\t\t$16" );
+					expect.invalidOperandsForOpcode( 12, "sub", "\t$24,\tr20\t,\t\t$16" );
 				}
 				
 				@Test
 				void NewLine_Invalid ( ) {
 					expect.notRecognised( 67, "R0" );
-					expect.operandsForOpcodeNotValid( 67, "sub", "t8\t,r20,\nR0" );
+					expect.invalidOperandsForOpcode( 67, "sub", "t8\t,r20,\nR0" );
 				}
 				
 			}
@@ -340,28 +332,20 @@ public class ValidateInstructionsTest {
 			@ParameterizedTest ( name="Valid {index} - opcode\"{0}\"" + TA )
 			@ArgumentsSource ( NO_OPS.class )
 			void assemble_ValidOperands (String opcode) {
-				Operands operands=opsVal.splitValidOperands( 12, opcode, " " );
-				expect.assertNotNullOperandsEqual_And_Throws_ISE( operands, InstrType.R, null, null, null, null );
+				Instruction ins=ValidateInstr.splitValidOperands( 12, opcode, " " );
+				expect.assertNotNull_InsEquals( ins, opcode, Type.NOP, null, null,null, null );
+				expect.assertAssemblesSuccessfully(ins, null);
 			}
 			
 			@Test
 			void comments_Not_Removed ( ) {
-				assertThrows( IllegalStateException.class, ()-> opsVal.splitValidOperands(20,"j"," #"));
+				assertThrows( IllegalStateException.class, ()-> ValidateInstr.splitValidOperands( 20, "j", " #"));
 				
 			}
 			
 			@Test
-			void operands_EdgeCase (){
-				assertThrows( IllegalArgumentException.class, ()-> new Operands(" "));
-				assertThrows( IllegalArgumentException.class, ()-> new Operands("lw", 20,""));
-				assertThrows( IllegalArgumentException.class, ()-> new Operands("panda", 20,20,20));
-				
-				Operands temp = new Operands("lw", 2,null,null);
-				expect.assertNotNullOperandsEqual_And_Throws_IAE(temp,expect.type( "lw" ),null,null,2,null  );
-				
-				assertEquals("Operands{ instrType= R, immediateSet= false, "+
-							 "rs= null, rt= null, rd= null, immediate= null, label= 'null' }",
-							 Operands.getExit().toString() );
+			void Invalid_OpCode (){
+				assertThrows( IllegalArgumentException.class, ()-> new Nop(" "));
 			}
 			
 		}
@@ -369,26 +353,24 @@ public class ValidateInstructionsTest {
 		@Nested
 		class Register_Type {
 			
-			@ParameterizedTest ( name="Valid {index} - opcode\"{0}\"" + TA )
+			@ParameterizedTest ( name="Valid {index} - opcode\"{0}\"" + A )
 			@ArgumentsSource ( RD_RS_RT.class )
 			void assemble_ValidOperands (String opcode) {
-				Operands operands=opsVal.splitValidOperands( 12, opcode, RD_RS_RT.OPS );
-				expect.assertNotNullOperandsEqual_And_Throws_ISE( operands, InstrType.R, null, 1, 1, 1 );
+				Instruction ins=ValidateInstr.splitValidOperands( 12, opcode, RD_RS_RT.OPS );
+				expect.assertREGISTER_Equals_AndAssembles( ins, opcode, 1, 1, 1 );
 			}
-			@ParameterizedTest ( name="Valid {index} - opcode\"{0}\" -  Different Register Names" + TA )
+			@ParameterizedTest ( name="Valid {index} - opcode\"{0}\" -  Different Register Names" + A )
 			@ArgumentsSource ( RD_RS_RT.class )
 			void testOperands_Add_Sub ( ) {
-				Operands operands=opsVal.splitValidOperands( 12, "add", "$8,r31, $s2" );
-				expect.assertNotNullOperandsEqual_And_Throws_ISE( operands, Operands.InstrType.R,
-																	  null, 8, 31, 18 );
+				Instruction ins=ValidateInstr.splitValidOperands( 12, "add", "$8,r31, $s2" );
+				expect.assertREGISTER_Equals_AndAssembles( ins, "add", 8, 31, 18 );
 			}
 			
-			@ParameterizedTest ( name="Valid {index} - opcode [sub], operands \"{0}\" -  Mixed Spacing" + TA )
+			@ParameterizedTest ( name="Valid {index} - opcode [sub], operands \"{0}\" -  Mixed Spacing" + A )
 			@ValueSource ( strings={ "$24 , $s4, $s0", "t8,r20,\t$16" } )
 			void testOperands_R_Type_Spacing (String ops) {
-				Operands operands=opsVal.splitValidOperands( 12, "sub", ops );
-				expect.assertNotNullOperandsEqual_And_Throws_ISE( operands, Operands.InstrType.R,
-																	  null, 24, 20, 16 );
+				Instruction ins=ValidateInstr.splitValidOperands( 12, "sub", ops );
+				expect.assertREGISTER_Equals_AndAssembles( ins, "sub", 24, 20, 16 );
 			}
 			
 			@Nested
@@ -398,7 +380,7 @@ public class ValidateInstructionsTest {
 				@ArgumentsSource ( RD_RS_RT.class )
 				void multipleInvalid_ZWW ( ) {
 					expect.notRecognised( 76, "$panda", "31" );
-					expect.operandsForOpcodeNotValid( 76, "add", "zero, $panda, 31" );
+					expect.invalidOperandsForOpcode( 76, "add", "zero, $panda, 31" );
 					testLogs.zeroWarning( 76, "zero" );
 				}
 			}
@@ -412,25 +394,25 @@ public class ValidateInstructionsTest {
 			@DisplayName ( "RT, RS, IMM" )
 			class RT_RS_IMM {
 				
-				@ParameterizedTest ( name="Valid {index} - opcode\"{0}\"" + TA )
+				@ParameterizedTest ( name="Valid {index} - opcode\"{0}\"" + A )
 				@ArgumentsSource ( I.RT_RS_IMM.class )
 				void assemble_ValidOperands (String opcode) {
-					Operands operands=opsVal.splitValidOperands( 12, opcode, I.RT_RS_IMM.OPS );
-					expect.assertNotNullOperandsEqual_And_Throws_IAE( operands, InstrType.I_rt_write, -40, null, 1, 1 );
+					Instruction ins=ValidateInstr.splitValidOperands( 12, opcode, I.RT_RS_IMM.OPS );
+					expect.assertIMMEDIATE_Equals_AndAssembles( ins, opcode, -40, 1, 1 );
 				}
 				
 				@ParameterizedTest ( name="{index} - Immediate\"{2}\" Valid 16Bit :: Hex" )
 				@ArgumentsSource ( ImmediateProvider._16Bit.class )
 				void Valid_16Bit_Hex (String addr, Integer address, String hex, Integer imm) {
-					Operands operands = opsVal.splitValidOperands(30,"addi","$2, $2, "+hex);
-					expect.assertNotNullOperandsEqual_And_Throws_IAE(operands, InstrType.I_rt_write, imm,null,2,2);
+					Instruction ins = ValidateInstr.splitValidOperands( 30, "addi", "$2, $2, " + hex);
+					expect.assertIMMEDIATE_Equals_AndAssembles( ins, "addi", imm, 2, 2);
 				}
 				
 				@ParameterizedTest ( name="{index} - Immediate\"{3}\" Valid 16Bit :: Imm" )
 				@ArgumentsSource ( ImmediateProvider._16Bit.class )
 				void Valid_16Bit_Imm (String addr, Integer address, String hex, Integer imm) {
-					Operands operands = opsVal.splitValidOperands(30,"addi","$2, $2, "+imm);
-					expect.assertNotNullOperandsEqual_And_Throws_IAE(operands, InstrType.I_rt_write, imm,null,2,2);
+					Instruction ins = ValidateInstr.splitValidOperands( 30, "addi", "$2, $2, " + imm);
+					expect.assertIMMEDIATE_Equals_AndAssembles( ins, "addi", imm, 2, 2);
 				}
 				
 				@Nested
@@ -438,14 +420,14 @@ public class ValidateInstructionsTest {
 					
 					@Test
 					@DisplayName ( "Invalid Operands I_RT_RS_IMM (ADDI), given I_RT_Imm" )
-					void invalidOperands_I_RT_RS ( ) { expect.operandsForOpcodeNotValid( 52, "addi", "$1, 0x20" ); }
+					void invalidOperands_I_RT_RS ( ) { expect.invalidOperandsForOpcode( 52, "addi", "$1, 0x20" ); }
 					
 					@ParameterizedTest ( name="Multiple Invalid {index} - opcode\"{0}\" And ZeroWriteWarning" )
 					@ArgumentsSource ( I.RT_MEM.class )
 					void multipleInvalid_ZWW ( ) {
-						Operands operands=opsVal.splitValidOperands( 30, "addi", "$0, $panda, 32769" );
+						Instruction ins=ValidateInstr.splitValidOperands( 30, "addi", "$0, $panda, 32769" );
 						// Errors with all Operands
-						assertNull( operands );
+						assertNull( ins );
 						testLogs.appendErrors(
 								30,
 								FMT_MSG.reg._NotRecognised( "$panda" ),
@@ -459,14 +441,14 @@ public class ValidateInstructionsTest {
 					@ArgumentsSource ( ImmediateProvider._16Bit.Invalid.class )
 					void Invalid_16Bit_Hex (String addr, Integer address, String hex, Integer imm) {
 						expectedErrs.appendEx(30,FMT_MSG.imm.notSigned16Bit( imm ));
-						expect.operandsForOpcodeNotValid(30,"addi","$2, $2, "+hex);
+						expect.invalidOperandsForOpcode( 30, "addi", "$2, $2, " + hex);
 					}
 					
 					@ParameterizedTest ( name="{index} - Immediate\"{3}\" Not Valid 16Bit :: Imm" )
 					@ArgumentsSource ( ImmediateProvider._16Bit.Invalid.class )
 					void Invalid_16Bit_Imm (String addr, Integer address, String hex, Integer imm) {
 						expectedErrs.appendEx(30,FMT_MSG.imm.notSigned16Bit( imm ));
-						expect.operandsForOpcodeNotValid(30,"addi","$2, $2, "+imm);
+						expect.invalidOperandsForOpcode( 30, "addi", "$2, $2, " + imm);
 					}
 				}
 				
@@ -482,78 +464,81 @@ public class ValidateInstructionsTest {
 				 	When Imm with Empty Brackets (Register $0),   It does not !. -> This should be caught during Execution
 				 */
 				
-				/** If opcode belongs to rt_write, it pushed ZeroWriteWarning */
-				private void possibleZeroWarning (String opcode, int lineNo, String regName) {
-					if ( expect.type( opcode )==InstrType.I_rt_write )
-						testLogs.zeroWarning( lineNo, regName );
-				}
-				
 				@Nested
-				@DisplayName ( "Valid" )
 				class Valid {
 					
 					@ParameterizedTest ( name="Valid {index} - opcode\"{0}\", Label" + A )
 					@ArgumentsSource ( I.RT_MEM.class )
 					void assemble_ValidOperands_Label (String opcode) {
-						Operands operands=opsVal.splitValidOperands( 12, opcode, "$9, data" );
-						expect.assertNotNullOperandsEqual( operands, opcode , "data", 9 );
-						expect.assertAssembles_Label_Successfully( operands, 0x10010000 );
+						Instruction ins=ValidateInstr.splitValidOperands( 12, opcode, "$9, data" );
+						expect.assertNotNull_InsEquals_Mem( ins, opcode, Type.IMMEDIATE, 9, "data" );
+						expect.assertAssemblesSuccessfully( ins, 0x10010000 );
 						//MAX
-						Operands operands2=opsVal.splitValidOperands( 12, opcode, "r2, data_top" );
-						expect.assertNotNullOperandsEqual( operands2, opcode , "data_top", 2 );
-						expect.assertAssembles_Label_Successfully( operands2, 0x100107F8 );
+						Instruction ins1=ValidateInstr.splitValidOperands( 12, opcode, "r2, data_top" );
+						expect.assertNotNull_InsEquals_Mem( ins1, opcode, Type.IMMEDIATE, 2, "data_top" );
+						expect.assertAssemblesSuccessfully( ins1, 0x100107F8 );
 					}
 					
-					
 					@Nested
-					class Throws_Assemble {
+					@DisplayName( "Base+Offset/Imm(RS)" )
+					class Base_Offset {
 						
-						@ParameterizedTest ( name="Valid {index} - opcode\"{0}\", Imm(RS)" + TA )
+						@ParameterizedTest ( name="Valid {index} - opcode\"{0}\", Imm(RS)" + A )
 						@ArgumentsSource ( I.RT_MEM.class )
 						void assemble_ValidOperands (String opcode) {
-							Operands operands=opsVal.splitValidOperands( 12, opcode, I.RT_MEM.OPS_IMM_RS );
-							expect.assertNotNullOperandsEqual_And_Throws_IAE( operands, expect.type( opcode ),
-																				  -8, null, 1, 1 );
+							Instruction ins=ValidateInstr.splitValidOperands( 12, opcode, I.RT_MEM.OPS_IMM_RS );
+							expect.assertIMMEDIATE_Equals_AndAssembles( ins, opcode,-8, 1, 1 );
 						}
 						
-						@ParameterizedTest ( name="Valid {index} - opcode\"{0}\" Base+Offset :: NoImm" + TA )
+						@ParameterizedTest ( name="Valid {index} - opcode\"{0}\" Base+Offset :: Int" + A )
 						@ArgumentsSource ( I.RT_MEM.class )
-						@Tag ( Tags.MULTIPLE )
-						@DisplayName ( "Test Operands, Base+Offset" )
-						void assemble_ValidOperands_BaseOffset_NoImm (String opcode) {
-							// No Imm
-							Operands operands=opsVal.splitValidOperands( 0, opcode, "$6, ($1)" );
-							expect.assertNotNullOperandsEqual_And_Throws_IAE( operands, expect.type( opcode ), 0, null, 1, 6 );
-							// No Imm or RS
-							Operands operands1=opsVal.splitValidOperands( 0, opcode, "$8,  ()" );
-							expect.assertNotNullOperandsEqual_And_Throws_IAE( operands1, expect.type( opcode ), 0, null, 0, 8 );
-						}
-						
-						@ParameterizedTest ( name="Valid {index} - opcode\"{0}\" Base+Offset :: Int" + TA )
-						@ArgumentsSource ( I.RT_MEM.class )
-						@Tag ( Tags.MULTIPLE )
-						@DisplayName ( "Test Operands, Base+Offset" )
 						void assemble_ValidOperands_BaseOffset_INT (String opcode) {
-							Operands operands=opsVal.splitValidOperands( 0, opcode, "$5, 20 ($1)" );
-							expect.assertNotNullOperandsEqual_And_Throws_IAE( operands, expect.type( opcode ), 20, null, 1, 5 );
-							// No RS
-							Operands operands1=opsVal.splitValidOperands( 0, opcode, "$7, -800 ()" );
-							expect.assertNotNullOperandsEqual_And_Throws_IAE( operands1, expect.type( opcode ), -800, null, 0,
-																				  7 );
+							Instruction ins=ValidateInstr.splitValidOperands( 0, opcode, "$5, 20 ($1)" );
+							expect.assertIMMEDIATE_Equals_AndAssembles( ins, opcode,20, 1, 5 );
 						}
 						
+						@ParameterizedTest ( name="Valid {index} - opcode\"{0}\" Base+Offset :: NoImm" + A )
+						@ArgumentsSource ( I.RT_MEM.class )
+						void assemble_ValidOperands_BaseOffset_NoImm (String opcode) {
+							Instruction ins=ValidateInstr.splitValidOperands( 0, opcode, "$6, ($1)" );
+							expect.assertIMMEDIATE_Equals_AndAssembles( ins, opcode, 0, 1, 6 );
+						}
 						
 						@ParameterizedTest ( name="Valid {index} - opcode\"{0}\" Base+Offset :: HEX" + TA )
 						@ArgumentsSource ( I.RT_MEM.class )
 						@Tag ( Tags.MULTIPLE )
 						@DisplayName ( "Test Operands, Base+Offset" )
 						void assemble_ValidOperands_BaseOffset_Hex (String opcode) {
-							Operands operands=opsVal.splitValidOperands( 0, opcode, "$5, 0x290($8)" );
-							expect.assertNotNullOperandsEqual_And_Throws_IAE( operands, expect.type( opcode ), 656, null, 8, 5 );
-							// No RS
-							Operands operands1=opsVal.splitValidOperands( 0, opcode, "$7, 0xFFFF8000 ()" );
-							expect.assertNotNullOperandsEqual_And_Throws_IAE( operands1, expect.type( opcode ), -32768, null, 0,
-																				  7 );
+							Instruction ins=ValidateInstr.splitValidOperands( 0, opcode, "$5, 0x290($8)" );
+							expect.assertIMMEDIATE_Equals_AndAssembles( ins, opcode, 656, 8, 5 );
+						}
+						
+						@Nested
+						class no_RS {
+							
+							@ParameterizedTest ( name="Valid {index} - opcode\"{0}\" Base+Offset :: NoImm, noRS" + A )
+							@ArgumentsSource ( I.RT_MEM.class )
+							void assemble_ValidOperands_BaseOffset_NoImm_noRS (String opcode) {
+								// TODO check the IMM is a valid address, when RS=0
+								Instruction ins1=ValidateInstr.splitValidOperands( 0, opcode, "$8,  ()" );
+								expect.assertIMMEDIATE_Equals_AndAssembles( ins1, opcode, 0, 0, 8 );
+							}
+							
+							@ParameterizedTest ( name="Valid {index} - opcode\"{0}\" Base+Offset :: Int, noRS" + A )
+							@ArgumentsSource ( I.RT_MEM.class )
+							void assemble_ValidOperands_BaseOffset_INT_noRS (String opcode) {
+								// TODO check the IMM is a valid address, when RS=0
+								Instruction ins1=ValidateInstr.splitValidOperands( 0, opcode, "$7, -800 ()" );
+								expect.assertIMMEDIATE_Equals_AndAssembles( ins1, opcode, -800, 0, 7 );
+							}
+							
+							@ParameterizedTest ( name="Valid {index} - opcode\"{0}\" Base+Offset :: HEX, noRS" + A )
+							@ArgumentsSource ( I.RT_MEM.class )
+							void assemble_ValidOperands_BaseOffset_Hex_noRS (String opcode) {
+								// TODO check the IMM is a valid address, when RS=0
+								Instruction ins1=ValidateInstr.splitValidOperands( 0, opcode, "$9, 0xFFFF8000 ()" );
+								expect.assertIMMEDIATE_Equals_AndAssembles( ins1, opcode, -32768, 0, 9);
+							}
 						}
 						
 					}
@@ -563,83 +548,87 @@ public class ValidateInstructionsTest {
 				@Nested
 				class Invalid_Operands {
 					
-					@ParameterizedTest ( name="Valid {index} - opcode\"{0}\", NonData Label" + FA )
+					@ParameterizedTest ( name="Valid - opcode\"{0}\", NonData Label" + FA )
 					@ArgumentsSource ( I.RT_MEM.class )
 					void NonData_Label (String opcode) {
 						for ( String label : InstrProvider.KeysExcluding( "data","data_top" ) ) {
-							Operands operands=opsVal.splitValidOperands( 12, opcode, "$2," + label );
-							expect.assertNotNullOperandsEqual( operands, opcode , label,2 );
-							expect.assertFailAssemble_LabelPtr( operands, label );
+							Instruction ins=ValidateInstr.splitValidOperands( 12, opcode, "$2," + label );
+							expect.assertNotNull_InsEquals_Mem( ins, opcode, Type.IMMEDIATE, 2, label );
+							expect.assertFailAssemble_LabelPtr( ins, label );
 						}
 					}
 					
 					@ParameterizedTest ( name="Invalid {index} - opcode\"{0}\" LabelNotFound And ZeroWriteWarning" )
 					@ArgumentsSource ( I.RT_MEM.class )
 					void LabelNotFound_ZWW (String opcode) {
-						Operands operands=opsVal.splitValidOperands( 30, opcode, "$0, panda" );
+						Instruction ins=ValidateInstr.splitValidOperands( 30, opcode, "$0, panda" );
 						
-						expect.assertNotNullOperandsEqual( operands, opcode ,"panda",0 );
-						expect.assertFailAssemble_LabelPtr( operands, "panda" );
-						possibleZeroWarning( opcode, 30, "$0" );
+						expect.assertNotNull_InsEquals_Mem( ins, opcode, Type.IMMEDIATE, 0, "panda" );
+						expect.assertFailAssemble_LabelPtr( ins, "panda" );
+						if ( InstructionValidation.I_MEM_WRITE.contains( opcode ) )
+							testLogs.zeroWarning( 30, "$0" );
 					}
 					
 					
 					@ParameterizedTest ( name="Invalid {index} - opcode\"{0}\" Invalid Integer" )
 					@ArgumentsSource ( I.RT_MEM.class )
 					void invalid_Integer (String opcode) {
-						Operands operands=opsVal.splitValidOperands( 23, opcode, "$1, 1.5" );
+						ValidateInstr.splitValidOperands( 23, opcode, "$1, 1.5" );
 						// Errors with all Operands
 						expectedErrs.appendEx( 23, FMT_MSG.imm.notValInt( "1.5" ) );
 						expectedErrs.append( 23, _opsForOpcodeNotValid( opcode, "$1, 1.5" ) );
 						
 						expectedErrs.appendEx( 23, FMT_MSG.imm.notValInt( "1.5" ) );
-						expect.operandsForOpcodeNotValid( 23, opcode, "$1, 1.5" );
+						expect.invalidOperandsForOpcode( 23, opcode, "$1, 1.5" );
 					}
 					
 					@ParameterizedTest ( name="Invalid {index} - opcode\"{0}\" No ImmRS Found" )
 					@ArgumentsSource ( I.RT_MEM.class )
 					void NoImmRS_NotFound (String opcode) {
 						expectedErrs.appendEx( 78, "\t\tNo Imm(RS) found" );
-						expect.operandsForOpcodeNotValid( 78, opcode, "$1," );
+						expect.invalidOperandsForOpcode( 78, opcode, "$1," );
 					}
 					
 				}
 				
 				@Nested
 				@DisplayName ( "Imm(RS) method" )
-				class immRS {
+				class immRS_method {
 					@BeforeEach
 					void setUp ( ) {
-						opsVal.setLineNo( -1 );
-						opsVal.setOpcode( "lw" );// valid opcode for ImmRS
+						ValidateInstr.setLineNo( -1 );	// TODO change back to parameters being passed into every method
+						ValidateInstr.setOpcode( "lw" );// valid opcode for ImmRS
 					}
 					
 					@Nested
 					@DisplayName ( "Valid Imm(RS)" )
 					class validImmRS {
 						
+						private void assertImmRS (Instruction ins, int imm, int rs) {
+							assertNotNull( ins );
+							System.out.println( ins );
+							assertAll(
+									( ) -> assertTrue( ins.toString().contains( "IMM= "+imm ) ),
+									( ) -> assertTrue( ins.toString().contains( "RS= "+rs ) )
+							);
+						}
+						
 						@ParameterizedTest ( name="Valid no RS, no IMM {index}, Just Brackets[{0}]] -> Default" )
 						@ValueSource ( strings={ "( )", "()" } )
 						void onlyBrackets (String immRS) {
-							assertImmRS( opsVal.rt_ImmRs( 9, immRS ), 0, 0 );
+							assertImmRS( ValidateInstr.rt_ImmRs( 9, immRS ), 0, 0 );
 						}
-						private void assertImmRS (Operands ops, int imm, int rs) {
-							assertNotNull( ops );
-							assertAll(
-									( ) -> assertEquals( imm, ops.getImmediate( ) ),
-									( ) -> assertEquals( rs, ops.getRs( ) )
-							);
-						}
+						
 						@ParameterizedTest ( name="Valid {index} - \"{0}\" -> noIMM -> Default" )
 						@ValueSource ( strings={ "($2)", "( $2 )" } )
 						void noIMM (String immRS) {
-							assertImmRS( opsVal.rt_ImmRs( 8, immRS ), 0, 2 );// RS = $2 ==>2
+							assertImmRS( ValidateInstr.rt_ImmRs( 8, immRS ), 0, 2 );// RS = $2 ==>2
 						}
 						
 						@ParameterizedTest ( name="Valid {index} - \"{0}\" -> noRS -> Default" )
 						@ValueSource ( strings={ "8()", "8 ()", "8 ( )", "0x8 ()" } )
 						void noRS (String immRS) {
-							assertImmRS( opsVal.rt_ImmRs( 7, immRS ), 8, 0 );// Imm = 8
+							assertImmRS( ValidateInstr.rt_ImmRs( 7, immRS ), 8, 0 );// Imm = 8
 						}
 						
 					}
@@ -651,14 +640,14 @@ public class ValidateInstructionsTest {
 						@ParameterizedTest ( name="invalidImmRS {index} - \"{0}\" -> MissingOpeningBracket" )
 						@ValueSource ( strings={ "1.5 )", "8$2)", "8 $2)", "8)", ")", "$2)", "0x2 $4)" } )
 						void missingOpeningBracket (String immRS) {
-							assertNull( opsVal.rt_ImmRs( 5, immRS ) );
-							expectedErrs.appendEx( -1, FMT_MSG.imm.RS_MissingOpeningBracket( ) );
+							assertNull( ValidateInstr.rt_ImmRs( 5, immRS ) );
+							expectedErrs.appendEx( -1, FMT_MSG.imm.RS_MissingOpeningBracket );
 						}
 						@ParameterizedTest ( name="invalidImmRS {index} - \"{0}\" -> MissingClosingBracket" )
 						@ValueSource ( strings={ "1.5 (", "8($2", "8 ($2", "8(", "(", "($2", "0x2 ($4" } )
 						void missingClosingBracket (String immRS) {
-							assertNull( opsVal.rt_ImmRs( 4, immRS ) );
-							expectedErrs.appendEx( -1, FMT_MSG.imm.RS_MissingClosingBracket( ) );
+							assertNull( ValidateInstr.rt_ImmRs( 4, immRS ) );
+							expectedErrs.appendEx( -1, FMT_MSG.imm.RS_MissingClosingBracket );
 						}
 						
 					}
@@ -670,8 +659,8 @@ public class ValidateInstructionsTest {
 						@ParameterizedTest ( name="Imm {index} - \"{0}\" -> Not Valid Data Address" )
 						@ValueSource ( strings={ "8", "0x8" } )
 						void noRS (String immRS) {
-							Operands ops=opsVal.rt_ImmRs( 7, immRS );    // Imm
-							assertNull( ops );
+							Instruction ins=ValidateInstr.rt_ImmRs( 7, immRS );    // Imm
+							assertNull( ins );
 							AddressValidation.isSupportedDataAddr( 4*parseImm( immRS ), expectedErrs );
 						}
 						
@@ -682,10 +671,10 @@ public class ValidateInstructionsTest {
 							@ParameterizedTest ( name="{index}, invalid Imm[{0}]]" )
 							@ValueSource ( strings={ "1.5", "0x 2" } )
 							void invalidImm (String imm) {
-								assertNull( opsVal.rt_ImmRs( 4, imm ) );
+								assertNull( ValidateInstr.rt_ImmRs( 4, imm ) );
 								expectedErrs.appendEx( -1, FMT_MSG.imm.notValInt( imm ) );
 								
-								assertNull( opsVal.rt_ImmRs( 4, imm + " ()" ) );// + Brackets
+								assertNull( ValidateInstr.rt_ImmRs( 4, imm + " ()" ) );// + Brackets
 								expectedErrs.appendEx( -1, FMT_MSG.imm.notValInt( imm ) );
 								
 							}
@@ -693,10 +682,10 @@ public class ValidateInstructionsTest {
 							@ParameterizedTest ( name="{index}, invalid Imm[{0}]] Not 16Bit" )
 							@ValueSource ( strings={ "67108863", "-32769", "32768", "0xFFFF7FFF", "0x00008000" } )// TODO ARG SOURCE
 							void Not_16bit (String imm) {
-								assertNull( opsVal.rt_ImmRs( 4, imm ) );
+								assertNull( ValidateInstr.rt_ImmRs( 4, imm ) );
 								expectedErrs.appendEx( -1, FMT_MSG.imm.notSigned16Bit( parseImm( imm ) ) );
 								
-								assertNull( opsVal.rt_ImmRs( 4, imm + " ()" ) );// + Brackets
+								assertNull( ValidateInstr.rt_ImmRs( 4, imm + " ()" ) );// + Brackets
 								expectedErrs.appendEx( -1, FMT_MSG.imm.notSigned16Bit( parseImm( imm ) ) );
 							}
 							
@@ -722,13 +711,12 @@ public class ValidateInstructionsTest {
 				@ParameterizedTest ( name="Valid {index} - opcode\"{0}\", Jump_Type :: Imm" + A )
 				@ArgumentsSource ( J.class )
 				void assemble_ValidOperands_Label (String opcode) {
-					Operands operands=opsVal.splitValidOperands( 60, opcode, "instr" );
-					expect.assertNotNullOperandsEqual(operands, expect.type(opcode), "instr",
-													  null, null, null, null);
-					expect.assertAssembles_Label_Successfully( operands, 0x00400000/4);
+					Instruction ins=ValidateInstr.splitValidOperands( 60, opcode, "instr" );
+					expect.assertNotNull_InsEquals_Jump( ins, opcode, Type.JUMP, "instr");
+					expect.assertAssemblesSuccessfully( ins, 0x00400000/4);
 					//MAX
-					Operands operands2=opsVal.splitValidOperands( 60, opcode, "instr_top" );
-					expect.assertAssembles_Label_Successfully( operands2, 0x00500000/4);
+					Instruction ins1=ValidateInstr.splitValidOperands( 60, opcode, "instr_top" );
+					expect.assertAssemblesSuccessfully( ins1, 0x00500000/4);
 				}
 				
 				@Nested
@@ -737,24 +725,20 @@ public class ValidateInstructionsTest {
 					@ParameterizedTest ( name="Valid {index} - opcode\"{0}\", Jump_Type :: Imm" + TA )
 					@ArgumentsSource ( J.class )
 					void assemble_ValidOperands_Imm (String opcode) {
-						Operands operands=opsVal.splitValidOperands( 0, opcode, "1048576" );
-						expect.assertNotNullOperandsEqual_And_Throws_IAE(operands, expect.type(opcode),
-																			 1048576,null,null,null);
+						Instruction ins=ValidateInstr.splitValidOperands( 0, opcode, "1048576" );
+						expect.assertNotNull_InsEquals( ins, opcode, Type.JUMP, 1048576,null,null, null);
 						//MAX
-						Operands operands2=opsVal.splitValidOperands( 0, opcode, "1310720" );
-						expect.assertNotNullOperandsEqual_And_Throws_IAE(operands2, expect.type(opcode),
-																			 1310720,null,null,null);
+						Instruction ins1=ValidateInstr.splitValidOperands( 0, opcode, "1310720" );
+						expect.assertNotNull_InsEquals( ins1, opcode, Type.JUMP, 1310720,null,null, null);
 					}
 					@ParameterizedTest ( name="Valid {index} - opcode\"{0}\", Jump_Type :: Hex" + TA )
 					@ArgumentsSource ( J.class )
 					void assemble_ValidOperands_Hex (String opcode) {
-						Operands operands=opsVal.splitValidOperands( 0, opcode, "0x00100000" );
-						expect.assertNotNullOperandsEqual_And_Throws_IAE(operands, expect.type(opcode),
-																			 1048576,null,null,null);
+						Instruction ins=ValidateInstr.splitValidOperands( 0, opcode, "0x00100000" );
+						expect.assertNotNull_InsEquals( ins, opcode, Type.JUMP, 1048576, null,null, null);
 						//MAX
-						Operands operands2=opsVal.splitValidOperands( 0, opcode, "0x00140000" );
-						expect.assertNotNullOperandsEqual_And_Throws_IAE(operands2, expect.type(opcode),
-																			 1310720,null,null,null);
+						Instruction ins1=ValidateInstr.splitValidOperands( 0, opcode, "0x00140000" );
+						expect.assertNotNull_InsEquals( ins1, opcode, Type.JUMP, 1310720, null,null, null);
 					}
 					
 				}
@@ -767,9 +751,9 @@ public class ValidateInstructionsTest {
 				@ParameterizedTest ( name="IO {index}Jump _Immediate[{0}] - Out of Range" )
 				@ArgumentsSource (  ImmediateProvider.ConvertInvalid.OutOfRange.class )
 				void testInvalid_OperandsJump_ImmOutOfRange (String hex, int imm) {
-					Operands operands=opsVal.splitValidOperands( 0, "j", "" + imm );
-					assertNull( operands );
+					Instruction ins=ValidateInstr.splitValidOperands( 0, "j", "" + imm );
 					
+					assertNull( ins );
 					expectedErrs.appendEx( 0, FMT_MSG.imm.notUnsigned26Bit(imm) );
 					expectedErrs.append( 0, _opsForOpcodeNotValid( "j", "" + imm ) );
 				}
@@ -786,26 +770,26 @@ public class ValidateInstructionsTest {
 					int a=(int) imm*4;
 					String err="Instruction Address: \"" +hexAddr + "\" Not "+ ((a>=0x10000000 || a<0x00400000) ? "Valid" : "Supported");
 					expectedErrs.appendEx( err );
-					expect.operandsForOpcodeNotValid(97, "j", "" + imm);
+					expect.invalidOperandsForOpcode( 97, "j", "" + imm);
 					
 					//Hex
 					expectedErrs.appendEx( err );
-					expect.operandsForOpcodeNotValid(120, "j", "" + imm);
+					expect.invalidOperandsForOpcode( 120, "j", "" + imm);
 				}
 				
 				@Test
 				@DisplayName ( "Test Invalid Operands, Jump _TooManyOperands" )
 				void testInvalid_OperandsJump_TooManyOperands ( ) {
-					expect.operandsForOpcodeNotValid( "j", "0x100009, 50" );
+					expect.invalidOperandsForOpcode( "j", "0x100009, 50" );
 				}
 				
 				@ParameterizedTest ( name="Valid {index} - opcode\"{0}\", NonInstr Label" + FA )
 				@ArgumentsSource ( J.class )
 				void NonData_Label (String opcode) {
 					for ( String label : InstrProvider.KeysExcluding( "instr","instr_top" ) ) {
-						Operands operands=opsVal.splitValidOperands( 12, opcode, label );
-						expect.assertNotNullOperandsEqual( operands, opcode , label,null );
-						expect.assertFailAssemble_LabelPtr( operands, label );
+						Instruction ins=ValidateInstr.splitValidOperands( 12, opcode, label );
+						expect.assertNotNull_InsEquals_Jump( ins, opcode, Type.JUMP, label );
+						expect.assertFailAssemble_LabelPtr( ins, label );
 					}
 				}
 			}
@@ -817,21 +801,21 @@ public class ValidateInstructionsTest {
 				@ParameterizedTest ( name="[{index}] Immediate[{0}], Valid for Jump" )
 				@ArgumentsSource(ImmediateProvider.Instr_Imm.class )
 				void Jump_LabelAddress (String hexAddr, long addr, String hexImm, long imm) {
-					assertNotNull( opsVal.splitValidOperands( -1, "j", ""+imm ) );
-					assertNotNull( opsVal.splitValidOperands( -1, "j", hexImm ));
+					assertNotNull( ValidateInstr.splitValidOperands( -1, "j", "" + imm ) );
+					assertNotNull( ValidateInstr.splitValidOperands( -1, "j", hexImm ));
 					
 				}
 				
 				@ParameterizedTest ( name="[{index}] Label[{0}], Valid Label/Address for Jump" )
 				@ArgumentsSource(SetupProvider.ValidLabels.class )
-				void Invalid_LabelAddress (String label) { assertNotNull( opsVal.splitValidOperands( -1, "j", label ) ); }
+				void Invalid_LabelAddress (String label) { assertNotNull( ValidateInstr.splitValidOperands( -1, "j", label ) ); }
 				
 				@ParameterizedTest ( name="[{index}] Immediate[{0}], Valid for Mem" )
 				@Tag ( Tags.MULTIPLE )
 				@ValueSource ( strings={ "20", "0x2" } )
 				void Mem_LabelAddress (String labelAddr) {
-					assertNotNull( opsVal.splitValidOperands( -1, "lw", "$1," + labelAddr + "($0)" ) );
-					assertNotNull( opsVal.splitValidOperands( -1, "sw", "$1," + labelAddr + "($0)" ) );
+					assertNotNull( ValidateInstr.splitValidOperands( -1, "lw", "$1," + labelAddr + "($0)" ) );
+					assertNotNull( ValidateInstr.splitValidOperands( -1, "sw", "$1," + labelAddr + "($0)" ) );
 				}
 				
 				@Nested
@@ -840,7 +824,7 @@ public class ValidateInstructionsTest {
 					@ParameterizedTest ( name="[{index}] Label[{0}], Invalid Label/Address for Jump" )
 					@ArgumentsSource( SetupProvider.InvalidLabels.class )
 					void Invalid_LabelAddress (String label) {
-						assertNull( opsVal.splitValidOperands( -1, "j", label ) );
+						assertNull( ValidateInstr.splitValidOperands( -1, "j", label ) );
 						expectedErrs.appendEx( -1, FMT_MSG.label.notSupp( label ) );
 						expectedErrs.append( -1, _opsForOpcodeNotValid( "j", label ) );
 						
@@ -856,38 +840,17 @@ public class ValidateInstructionsTest {
 	@Nested
 	@DisplayName ( "Test Sub Modules" )
 	class testSubModules {
-		
-		@Test
-		@Tag ( Tags.MULTIPLE )
-		@DisplayName ( "Valid notNullInRange" )
-		void notNullInRange ( ) {
-			assertTrue( OperandsValidation.notNullAndInRange( 4, 4, 5 ) );
-			
-			assertTrue( OperandsValidation.notNullAndInRange( 0, 0, 31 ) );
-			
-			assertFalse( OperandsValidation.notNullAndInRange( 3, 4, 5 ) );
-			assertFalse( OperandsValidation.notNullAndInRange( null, 0, 5 ) );
-			
-			//noinspection ResultOfMethodCallIgnored
-			assertThrows( IllegalArgumentException.class, ( ) -> OperandsValidation.notNullAndInRange( 3, 5, 4 ) );
-			
-			//noinspection ResultOfMethodCallIgnored
-			assertThrows( IllegalArgumentException.class, ( ) -> OperandsValidation.notNullAndInRange( null, 5, 4 ) );
-		}
-		
-		
-		
 		@Test
 		@DisplayName ( "Convert Invalid Register" )
 		void validateConvertRegister ( ) {
-			opsVal.setLineNo( -1 );
-			assertNull( opsVal.convertRegister( "$f0", DataType.FLOATING_POINT ) );
+			ValidateInstr.setLineNo( -1 );
+			assertNull( ValidateInstr.convertRegister( "$f0", DataType.FLOATING_POINT ) );
 			expectedErrs.appendEx( -1, FMT_MSG.reg.wrongData( "$f0" ) );
 			
-			assertNull( opsVal.convertRegister( "$-40", DataType.NORMAL ) );
+			assertNull( ValidateInstr.convertRegister( "$-40", DataType.NORMAL ) );
 			expectedErrs.appendEx( -1, FMT_MSG.reg.notInRange( "$-40" ) );
 			
-			assertNull( opsVal.convertRegister( "$50", DataType.NORMAL ) );
+			assertNull( ValidateInstr.convertRegister( "$50", DataType.NORMAL ) );
 			expectedErrs.appendEx( -1, FMT_MSG.reg.notInRange( "$50" ) );
 		}
 		
@@ -895,14 +858,14 @@ public class ValidateInstructionsTest {
 		@ArgumentsSource ( RegisterProvider.ZERO.class )
 		void zeroWarning_Read (String regName) {
 			//isValidLoadRegister
-			assertNotNull( opsVal.convertRegister( regName, DataType.NORMAL ) );
+			assertNotNull( ValidateInstr.convertRegister( regName, DataType.NORMAL ) );
 		}
 		
 		@ParameterizedTest ( name="zeroWarning[{index}] on Write, Reg[{0}]" )
 		@ArgumentsSource ( RegisterProvider.ZERO.class )
 		void zeroWarning_Write (String regName) {
-			opsVal.setLineNo( -1 );
-			assertNotNull( opsVal.convertWriteRegister( regName, DataType.NORMAL ) );
+			ValidateInstr.setLineNo( -1 );
+			assertNotNull( ValidateInstr.convertWriteRegister( regName, DataType.NORMAL ) );
 			testLogs.zeroWarning( -1, regName );
 		}
 		

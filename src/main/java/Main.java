@@ -1,30 +1,28 @@
-import org.jetbrains.annotations.Nullable;
-import control.Execute;
+import control.Execution;
 
-import model.Instruction;
+import model.instr.Instruction;
 import model.MemoryBuilder;
 import model.components.DataMemory;
 import model.components.RegisterBank;
 
 import setup.Parser;
 
+import util.ansi_codes.Color;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
-import util.logs.Logger;
 import util.logs.WarningsLog;
 
 import java.util.ArrayList;
-import java.util.Scanner;
 
 public class Main {
 	public static void main(String[] args) {
 		//Disable Colour for Windows Terminals
 		if ( System.console( )!=null && System.getenv( ).get( "TERM" )==null )
-			Logger.Color.colorSupport=false;	// Tested Manually, enabled on CMD/Powershell
+			Color.colorSupport=false;	// Tested Manually, enabled on CMD/Powershell
 		//Setup
 		final ErrorLog errorLog=new ErrorLog( new ArrayList<>( ) );
 		final WarningsLog warningsLog=new WarningsLog( new ArrayList<>( ) );
-		final MemoryBuilder MEMORY_BUILDER=new MemoryBuilder( );
+		final MemoryBuilder MEMORY_BUILDER=new MemoryBuilder( errorLog, warningsLog );
 		final StringBuilder output = new StringBuilder();
 		final String path=(args.length>0)?args[0]:"";
 		
@@ -38,13 +36,13 @@ public class Main {
 			ArrayList<Instruction> instructions=MEMORY_BUILDER.assembleInstr( errorLog );
 			if ( instructions!=null ) {
 				System.out.println( "Assembly Complete!" );
-				//Execute
+				//Execution
 				// Setup Components
 				ExecutionLog executionLog=new ExecutionLog( new ArrayList<>( ) );
 				DataMemory dm=parser.getMem( executionLog );
 				RegisterBank rb=new RegisterBank( new int[ 32 ], executionLog );
 				// Execution
-				Execute.execute( dm, rb, instructions, executionLog, output );
+				Execution.RunToEnd( dm, rb, instructions, executionLog, output );
 				
 				// Output
 				// Print Results
@@ -56,15 +54,6 @@ public class Main {
 			}
 		}
 		errorLog.println();
-	}
-	
-	@SuppressWarnings ("UnusedReturnValue")
-	public static String waitForInput(@Nullable String msg) {
-		if ( msg==null ) {
-			msg+="Press ENTER to continue . . .";
-		}
-		System.out.print( Logger.Color.fmtColored( Logger.Color.WHITE_ANSI, msg ) );
-		return new Scanner( System.in ).nextLine( );
 	}
 	
 }
