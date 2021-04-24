@@ -12,11 +12,30 @@ Please make sure you have this installed before attempting to run the applicatio
 
 To run the executable jar file run:
 
-> **java -jar *MTT-1.0.jar*** <path>
+> **java -jar *MTT-1.0.jar*** <file>
 
-`With PowerShell/CMD there is no colour in the output, and you need to use backslashes '\' between directories.`
+If no path is specified it defaults to ***"FileInput.s"*** in the pwd.
 
-`If no path is specified it defaults to "FileInput.s" in pwd.`
+**File must end in *.s*, *.asm* or *.txt* extension!**
+
+- `With PowerShell/CMD there is no colour in the output, and you need to use backslashes '\' between directories.`
+
+- `Git-Bash needs '/' directory seperator, and does not auto complete.`
+  - `Consider using WSL on windows.` 
+    - (the default WSL terminal does not support anscii double underline. Windows Terminal does)
+
+## Change Log
+
+#### Ver1.1
+
+- Output now better segments the stages of execution (Fetch->Decode->Execute->Memory->WriteBack)
+
+- Internal changes, to better accurately represent and emulate computer architecture.
+- Execution is combined, and determined by control signals calculated during the Decode Stage.
+
+- Filename is now required to use an appropriate file extension (.s or .asm are preferred)
+
+  ![image-20210424094157858](README.assets/image-20210424094157858.png)
 
 ## Feedback
 
