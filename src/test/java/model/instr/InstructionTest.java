@@ -268,12 +268,14 @@ class InstructionTest {
 	@Nested
 	class JUMP {
 		
+		private final String label="instr_top";
+		
 		@Test
 		void Jump_Execution_Label ( ) {
 			// Setup
-			int addr=labelMap.get( "instr" );
+			int addr=labelMap.get( label );
 			// Build
-			Instruction ins=new J_Type( "j", "instr" );
+			Instruction ins=new J_Type( "j", label );
 			assertNotNull( ins );
 			// Execution & Result
 			Instr.assembleAndExecute_newPC( addr, ins );
@@ -295,7 +297,6 @@ class InstructionTest {
 		@Test
 		void JumpAndLink_Execution_Label  ( ) {
 			// Setup
-			String label="instr";
 			int addr=labelMap.get( label );
 			// Build
 			Instruction ins=new J_Type( "jal",  label );

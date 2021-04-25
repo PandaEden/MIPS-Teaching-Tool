@@ -144,7 +144,7 @@ public class InstructionValidationTest {
 			private void assertAssemblesSuccessfully (Instruction ins, Integer postAssembleAddr) {
 				assertNotNull(ins);
 				assertAll(
-						( ) -> assertTrue( ins.assemble( errLog, LABELS_MAP, 0x00400000) ),
+						( ) -> assertTrue( ins.assemble( errLog, LABELS_MAP, 0x00400004) ),
 						( ) -> assertEquals( postAssembleAddr, ins.getImmediate() )
 				);
 			}
@@ -160,7 +160,7 @@ public class InstructionValidationTest {
 			 <p>Or If the label is not in the {@link #LABELS_MAP}
 			 */
 			private void assertFailAssemble_LabelPtr (Instruction ins, String label) {
-				assertNotNull_FailAssemble(ins, 0x00400000);
+				assertNotNull_FailAssemble(ins, 0x00400004);
 				if ( LABELS_MAP.containsKey( label ) ) {
 					int addr=LABELS_MAP.get( label );
 					if ( ins instanceof J_Type || ins instanceof Branch ) {
@@ -726,6 +726,14 @@ public class InstructionValidationTest {
 			
 			@Nested
 			class Branches {
+				
+				@Test
+				void Branch_InfiniteLoop_CaughtAtAssembly () {
+					Instruction ins = ValidateInstr.splitValidOperands( 20,"beq","$0, $0, -1" );
+					expect.assertNotNull_FailAssemble(ins, 0x00400004);
+					expectedErrs.appendEx( "Branch PC is the same as its targetPC:[0x00400004], Imm:[-1], This will cause an infinite loop" );
+				}
+				
 				@Nested
 				class IMM { // Assume PC = 0x00400000
 					
@@ -853,7 +861,7 @@ public class InstructionValidationTest {
 						void assemble_ValidOperands_Label (String opcode) {
 							Instruction ins=ValidateInstr.splitValidOperands( 12, opcode, "$9, $20, instr" );
 							expect.assertNotNull_InsEquals( ins, opcode, Type.IMMEDIATE, 9,20, "instr" );
-							expect.assertAssemblesSuccessfully( ins, -1 );
+							expect.assertAssemblesSuccessfully( ins, -2 );
 							//MAX
 							Instruction ins1=ValidateInstr.splitValidOperands( 12, opcode, "r2, r4, instr_15_top" );
 							expect.assertNotNull_InsEquals( ins1, opcode, Type.IMMEDIATE, 2,4, "instr_15_top" );
@@ -913,7 +921,6 @@ public class InstructionValidationTest {
 			@Tag( Tags.MULTIPLE )
 			class Valid {
 				
-				
 				@ParameterizedTest ( name="Valid {index} - opcode\"{0}\", Jump_Type :: Label" + A )
 				@ArgumentsSource ( J.class )
 				void assemble_ValidOperands_Label (String opcode) {
@@ -922,7 +929,7 @@ public class InstructionValidationTest {
 					expect.assertAssemblesSuccessfully( ins, 0x00400000/4);
 					//BranchMax
 					Instruction ins1=ValidateInstr.splitValidOperands( 60, opcode, "instr_15_top" );
-					expect.assertAssemblesSuccessfully( ins1, 0x420000/4);
+					expect.assertAssemblesSuccessfully( ins1, 0x00420004/4);
 					//MAX
 					Instruction ins2=ValidateInstr.splitValidOperands( 60, opcode, "instr_top" );
 					expect.assertAssemblesSuccessfully( ins2, 0x00500000/4);
@@ -948,6 +955,12 @@ public class InstructionValidationTest {
 					expect.assertNotNull_InsEquals( ins1, opcode, Type.JUMP, 1310720, null,null, null);
 				}
 				
+				@Test
+				void Jump_InfiniteLoop_CaughtAtAssembly () {
+					Instruction ins = ValidateInstr.splitValidOperands( 20,"j","0x00100001" );
+					expect.assertNotNull_FailAssemble(ins, 0x00400004);
+					expectedErrs.appendEx( "Jump PC is the same as its targetPC:[0x00400004], This will cause an infinite loop" );
+				}
 			}
 			
 			@Nested
@@ -962,7 +975,6 @@ public class InstructionValidationTest {
 					expectedErrs.appendEx( 0, FMT_MSG.imm.notUnsigned26Bit(imm) );
 					expectedErrs.append( 0, _opsForOpcodeNotValid( "j", "" + imm ) );
 				}
-				
 				
 				// Immediate Values <(0x00100000) & >(0x00140000) Convert To Valid Addresses, but not Valid for Jump
 				@ParameterizedTest ( name="[{index}] Invalid 26BitImm[{2}, {3}] for for Jump Instruction" )

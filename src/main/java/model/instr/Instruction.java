@@ -65,7 +65,8 @@ public abstract class Instruction {
 			rtn=this.setImm( log, labelMap, PC );
 		if ( this.IMM!=null && this instanceof Branch )
 			rtn &= imm16bit(log, PC+4);
-		
+		if ( this.IMM!=null && this instanceof J_Type )
+			rtn &= Jump_valImm(log, PC);
 		return rtn;
 	}
 	
@@ -93,9 +94,12 @@ public abstract class Instruction {
 				final String invalidInstrAddr=" points to Invalid Instruction Address"; // JUMP / BRANCH
 				switch ( this.type ) {
 					case JUMP:	// TODO, move to subclass
-						if ( AddressValidation.isSupportedInstrAddr( address, errorLog ) )
-							this.IMM=Convert.address2Imm( address );
-						else
+						if ( AddressValidation.isSupportedInstrAddr( address, errorLog ) ) {
+							if ( address==PC )	// Infinite Loop
+								errorLog.appendEx( "Jump PC is the same as its targetPC:["+Convert.int2Hex( address )+"], This will cause an infinite loop" );
+							else
+								this.IMM=Convert.address2Imm( address );
+						} else
 							errorLog.appendEx( pfx+invalidInstrAddr );
 						break;
 						
@@ -114,7 +118,7 @@ public abstract class Instruction {
 							if ( !AddressValidation.isSupportedInstrAddr( address, errorLog ) ) {
 								errorLog.appendEx( pfx + invalidInstrAddr );
 							} else {
-								this.IMM=Convert.address2Imm( address )-(PC+4)/4;
+									this.IMM=Convert.address2Imm( address )-((PC+4)/4);
 							}
 						}
 						break;
@@ -134,7 +138,21 @@ public abstract class Instruction {
 		boolean valid = AddressValidation.isSupportedInstrAddr( target, errorLog );
 		if ( !valid )
 			errorLog.appendEx( "NPC["+Convert.int2Hex(NPC)+"], Offset["+this.IMM+"], Target["+Convert.int2Hex( target )+"]" );
+		else if ( IMM==-1 )	{// Infinite Loop
+			errorLog.appendEx( "Branch PC is the same as its targetPC:["+Convert.int2Hex( NPC-4 )+"], Imm:[-1], This will cause an infinite loop" );
+			valid=false;
+		}
 		return valid;
+	}
+	
+	private boolean Jump_valImm(@NotNull ErrorLog errorLog, int PC){
+		int address = Convert.imm2Address( this.IMM );
+		if ( address==PC ) {    // Infinite Loop
+			errorLog.appendEx( "Jump PC is the same as its targetPC:["
+							   + Convert.int2Hex( address ) + "], This will cause an infinite loop" );
+			return false;
+		}
+		return true;
 	}
 	
 	@Nullable
