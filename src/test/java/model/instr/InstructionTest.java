@@ -266,6 +266,140 @@ class InstructionTest {
 	}
 	
 	@Nested
+	class IMMEDIATE_BRANCH {
+		
+		private int takenPC(int imm){
+			return 0x00400000+4+(4*imm);
+		}
+		
+		@Nested
+		class Taken {
+			@Test
+			void BEQ_Execution ( ) {
+				Instruction ins=new I_Type( "beq", 2, 2, 20 );
+				assertNotNull( ins );
+				// Execution & Result
+				Instr.assembleAndExecute_newPC( takenPC(20), ins );
+			}
+			@Test
+			void BNE_Execution ( ) {
+				values[ 2 ]=40;
+				values[ 3 ]=41;
+				Instruction ins=new I_Type( "bne", 2, 3, 20 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_newPC( takenPC(20), ins );
+			}
+			@Test
+			void BLT_Execution ( ) {
+				values[ 2 ]=40;
+				values[ 3 ]=41;
+				Instruction ins=new I_Type( "blt", 2, 3, 20 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_newPC( takenPC(20), ins );
+			}
+			@Test
+			void BGE_Execution_Equal ( ) {
+				Instruction ins=new I_Type( "bge", 2, 2, 20 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_newPC( takenPC(20), ins );
+			}
+			@Test
+			void BGE_Execution ( ) {
+				values[ 2 ]=42;
+				values[ 3 ]=41;
+				Instruction ins=new I_Type( "bge", 2, 3, 20 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_newPC( takenPC(20), ins );
+			}
+			@Test
+			void BGT_Execution ( ) {
+				values[ 2 ]=41;
+				values[ 3 ]=42;
+				Instruction ins=new I_Type( "bgt", 3, 2, 20 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_newPC( takenPC(20), ins );
+			}
+			@Test
+			void BLE_Execution_Equal ( ) {
+				Instruction ins=new I_Type( "ble", 2, 2, 20 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_newPC( takenPC(20), ins );
+			}
+			@Test
+			void BLE_Execution ( ) {
+				values[ 2 ]=41;
+				values[ 3 ]=43;
+				Instruction ins=new I_Type( "ble", 2, 3, 20 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_newPC( takenPC(20), ins );
+			}
+		}
+		
+		@Nested
+		class Not_Taken {
+			@Test
+			void BEQ_Execution ( ) {
+				values[ 2 ]=40;
+				values[ 3 ]=41;
+				Instruction ins=new I_Type( "beq", 2, 3, 20 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_incPC( ins );
+			}
+			@Test
+			void BNE_Execution ( ) {
+				Instruction ins=new I_Type( "bne", 2, 2, 20 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_incPC( ins );
+			}
+			@Test
+			void BLT_Execution ( ) {
+				values[ 2 ]=40;
+				values[ 3 ]=41;
+				Instruction ins=new I_Type( "blt", 3, 2, 20 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_newPC( takenPC(20), ins );
+			}
+			@Test
+			void BGE_Execution ( ) {
+				values[ 2 ]=42;
+				values[ 3 ]=41;
+				Instruction ins=new I_Type( "bge", 3, 2, 20 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_incPC( ins );
+			}
+			@Test
+			void BGT_Execution ( ) {
+				values[ 2 ]=30;
+				values[ 3 ]=42;
+				Instruction ins=new I_Type( "bgt", 2, 3, 20 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_incPC( ins );
+			}
+			@Test
+			void BLE_Execution ( ) {
+				values[ 2 ]=41;
+				values[ 3 ]=43;
+				Instruction ins=new I_Type( "ble", 3, 2, 20 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_incPC( ins );
+			}
+		}
+		
+	}
+	@Nested
 	class JUMP {
 		
 		private final String label="instr_top";
