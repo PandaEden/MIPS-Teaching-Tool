@@ -60,9 +60,13 @@ public abstract class Instruction {
 	 */
 	public boolean assemble (@NotNull ErrorLog log, @NotNull HashMap<String, Integer> labelMap, int PC)
 			throws IllegalArgumentException{
-		if ( this.IMM==null && (!Util.isNullOrBlank(this.label)) )
-			return this.setImm( log, labelMap, PC );
-		return true;
+		boolean rtn = true;
+		if ( (this.IMM==null && (!Util.isNullOrBlank(this.label))) )
+			rtn=this.setImm( log, labelMap, PC );
+		if ( this.IMM!=null && this instanceof Branch )
+			rtn &= imm16bit(log, PC+4);
+		
+		return rtn;
 	}
 	
 	/**
@@ -94,6 +98,7 @@ public abstract class Instruction {
 						else
 							errorLog.appendEx( pfx+invalidInstrAddr );
 						break;
+						
 					case IMMEDIATE:	// TODO, move to subclass
 						if ( InstructionValidation.I_TYPE_RT_IMM_RS.contains( opcode ) ) {
 							if ( RS!=0 )
@@ -104,16 +109,12 @@ public abstract class Instruction {
 								this.IMM=(address);
 							else
 								errorLog.appendEx( pfx+" points to Invalid Data Address" );
+							
 						} else if ( InstructionValidation.I_TYPE_RT_RS_INSTR.contains( opcode ) ) {
-							if ( !AddressValidation.isSupportedInstrAddr( address, errorLog ) )
-								errorLog.appendEx( pfx+invalidInstrAddr );
-							else {
-								this.IMM=Convert.address2Imm( address-PC );
-								if ( !Util.notNullAndInRange( IMM, -32768, 32768) ) {// Signed 16bit
-									errorLog.appendEx( "Offset Imm[" + IMM + "], Is not a Valid Signed 16Bit Number" );
-									this.IMM=null; // so it returns false;
-								}
-								
+							if ( !AddressValidation.isSupportedInstrAddr( address, errorLog ) ) {
+								errorLog.appendEx( pfx + invalidInstrAddr );
+							} else {
+								this.IMM=Convert.address2Imm( address )-(PC+4)/4;
 							}
 						}
 						break;
@@ -121,6 +122,19 @@ public abstract class Instruction {
 			}
 		}
 		return (this.IMM!=null); // returns True if Immediate has been set.
+	}
+	
+	private boolean imm16bit (@NotNull ErrorLog errorLog, int NPC) {
+		if ( !Util.notNullAndInRange( IMM, -32768, 32768) ) {// Signed 16bit
+			errorLog.appendEx( "Offset Imm[" + IMM + "], Is not a Valid Signed 16Bit Number" );
+			this.IMM=null;
+			return false;
+		}
+		int target = NPC+this.IMM*4;
+		boolean valid = AddressValidation.isSupportedInstrAddr( target, errorLog );
+		if ( !valid )
+			errorLog.appendEx( "NPC["+Convert.int2Hex(NPC)+"], Offset["+this.IMM+"], Target["+Convert.int2Hex( target )+"]" );
+		return valid;
 	}
 	
 	@Nullable
