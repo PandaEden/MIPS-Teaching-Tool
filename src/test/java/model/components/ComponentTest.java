@@ -79,10 +79,10 @@ class ComponentTest {
 		void Codes ( ) {
 			assertAll(
 					()-> assertEquals( "NOP", Component.ALU_codes.get( -1 ) ),
-					()-> assertEquals( "SLL", Component.ALU_codes.get( 0 ) ),
-					()-> assertEquals( "ADD", Component.ALU_codes.get( 2 ) ),
-					()-> assertEquals( "SUB", Component.ALU_codes.get( 6 ) ),
-					()-> assertEquals( "SLT", Component.ALU_codes.get( 7 ) ),
+					()-> assertEquals( "SLL", Component.ALU_codes.get( 1 ) ),
+					()-> assertEquals( "ADD", Component.ALU_codes.get( 0 ) ),
+					()-> assertEquals( "SUB", Component.ALU_codes.get( 2 ) ),
+					()-> assertEquals( "SLT", Component.ALU_codes.get( 8 ) ),
 					()-> assertNull( Component.ALU_codes.get( -2 ) ) // Not actual Value
 			);
 		}
@@ -91,81 +91,136 @@ class ComponentTest {
 		void Search_Code ( ) {
 			assertAll(
 					()-> assertEquals( -1, Component.searchALUCode( null ) ),
-					()-> assertEquals( 0, Component.searchALUCode( "sll" ) ),
-					()-> assertEquals( 2, Component.searchALUCode( "add" ) ),
-					()-> assertEquals( 6, Component.searchALUCode( "sub" ) ),
-					()-> assertEquals( 7, Component.searchALUCode( "slt" ) ),
+					()-> assertEquals( 1, Component.searchALUCode( "sll" ) ),
+					()-> assertEquals( 0, Component.searchALUCode( "add" ) ),
+					()-> assertEquals( 2, Component.searchALUCode( "sub" ) ),
+					()-> assertEquals( 4, Component.searchALUCode( "and" ) ),
+					()-> assertEquals( 5, Component.searchALUCode( "or" ) ),
+					()-> assertEquals( 6, Component.searchALUCode( "xor" ) ),
+					()-> assertEquals( 8, Component.searchALUCode( "slt" ) ),
+					()-> assertEquals( 9, Component.searchALUCode( "sle" ) ),
 					()-> assertThrows( IllegalArgumentException.class, ()-> Component.searchALUCode( "panda" ) )
 			);
 		}
 		
-		@Test
-		void Addition ( ) {
-			int ALUResult = Component.ALU( 250, 72, 2, log);
-			assertEquals( 322, ALUResult );
-			expected.append( "\tALU Result = 250 + 72 ==> 322" );
-		}
-		@Test
-		@Disabled
-		void ADD_Overflow ( ) {
-			int ALUResult = Component.ALU( Integer.MAX_VALUE, 1, 2, log);
-			assertEquals( Integer.MIN_VALUE, ALUResult ); // needs to set overflow bit
-			expected.append( "\tArithmetic Overflow!" );
-			fail( "Not implemented" );
-		}
-		@Test
-		void Subtraction ( ) {
-			int ALUResult = Component.ALU( 42, 900, 6, log);
-			assertEquals( -858, ALUResult );
-			expected.append( "\tALU Result = 42 - 900 ==> -858" );
-		}
-		@Test
-		@Disabled
-		void SUB_Underflow ( ) {
-			int ALUResult = Component.ALU( Integer.MIN_VALUE, 1, 6, log);
-			assertEquals( Integer.MAX_VALUE, ALUResult ); // needs to set overflow bit
-			expected.append( "\tArithmetic Underflow" );
-			fail( "Not implemented" );
+		@Nested
+		class ARITHMETIC {
+			
+			@Test
+			void Addition ( ) {
+				int ALUResult = Component.ALU( 250, 72, 0, log);
+				assertEquals( 322, ALUResult );
+				expected.append( "\tALU Result = 250 + 72 ==> 322" );
+			}
+			@Test
+			@Disabled
+			void ADD_Overflow ( ) {
+				int ALUResult = Component.ALU( Integer.MAX_VALUE, 1, 0, log);
+				assertEquals( Integer.MIN_VALUE, ALUResult ); // needs to set overflow bit
+				expected.append( "\tArithmetic Overflow!" );
+				fail( "Not implemented" );
+			}
+			@Test
+			void Subtraction ( ) {
+				int ALUResult = Component.ALU( 42, 900, 2, log);
+				assertEquals( -858, ALUResult );
+				expected.append( "\tALU Result = 42 - 900 ==> -858" );
+			}
+			@Test
+			@Disabled
+			void SUB_Underflow ( ) {
+				int ALUResult = Component.ALU( Integer.MIN_VALUE, 1, 2, log);
+				assertEquals( Integer.MAX_VALUE, ALUResult ); // needs to set overflow bit
+				expected.append( "\tArithmetic Underflow" );
+				fail( "Not implemented" );
+			}
+			
+			@Test
+			void Shift_Left_Logical ( ) {
+				int ALUResult = Component.ALU( 0x01Ab, 4, 1, log);
+				assertEquals( 0x01Ab0, ALUResult );	// SLL 4 === *2^4 == *16
+				expected.append( "\tALU Result = 427 << 4 ==> 6832" );
+			}
+			@Test
+			void SLL_Negative_Amount ( ) {
+				int ALUResult = Component.ALU( 52, -20, 1, log);
+				// only last 5 bits are considered, '01100' ==> 12
+				assertEquals( 212992, ALUResult );	// SLL 12 === *2^12 == *4096
+				expected.append( "\tALU Result = 52 << 12 ==> 212992" );
+			}
+			@Test
+			void SLL_Above_31 ( ) {
+				int ALUResult = Component.ALU( 72, 500, 1, log);
+				// only last 5 bits are considered, '10100' ==> 20
+				assertEquals( 75497472, ALUResult );	// SLL 20 === *2^20 == *1048576
+				expected.append( "\tALU Result = 72 << 20 ==> 75497472" );
+			}
+			
 		}
 		
-		@Test
-		void Shift_Left_Logical ( ) {
-			int ALUResult = Component.ALU( 0x01Ab, 4, 0, log);
-			assertEquals( 0x01Ab0, ALUResult );	// SLL 4 === *2^4 == *16
-			expected.append( "\tALU Result = 427 << 4 ==> 6832" );
-		}
-		@Test
-		void SLL_Negative_Amount ( ) {
-			int ALUResult = Component.ALU( 52, -20, 0, log);
-			// only last 5 bits are considered, '01100' ==> 12
-			assertEquals( 212992, ALUResult );	// SLL 12 === *2^12 == *4096
-			expected.append( "\tALU Result = 52 << 12 ==> 212992" );
-		}
-		@Test
-		void SLL_Above_31 ( ) {
-			int ALUResult = Component.ALU( 72, 500, 0, log);
-			// only last 5 bits are considered, '10100' ==> 20
-			assertEquals( 75497472, ALUResult );	// SLL 20 === *2^20 == *1048576
-			expected.append( "\tALU Result = 72 << 20 ==> 75497472" );
+		@Nested
+		class Condition {
+			
+			@Test
+			void Set_On_Less_Than ( ) {
+				int ALUResult = Component.ALU( 5, 20, 8, log);
+				assertEquals( 1, ALUResult );
+				expected.append( "\tALU Result = 5 set-on < 20 ==> 1" );
+			}
+			@Test
+			void Set_On_Less_Than_Negative ( ) {
+				int ALUResult = Component.ALU( Integer.MIN_VALUE, -1, 8, log);
+				assertEquals( 1, ALUResult );
+				expected.append( "\tALU Result = -2147483648 set-on < -1 ==> 1" );
+			}
+			@Test
+			void SLT_GreaterThanEquals ( ) {
+				int ALUResult = Component.ALU( 500, 20, 8, log);
+				assertEquals( 0, ALUResult );
+				expected.append( "\tALU Result = 500 set-on < 20 ==> 0" );
+			}
+			
+			@Test
+			void Set_On_Less_Than_Equals ( ) {
+				int ALUResult = Component.ALU( 5, 5, 9, log);
+				assertEquals( 1, ALUResult );
+				expected.append( "\tALU Result = 5 set-on <= 5 ==> 1" );
+			}
 		}
 		
-		@Test
-		void Set_On_Less_Than ( ) {
-			int ALUResult = Component.ALU( 5, 20, 7, log);
-			assertEquals( 1, ALUResult );
-			expected.append( "\tALU Result = 5 set-on < 20 ==> 1" );
-		}
-		@Test
-		void Set_On_Less_Than_Negative ( ) {
-			int ALUResult = Component.ALU( Integer.MIN_VALUE, -1, 7, log);
-			assertEquals( 1, ALUResult );
-			expected.append( "\tALU Result = -2147483648 set-on < -1 ==> 1" );
-		}
-		@Test
-		void SLT_GreaterThanEquals ( ) {
-			int ALUResult = Component.ALU( 500, 20, 7, log);
-			assertEquals( 0, ALUResult );
-			expected.append( "\tALU Result = 500 set-on < 20 ==> 0" );
+		@Nested
+		class Logical {
+			
+			@Test
+			void AND ( ) {
+				int ALUResult = Component.ALU( 8, 2, 4, log);
+				assertEquals( 0, ALUResult );
+				expected.append( "\t\t\t (binary) '1000' and '10' ==> '0'" );
+				expected.append( "\tALU Result = 8 & 2 ==> 0" );
+			}
+			@Test
+			void OR ( ) {
+				int ALUResult = Component.ALU( 8, 2, 5, log);
+				assertEquals( 10, ALUResult );
+				expected.append( "\t\t\t (binary) '1000' or '10' ==> '1010'" );
+				expected.append( "\tALU Result = 8 | 2 ==> 10" );
+			}
+			
+			@Test
+			void XOR ( ) {
+				int ALUResult = Component.ALU( 10, 2, 6, log);
+				assertEquals( 8, ALUResult );
+				expected.append( "\t\t\t (binary) '1010' xor '10' ==> '1000'" );
+				expected.append( "\tALU Result = 10 ^ 2 ==> 8" );
+			}
+			
+			@Test
+			void Equals ( ) {
+				int ALUResult = Component.ALU( 10, 10, 6, log);
+				assertEquals( 0, ALUResult );
+				expected.append( "\t\t\t (binary) '1010' xor '1010' ==> '0'" );
+				expected.append( "\tALU Result = 10 ^ 10 ==> 0" );
+			}
 		}
 		
 		@Test

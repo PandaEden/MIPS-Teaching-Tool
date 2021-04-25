@@ -16,7 +16,11 @@ import java.util.Map;
 
 public class Component {
 	
-	public static Map<Integer,String> ALU_codes =Map.of(-1,"NOP", 0,"SLL",2,"ADD",6, "SUB",7, "SLT");
+	public static Map<Integer,String> ALU_codes =Map.of(-1,"NOP",
+														0,"ADD", 1,"SLL", 2, "SUB",
+														4, "AND",5, "OR",
+														6, "XOR",
+														8,"SLT", 9, "SLE");
 	public static Integer searchALUCode(@Nullable String Op){
 		if ( Op==null )
 			Op="NOP";
@@ -52,14 +56,18 @@ public class Component {
 	/** Performs ALU operation based on ALU_OP,
 	 <ui>
 	   <li>null:[-1] - NOP - no action/output</li>
-	   <li>000:[0] - SLL - Shift Left Logical</li>
-	   <li>010:[2] - ADD - Addition</li>
-	   <li>110:[3] - SUB - Subtraction (Binvert Addition)</li>
-	   <li>111:[4] - SLT - Set On Less Than</li>
+	   <li>010:[0] - ADD - Addition</li>
+	   <li>000:[1] - SLL - Shift Left Logical</li>
+	   <li>110:[2] - SUB - Subtraction (Binvert Addition)</li>
+	 		<li>110:[4] - AND</li>
+	 		<li>110:[5] - OR</li>
+	 		<li>110:[6] - XOR - Exclusive OR</li>
+	   <li>111:[8] - SLT - Set On Less Than</li>
+	   <li>111:[9] - SLE - Set On Less Than Equal</li>
 	 </ui>*/
 	public static Integer ALU(Integer input0, Integer input1, Integer ALUCtrl, @NotNull ExecutionLog log){
 		int output;
-		
+		String bitwise=null;
 		// BInvert is determined by bit[0], SUB/SLT
 		String ALU_OP = ALU_codes.get( ALUCtrl==null?-1:ALUCtrl );
 		String sign;
@@ -84,11 +92,33 @@ public class Component {
 					input1 = Integer.parseInt(biteStream.substring(biteStream.length()-5), 2);
 				output=input0 << input1; sign = " << ";
 				break;
+				
+			case "AND": // Bitwise AND
+				bitwise = " and ";
+				output=input0 & input1; sign = " & ";
+				break;
+			case "OR": // Bitwise OR
+				bitwise = " or ";
+				output=input0 | input1; sign = " | ";
+				break;
+			case "XOR": // Bitwise XOR
+				bitwise = " xor ";
+				output=input0 ^ input1; sign = " ^ ";
+				break;
+				
 			case "SLT": //Set Less Than
 				output=input0 < input1?1:0; sign = " set-on < ";
 				break;
+			case "SLE": //Set Less Than
+				output=input0 <= input1?1:0; sign = " set-on <= ";
+				break;
 			default:
 				throw new IllegalStateException("ALU_OP ["+ALU_OP+"] Not Implemented!");
+		}
+		
+		if ( bitwise!=null ){
+			log.append( "\t\t\t (binary) '" + Integer.toBinaryString(input0) +"'"+ bitwise +"'"
+						+  Integer.toBinaryString(input1) + "' ==> '" + Color.fmtUnder( Integer.toBinaryString(output)) +"'");
 		}
 		
 		log.append( "\tALU Result = " + input0 + sign + input1 + " ==> " + Color.fmtUnder( ""+output ) );
