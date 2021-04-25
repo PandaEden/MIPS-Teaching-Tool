@@ -22,9 +22,6 @@ public class I_Type extends Instruction {
 	/**{@link InstructionValidation#I_TYPE}, Label needs to be assembled into IMM value*/
 	protected I_Type (@NotNull List<String> codes, @NotNull String opcode, int RS, int RT, @NotNull String label) throws IllegalArgumentException{
 		super( Type.IMMEDIATE, codes, opcode, RS, RT, null, null, label );
-		if ( RS!=0 )
-			throw new IllegalArgumentException("RS:["+RS+"], must be 0, when IMM is null");
-		
 		super.regNotInRange_Register( RS ); // redundant
 		super.regNotInRange_Register( RT );
 	}

@@ -58,7 +58,7 @@ class ExecuteTest {
 		instr_list.add( new J_Type( "j",0x00100003 ));//4 -> J: 12
 		instr_list.add( new R_Type( "sub", 1,1,1 ));//8 - skipped
 		instr_list.add( new I_Type( "addi", 1, 1, -40));//12 <-
-		instr_list.forEach( i -> i.assemble( testLogs.actualErrors, InstrProvider.labelsMap) ); // ASSEMBLE
+		instr_list.forEach( i -> i.assemble( testLogs.actualErrors, InstrProvider.labelsMap, 0x00400000) ); // ASSEMBLE
 		// 16 (0x10) ,  <- AutoExit
 		
 		// Output
@@ -125,7 +125,7 @@ class ExecuteTest {
 		values[30]=0x10010005;
 		instr_list.add( new MemAccess( "lw", 30, 1, 40 ) );//0 -> * ERROR
 		instr_list.add( new R_Type( "add", 1,1,1 )); // Not Run
-		instr_list.forEach( i -> i.assemble( testLogs.actualErrors, InstrProvider.labelsMap) ); // ASSEMBLE
+		instr_list.forEach( i -> i.assemble( testLogs.actualErrors, InstrProvider.labelsMap, 0x00400000) ); // ASSEMBLE
 		
 		// Output
 		StringBuilder expectedOutput=new StringBuilder();

@@ -90,7 +90,7 @@ public class InstrProvider implements ArgumentsProvider {
 		}
 		
 		public static class RT_RS_INSTR implements ArgumentsProvider {
-			public Stream<Arguments> provideArguments(ExtensionContext context) { return toArgs( op_RT_MEM ); }
+			public Stream<Arguments> provideArguments(ExtensionContext context) { return toArgs( op_RT_RS_INSTR ); }
 			public static final String OPS_LABEL = "$4 , $12, instr";
 			public static final String OPS_IMM = "$1 , r1, 5";
 			

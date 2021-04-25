@@ -20,23 +20,22 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class InstructionValidation {
+	  // TODO Instruction definitions, such that it defines their control signals, Full instruction Name. and which Operands format it supports
 	// Operands should only belong to one subset, the subsets can then be merged
 	public static final List<String> NO_OPERANDS_OPCODE=List.of( "exit", "halt" );
 	public static final List<String> R_RD_RS_RT=List.of( "add", "sub" );
 	
+	// if it supports I type labels
 	public static final List<String> I_MEM_READ=List.of( "sw" );
 	public static final List<String> I_MEM_WRITE=List.of( "lw" );
-	
-	//private static final List<String> I_TYPE_BRANCH =  List.of("branch");
-	// if it supports I type labels
 	public static final List<String> I_TYPE_RT_IMM_RS=Stream.of( I_MEM_READ, I_MEM_WRITE )
 															 .flatMap( Collection :: stream ).collect( Collectors.toUnmodifiableList( ) );
-	public static final List<String> I_TYPE_MEM_ACCESS=I_TYPE_RT_IMM_RS; // + Branch
-	public static final List<String> I_TYPE_RT_RS_IMM=List.of( "addi" ); //+Branch
 	
+	public static final List<String> I_TYPE_RT_RS_IMM=List.of( "addi" );
+	public static final List<String> I_TYPE_RT_RS_INSTR=List.of( "beq","bne","bgt","blt","bge","ble" );
 	// SUPPORTED OPCODES
 	public static final List<String> R_TYPE=(R_RD_RS_RT);
-	public static final List<String> I_TYPE=Stream.of( I_TYPE_RT_RS_IMM, I_TYPE_RT_IMM_RS )
+	public static final List<String> I_TYPE=Stream.of( I_TYPE_RT_RS_IMM, I_TYPE_RT_RS_INSTR, I_TYPE_RT_IMM_RS )
 												   .flatMap( Collection :: stream ).collect( Collectors.toUnmodifiableList( ) );
 	public static final List<String> J_TYPE=List.of( "j", "jal" );
 	
@@ -155,7 +154,7 @@ public class InstructionValidation {
 						break;// -> Not Valid
 					
 					case 2:
-						if ( I_TYPE_MEM_ACCESS.contains( opcode ) ) {        // TODO - Could set InstrType here instead?
+						if ( I_TYPE_RT_IMM_RS.contains( opcode ) ) {        // TODO - Could set InstrType here instead?
 							if ( I_MEM_WRITE.contains( opcode ) ) //Set RT
 								rt=convertWriteRegister( first, dataType );
 							else if ( I_MEM_READ.contains( opcode ) )
@@ -178,13 +177,19 @@ public class InstructionValidation {
 								rt=convertRegister( third, dataType );
 								if ( destination!=null && rs!=null && rt!=null )
 									rtn=new R_Type( opcode, rs, rt, destination );
-							} else { //( I_TYPE_RT_RS_IMM.contains( opcode ) )
+							} else if ( I_TYPE_RT_RS_IMM.contains( opcode ) ) {
 								// RT, RS, IMM
 								rt=destination;
 								imm=is16Bit( convertInteger( third ) );    // Check for Null/Blank
 								if ( rt!=null && rs!=null && imm!=null )
 									rtn=new I_Type( opcode, rs, rt, imm );
 							}
+						} else if ( I_TYPE_RT_RS_INSTR.contains( opcode ) ) {
+							// RT, RS, INSTR - IMM Offset/Label for Instruction PC
+							rt=convertRegister( first, dataType );;
+							rs=convertRegister( second, dataType );
+							// IMM may be Label
+							rtn = Branch_LabelOrInt( rt,rs,third );
 						}
 						break;// -> Not Valid
 					default:    // if for some reason the user gives more than 3 operands ? -> not Valid
@@ -246,7 +251,7 @@ public class InstructionValidation {
 	}
 	@Nullable
 	@VisibleForTesting
-	protected I_Type Mem_LabelOrInt (@NotNull Integer rt, @NotNull String addr) {
+	protected MemAccess Mem_LabelOrInt (@NotNull Integer rt, @NotNull String addr) {
 		if ( !Util.isNullOrBlank( addr ) ) {
 			Integer imm;
 			if ( isDec( addr ) || isHex( addr ) ){
@@ -281,6 +286,21 @@ public class InstructionValidation {
 				}
 			} else if ( isValidLabel( addr ) )
 					return new J_Type( opcode, addr );
+		}
+		return null;
+	}
+	@Nullable
+	@VisibleForTesting
+	protected I_Type Branch_LabelOrInt (@NotNull Integer rt,@NotNull Integer rs, @NotNull String addr) {
+		if ( !Util.isNullOrBlank( addr ) ) {
+			Integer imm;
+			if ( isDec( addr ) || isHex( addr ) ){
+				if ( (imm=is16Bit( convertInteger( addr ) ))!=null ) {
+					return new Branch( opcode, rt,rs,imm );
+				}
+			}else if ( isValidLabel( addr ) )
+				return new Branch( opcode, rt,rs, addr );
+			
 		}
 		return null;
 	}

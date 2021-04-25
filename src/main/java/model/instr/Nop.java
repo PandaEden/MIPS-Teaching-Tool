@@ -13,7 +13,7 @@ public class Nop extends Instruction {
 		super( Type.NOP, InstructionValidation.NO_OPERANDS_OPCODE, ins, null, null, null, null, null );
 	}
 	@Override
-	public boolean assemble (@NotNull ErrorLog log, @NotNull HashMap<String, Integer> labelMap) throws IllegalArgumentException {
+	public boolean assemble (@NotNull ErrorLog log, @NotNull HashMap<String, Integer> labelMap, int PC) throws IllegalArgumentException {
 		return true;
 	}
 }

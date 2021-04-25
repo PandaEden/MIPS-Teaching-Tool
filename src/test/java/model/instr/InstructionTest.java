@@ -367,7 +367,7 @@ class InstructionTest {
 		 <p> and the returned PC, matches the given newPC
 		 */
 		private static void assembleAndExecute_newPC (Integer newPC, Instruction ins) {
-			assertTrue( ins.assemble( errors, labelMap ) );
+			assertTrue( ins.assemble( errors, labelMap, 0x00400000) );
 			assertEquals( newPC, testLogs_ex.pipeline( ins) );
 		}
 		/**
@@ -375,7 +375,7 @@ class InstructionTest {
 		 Then attempting to execute makes it throw an exception
 		 */
 		private static void failAssemble_andExecuteThrows (Instruction ins) {
-			assertFalse( ins.assemble( errors, labelMap ) );
+			assertFalse( ins.assemble( errors, labelMap, 0x00400000) );
 			assertThrows( IllegalStateException.class, ( ) -> testLogs_ex.pipeline( ins ) );
 		}
 		/**
@@ -384,7 +384,7 @@ class InstructionTest {
 		 <p>For Address based instructions -> pointed to the wrong address
 		 */
 		private static <T extends Throwable> void assembleAndExecute_Throws (Class<T> exception, Instruction ins) {
-			assertTrue( ins.assemble( errors, labelMap ) );
+			assertTrue( ins.assemble( errors, labelMap, 0x00400000) );
 			assertThrows( exception, ( ) -> testLogs_ex.pipeline( ins ) );
 		}
 	}

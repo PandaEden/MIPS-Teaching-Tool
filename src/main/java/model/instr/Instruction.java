@@ -30,7 +30,7 @@ public abstract class Instruction {
 	protected final String label;
 	// TODO Add lineNo
 	
-	/**No Validation is performed, assumed all input to be valid. {@link #assemble(ErrorLog, HashMap)} needs to be ran before execution.
+	/**No Validation is performed, assumed all input to be valid. {@link #assemble(ErrorLog, HashMap, int)} needs to be ran before execution.
 	 <p>Errors with format may be caught during assembly.</p>
 	 <p>Trying to Execution an instruction where assembly has failed will throw an exception.</p>*/
 	protected Instruction (@NotNull Type type, @NotNull List<String> codes, @NotNull String opcode,
@@ -58,10 +58,10 @@ public abstract class Instruction {
 	 
 	 <p>Illegal Argument Exception may be throw is the label map
 	 */
-	public boolean assemble(@NotNull ErrorLog log, @NotNull HashMap<String, Integer> labelMap)
+	public boolean assemble (@NotNull ErrorLog log, @NotNull HashMap<String, Integer> labelMap, int PC)
 			throws IllegalArgumentException{
 		if ( this.IMM==null && (!Util.isNullOrBlank(this.label)) )
-			return this.setImm( log, labelMap );
+			return this.setImm( log, labelMap, PC );
 		return true;
 	}
 	
@@ -75,7 +75,7 @@ public abstract class Instruction {
 	 @throws IllegalArgumentException if used with null label Operand.
 	 @throws IllegalStateException error with initialisation of instruction.
 	 */
-	public boolean setImm(@NotNull ErrorLog errorLog, @NotNull HashMap<String, Integer> labelMap)
+	public boolean setImm(@NotNull ErrorLog errorLog, @NotNull HashMap<String, Integer> labelMap, int PC)
 			throws IllegalArgumentException, IllegalStateException {
 		if ( IMM==null) {
 			if ( this.label==null || this.label.isBlank( ) )
@@ -95,7 +95,7 @@ public abstract class Instruction {
 							errorLog.appendEx( pfx+invalidInstrAddr );
 						break;
 					case IMMEDIATE:	// TODO, move to subclass
-						if ( InstructionValidation.I_TYPE_MEM_ACCESS.contains( opcode ) ) {
+						if ( InstructionValidation.I_TYPE_RT_IMM_RS.contains( opcode ) ) {
 							if ( RS!=0 )
 								throw new IllegalStateException( "Invalid Operands for Assembly, IMM[" + IMM + "], RS[" + RS + "]" );
 							else if ( AddressValidation.isSupportedDataAddr( address, errorLog ) )
@@ -104,6 +104,17 @@ public abstract class Instruction {
 								this.IMM=(address);
 							else
 								errorLog.appendEx( pfx+" points to Invalid Data Address" );
+						} else if ( InstructionValidation.I_TYPE_RT_RS_INSTR.contains( opcode ) ) {
+							if ( !AddressValidation.isSupportedInstrAddr( address, errorLog ) )
+								errorLog.appendEx( pfx+invalidInstrAddr );
+							else {
+								this.IMM=Convert.address2Imm( address-PC );
+								if ( !Util.notNullAndInRange( IMM, -32768, 32768) ) {// Signed 16bit
+									errorLog.appendEx( "Offset Imm[" + IMM + "], Is not a Valid Signed 16Bit Number" );
+									this.IMM=null; // so it returns false;
+								}
+								
+							}
 						}
 						break;
 				}
