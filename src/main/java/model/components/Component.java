@@ -115,7 +115,7 @@ public class Component {
 		}
 		
 		if ( bitwise!=null ){
-			log.append( "\t\t\t (binary) '" + Integer.toBinaryString(input0) +"'"+ bitwise +"'"
+			log.append( "\t (binary) '" + Integer.toBinaryString(input0) +"'"+ bitwise +"'"
 						+  Integer.toBinaryString(input1) + "' ==> '" + Color.fmtUnder( Integer.toBinaryString(output)) +"'");
 		}
 		
@@ -137,9 +137,13 @@ public class Component {
 	 </ul>*/
 	public static Integer[] DECODER(Instruction ins, ExecutionLog log){			// TODO refactor to be defined in InstructionValidation
 		String opcode = ins.getOpcode();
+		if ( opcode==null )
+			opcode="nop";
+		
+		InstrSpec spec = InstrSpec.findSpec( opcode );
 		
 		log.append( "\n" );
-		log.append( DECODE + "\t----\t" + ins.getType() + " Instruction :: " + (opcode!=null?opcode.toUpperCase():"nop") );
+		log.append( DECODE + "\t----\t" + ins.getType() + " Instruction :: " + (opcode.toUpperCase())+" :: "+spec.getNAME() );
 //		if ( ins instanceof R_Type )
 //			log.append( "\n\t\t "+opcode+"\tRS["+ins.getRS()+"], RT["+ins.getRT()+"], RD["+ins.getRD()+"], [shamt], [funct]" );
 //		else if ( ins instanceof I_Type )
@@ -147,7 +151,7 @@ public class Component {
 //		else if ( ins instanceof J_Type )
 //			log.append( "\n\t\t "+opcode+"\t26_IMM["+ins.getImmediate()+"]" );
 		
-		Integer[] ctrl =InstrSpec.findSpec( opcode ).getCTRL();
+		Integer[] ctrl =spec.getCTRL();
 		String[] name = new String[8];
 		Arrays.fill( name, "-" );
 		

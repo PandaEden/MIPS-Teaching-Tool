@@ -197,14 +197,14 @@ class ComponentTest {
 			void AND ( ) {
 				int ALUResult = Component.ALU( 8, 2, 4, log);
 				assertEquals( 0, ALUResult );
-				expected.append( "\t\t\t (binary) '1000' and '10' ==> '0'" );
+				expected.append( "\t (binary) '1000' and '10' ==> '0'" );
 				expected.append( "\tALU Result = 8 & 2 ==> 0" );
 			}
 			@Test
 			void OR ( ) {
 				int ALUResult = Component.ALU( 8, 2, 5, log);
 				assertEquals( 10, ALUResult );
-				expected.append( "\t\t\t (binary) '1000' or '10' ==> '1010'" );
+				expected.append( "\t (binary) '1000' or '10' ==> '1010'" );
 				expected.append( "\tALU Result = 8 | 2 ==> 10" );
 			}
 			
@@ -212,7 +212,7 @@ class ComponentTest {
 			void XOR ( ) {
 				int ALUResult = Component.ALU( 10, 2, 6, log);
 				assertEquals( 8, ALUResult );
-				expected.append( "\t\t\t (binary) '1010' xor '10' ==> '1000'" );
+				expected.append( "\t (binary) '1010' xor '10' ==> '1000'" );
 				expected.append( "\tALU Result = 10 ^ 2 ==> 8" );
 			}
 			
@@ -220,7 +220,7 @@ class ComponentTest {
 			void Equals ( ) {
 				int ALUResult = Component.ALU( 10, 10, 6, log);
 				assertEquals( 0, ALUResult );
-				expected.append( "\t\t\t (binary) '1010' xor '1010' ==> '0'" );
+				expected.append( "\t (binary) '1010' xor '1010' ==> '0'" );
 				expected.append( "\tALU Result = 10 ^ 10 ==> 0" );
 			}
 		}

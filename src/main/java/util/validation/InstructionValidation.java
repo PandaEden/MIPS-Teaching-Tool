@@ -45,6 +45,8 @@ public class InstructionValidation {
 					   J_TYPE, NO_OPERANDS_OPCODE )
 				  .flatMap( Collection :: stream ).collect( Collectors.toUnmodifiableList( ) );
 	
+	
+	
 	public static final List<InstrSpec> SPEC = List.of(	// Decoder Input ::  Dest | ALUSrc1|AluSrc2 | AluOp | MemOp|MemToReg | PCWrite|BranchCond
 			new InstrSpec( "add", "Addition", 3, InstrSpec.FMT.RD_RS_RT, new Integer[]{ 1, 0,0,0, null,0, 0,null} ),
 			new InstrSpec( "sub", "Subtraction", 3, InstrSpec.FMT.RD_RS_RT, new Integer[]{ 1, 0,0,2, null,0, 0,null} ),

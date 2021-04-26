@@ -278,7 +278,7 @@ public class TestLogs {
 				ALU( rs_val+" + "+imm+" ==> "+addr);
 			}
 			private void shift_imm(int imm, int addr){
-				expectedExLog.append( "\tLeft Shifting IMMEDIATE By 2 = "+Convert.int2Hex(imm)
+				expectedExLog.append( "\tLeft Shifting IMMEDIATE By 2: "+Convert.int2Hex(imm)
 										+" << 2 ==> ["+addr+" === "+Convert.int2Hex(addr)+"]");
 			}
 			private void dm_read(int val, int addr){
