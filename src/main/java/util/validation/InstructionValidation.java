@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
-import model.*;
+import model.DataType;
 import model.instr.*;
 
 import util.Convert;
@@ -44,6 +44,30 @@ public class InstructionValidation {
 			Stream.of( R_TYPE, I_TYPE,
 					   J_TYPE, NO_OPERANDS_OPCODE )
 				  .flatMap( Collection :: stream ).collect( Collectors.toUnmodifiableList( ) );
+	
+	public static final List<InstrSpec> SPEC = List.of(	// Decoder Input ::  Dest | ALUSrc1|AluSrc2 | AluOp | MemOp|MemToReg | PCWrite|BranchCond
+			new InstrSpec( "add", "Addition", 3, InstrSpec.FMT.RD_RS_RT, new Integer[]{ 1, 0,0,0, null,0, 0,null} ),
+			new InstrSpec( "sub", "Subtraction", 3, InstrSpec.FMT.RD_RS_RT, new Integer[]{ 1, 0,0,2, null,0, 0,null} ),
+			//
+			new InstrSpec( "addi", "Addition_Imm", 3, InstrSpec.FMT.RT_RS_IMM, new Integer[]{ 0, 0,1,0, null,0, 0,null} ),
+			new InstrSpec( "lw", "Load Word", 2, InstrSpec.FMT.RT_MEM, new Integer[]{ 0, 0,1,0, 0,1, 0,null} ),
+			new InstrSpec( "sw", "Store Word", 2, InstrSpec.FMT.RT_MEM, new Integer[]{ null, 0,1,0, 1,null, 0,null} ),
+			
+			new InstrSpec( "j", "Jump", 1, InstrSpec.FMT.JUMP_ADDR, new Integer[]{ null, null,null,null, null,null, 1,null} ),
+			new InstrSpec( "jal", "Jump And Link", 1, InstrSpec.FMT.JUMP_ADDR, new Integer[]{ 2, 1,null,-1, null,0, 1,null} ),
+			
+			new InstrSpec( "exit", "Syscall-Exit", 0, InstrSpec.FMT.NO_OPS, new Integer[]{ null, null,null,null, null,null, null,null} ),
+			new InstrSpec( "halt", "Syscall-Exit", 0, InstrSpec.FMT.NO_OPS, new Integer[]{ null, null,null,null, null,null, null,null} ),
+			
+			new InstrSpec( "beq", "Branch - on - Equal", 3, InstrSpec.FMT.RT_MEM, new Integer[]{ null, 0,0,6, null,null, 2,0} ),
+			new InstrSpec( "bne", "Branch - on - NOT~Equal", 3, InstrSpec.FMT.RT_MEM, new Integer[]{ null, 0,0,6, null,null, 2,1} ),
+			new InstrSpec( "blt", "Branch - on - LessThan", 3, InstrSpec.FMT.RT_MEM, new Integer[]{ null, 0,0,8, null,null, 2,0} ),
+			new InstrSpec( "bge", "Branch - on - GreaterThan Or Equal", 3, InstrSpec.FMT.RT_MEM, new Integer[]{ null, 0,0,8, null,null, 2,1} ),
+			new InstrSpec( "ble", "Branch - on - LessThan Or Equal", 3, InstrSpec.FMT.RT_MEM, new Integer[]{ null, 0,0,9, null,null, 2,0} ),
+			new InstrSpec( "bgt", "Branch - on - GreaterThan", 3, InstrSpec.FMT.RT_MEM, new Integer[]{ null, 0,0,9, null,null, 2,1} ),
+			
+			new InstrSpec( "nop", "NO_OPERATION", 0, InstrSpec.FMT.NO_OPS, new Integer[]{ null, null,null,null, null,null, null,null} )
+	);
 	
 	private final ErrorLog errorLog;
 	private final WarningsLog warningsLog;
