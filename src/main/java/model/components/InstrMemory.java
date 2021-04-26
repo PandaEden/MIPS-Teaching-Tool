@@ -38,7 +38,7 @@ public class InstrMemory {
 	public InstrMemory(@NotNull ArrayList<Instruction> instructions, @NotNull ExecutionLog executionLog) {
 		this.instructions=instructions;
 		this.executionLog=executionLog;
-		autoExit.assemble(new ErrorLog( new ArrayList<>() ),new HashMap<>());// Pre-Assemble AutoExit
+		autoExit.assemble(new ErrorLog( new ArrayList<>() ),new HashMap<>(), 0x00400000);// Pre-Assemble AutoExit
 	}
 	
 	private static final String fetching=Color.fmtTitle(Color.GREEN,"Fetching")+":";

@@ -266,14 +266,164 @@ class InstructionTest {
 	}
 	
 	@Nested
+	class IMMEDIATE_BRANCH {	// Bug where Imm 2 is set to 40, for some reason
+		
+		private int takenPC(int imm){
+			return 0x00400000+4+(4*imm);
+		}
+		
+		@Nested
+		class Taken {
+			@Test
+			void BEQ_Execution ( ) {
+				Instruction ins=new Branch( "beq", 5, 5, 20 );
+				assertNotNull( ins );
+				// Execution & Result
+				Instr.assembleAndExecute_newPC( takenPC(20), ins );
+				testLogs_ex.Branch_output(base_PC, "beq",5, 0, 5, 0, 20, "^", true,true);
+			}
+			@Test
+			void BNE_Execution ( ) {
+				values[ 2 ]=40;
+				values[ 3 ]=41;
+				Instruction ins=new Branch( "bne", 2, 3, 30 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_newPC( takenPC(30), ins );
+				testLogs_ex.Branch_output(base_PC, "bne",2, 40, 3, 41, 30, "^", false,true);
+			}
+			@Test
+			void BLT_Execution ( ) {
+				values[ 2 ]=40;
+				values[ 3 ]=41;
+				Instruction ins=new Branch( "blt", 2, 3, 40 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_newPC( takenPC(40), ins );
+				testLogs_ex.Branch_output(base_PC, "blt",2, 40, 3, 41, 40, "<", false,true);
+			}
+			@Test
+			void BGE_Execution_Equal ( ) {
+				Instruction ins=new Branch( "bge", 5, 5, 50 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_newPC( takenPC(50), ins );
+				testLogs_ex.Branch_output(base_PC, "bge",5, 0, 5, 0, 50, "<", true,true);
+			}
+			@Test
+			void BGE_Execution ( ) {
+				values[ 2 ]=42;
+				values[ 3 ]=41;
+				Instruction ins=new Branch( "bge", 2, 3, 60 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_newPC( takenPC(60), ins );
+				testLogs_ex.Branch_output(base_PC, "bge",2, 42, 3, 41,60, "<", true,true);
+			}
+			@Test
+			void BGT_Execution ( ) {
+				values[ 2 ]=41;
+				values[ 3 ]=42;
+				Instruction ins=new Branch( "bgt", 3, 2, 70 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_newPC( takenPC(70), ins );
+				testLogs_ex.Branch_output(base_PC, "bgt",3, 42, 2, 41, 70, "<=", true,true);
+			}
+			@Test
+			void BLE_Execution_Equal ( ) {
+				Instruction ins=new Branch( "ble", 5, 5, 80 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_newPC( takenPC(80), ins );
+				testLogs_ex.Branch_output(base_PC, "ble",5, 0, 5, 0, 80, "<=", false,true);
+			}
+			@Test
+			void BLE_Execution ( ) {
+				values[ 2 ]=41;
+				values[ 3 ]=43;
+				Instruction ins=new Branch( "ble", 2, 3, 90 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_newPC( takenPC(90), ins );
+				testLogs_ex.Branch_output(base_PC, "ble",2, 41, 3, 43, 90, "<=", false,true);
+			}
+		}
+		
+		@Nested
+		class Not_Taken {
+			@Test
+			void BEQ_Execution ( ) {
+				values[ 2 ]=40;
+				values[ 3 ]=41;
+				Instruction ins=new Branch( "beq", 2, 3, 20 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_incPC( ins );
+				testLogs_ex.Branch_output(base_PC, "beq",2, 40, 3, 41, 20, "^", true,false);
+			}
+			@Test
+			void BNE_Execution ( ) {
+				Instruction ins=new Branch( "bne", 5, 5, 30 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_incPC( ins );
+				testLogs_ex.Branch_output(base_PC, "bne",5, 0, 5, 0, 30, "^", false,false);
+			}
+			@Test
+			void BLT_Execution ( ) {
+				values[ 2 ]=40;
+				values[ 3 ]=41;
+				Instruction ins=new Branch( "blt", 3, 2, 40 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_incPC( ins );
+				testLogs_ex.Branch_output(base_PC, "blt",3, 41, 2, 40, 40, "<", false,false);
+			}
+			@Test
+			void BGE_Execution ( ) {
+				values[ 2 ]=42;
+				values[ 3 ]=41;
+				Instruction ins=new Branch( "bge", 3, 2, 60 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_incPC( ins );
+				testLogs_ex.Branch_output(base_PC, "bge", 3, 41,2, 42,60, "<", true,false);
+			}
+			@Test
+			void BGT_Execution ( ) {
+				values[ 2 ]=30;
+				values[ 3 ]=42;
+				Instruction ins=new Branch( "bgt", 2, 3, 70 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_incPC( ins );
+				testLogs_ex.Branch_output(base_PC, "bgt", 2, 30,3, 42, 70, "<=", true,false);
+			}
+			@Test
+			void BLE_Execution ( ) {
+				values[ 2 ]=41;
+				values[ 3 ]=43;
+				Instruction ins=new Branch( "ble", 3, 2, 90 );
+				// Execution & Result
+				assertNotNull( ins );
+				Instr.assembleAndExecute_incPC( ins );
+				testLogs_ex.Branch_output(base_PC, "ble",3, 43, 2, 41, 90, "<=", false,false);
+			}
+		}
+		
+	}
+	@Nested
 	class JUMP {
+		
+		private final String label="instr_top";
 		
 		@Test
 		void Jump_Execution_Label ( ) {
 			// Setup
-			int addr=labelMap.get( "instr" );
+			int addr=labelMap.get( label );
 			// Build
-			Instruction ins=new J_Type( "j", "instr" );
+			Instruction ins=new J_Type( "j", label );
 			assertNotNull( ins );
 			// Execution & Result
 			Instr.assembleAndExecute_newPC( addr, ins );
@@ -295,7 +445,6 @@ class InstructionTest {
 		@Test
 		void JumpAndLink_Execution_Label  ( ) {
 			// Setup
-			String label="instr";
 			int addr=labelMap.get( label );
 			// Build
 			Instruction ins=new J_Type( "jal",  label );
@@ -367,7 +516,7 @@ class InstructionTest {
 		 <p> and the returned PC, matches the given newPC
 		 */
 		private static void assembleAndExecute_newPC (Integer newPC, Instruction ins) {
-			assertTrue( ins.assemble( errors, labelMap ) );
+			assertTrue( ins.assemble( errors, labelMap, 0x00400000) );
 			assertEquals( newPC, testLogs_ex.pipeline( ins) );
 		}
 		/**
@@ -375,7 +524,7 @@ class InstructionTest {
 		 Then attempting to execute makes it throw an exception
 		 */
 		private static void failAssemble_andExecuteThrows (Instruction ins) {
-			assertFalse( ins.assemble( errors, labelMap ) );
+			assertFalse( ins.assemble( errors, labelMap, 0x00400000) );
 			assertThrows( IllegalStateException.class, ( ) -> testLogs_ex.pipeline( ins ) );
 		}
 		/**
@@ -384,7 +533,7 @@ class InstructionTest {
 		 <p>For Address based instructions -> pointed to the wrong address
 		 */
 		private static <T extends Throwable> void assembleAndExecute_Throws (Class<T> exception, Instruction ins) {
-			assertTrue( ins.assemble( errors, labelMap ) );
+			assertTrue( ins.assemble( errors, labelMap, 0x00400000) );
 			assertThrows( exception, ( ) -> testLogs_ex.pipeline( ins ) );
 		}
 	}

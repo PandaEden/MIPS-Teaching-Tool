@@ -4,7 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.VisibleForTesting;
 
-import model.*;
+import model.DataType;
 import model.instr.*;
 
 import util.Convert;
@@ -20,23 +20,22 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class InstructionValidation {
+	
 	// Operands should only belong to one subset, the subsets can then be merged
 	public static final List<String> NO_OPERANDS_OPCODE=List.of( "exit", "halt" );
 	public static final List<String> R_RD_RS_RT=List.of( "add", "sub" );
 	
+	// if it supports I type labels
 	public static final List<String> I_MEM_READ=List.of( "sw" );
 	public static final List<String> I_MEM_WRITE=List.of( "lw" );
+	public static final List<String> I_RT_IMM_RS=Stream.of( I_MEM_READ, I_MEM_WRITE )
+													   .flatMap( Collection :: stream ).collect( Collectors.toUnmodifiableList( ) );
 	
-	//private static final List<String> I_TYPE_BRANCH =  List.of("branch");
-	// if it supports I type labels
-	public static final List<String> I_TYPE_RT_IMM_RS=Stream.of( I_MEM_READ, I_MEM_WRITE )
-															 .flatMap( Collection :: stream ).collect( Collectors.toUnmodifiableList( ) );
-	public static final List<String> I_TYPE_MEM_ACCESS=I_TYPE_RT_IMM_RS; // + Branch
-	public static final List<String> I_TYPE_RT_RS_IMM=List.of( "addi" ); //+Branch
-	
+	public static final List<String> I_RT_RS_IMM=List.of( "addi" );
+	public static final List<String> I_RS_RT_IMM=List.of( "beq", "bne", "bgt", "blt", "bge", "ble" );
 	// SUPPORTED OPCODES
 	public static final List<String> R_TYPE=(R_RD_RS_RT);
-	public static final List<String> I_TYPE=Stream.of( I_TYPE_RT_RS_IMM, I_TYPE_RT_IMM_RS )
+	public static final List<String> I_TYPE=Stream.of( I_RT_RS_IMM, I_RS_RT_IMM, I_RT_IMM_RS )
 												   .flatMap( Collection :: stream ).collect( Collectors.toUnmodifiableList( ) );
 	public static final List<String> J_TYPE=List.of( "j", "jal" );
 	
@@ -45,6 +44,32 @@ public class InstructionValidation {
 			Stream.of( R_TYPE, I_TYPE,
 					   J_TYPE, NO_OPERANDS_OPCODE )
 				  .flatMap( Collection :: stream ).collect( Collectors.toUnmodifiableList( ) );
+	
+	// TODO Write a helper method with searches all the specs, and creates a list of opcodes for each format.
+	
+	public static final List<InstrSpec> SPEC = List.of(	// Decoder Input ::  Dest | ALUSrc1|AluSrc2 | AluOp | MemOp|MemToReg | PCWrite|BranchCond
+			new InstrSpec( "add", "Addition", 3, InstrSpec.FMT.RD_RS_RT, new Integer[]{ 1, 0,0,0, null,0, 0,null} ),
+			new InstrSpec( "sub", "Subtraction", 3, InstrSpec.FMT.RD_RS_RT, new Integer[]{ 1, 0,0,2, null,0, 0,null} ),
+			//
+			new InstrSpec( "addi", "Addition_Imm", 3, InstrSpec.FMT.RT_RS_IMM, new Integer[]{ 0, 0,1,0, null,0, 0,null} ),
+			new InstrSpec( "lw", "Load Word", 2, InstrSpec.FMT.RT_MEM, new Integer[]{ 0, 0,1,0, 0,1, 0,null} ),
+			new InstrSpec( "sw", "Store Word", 2, InstrSpec.FMT.RT_MEM, new Integer[]{ null, 0,1,0, 1,null, 0,null} ),
+			
+			new InstrSpec( "j", "Jump", 1, InstrSpec.FMT.JUMP_ADDR, new Integer[]{ null, null,null,null, null,null, 1,null} ),
+			new InstrSpec( "jal", "Jump And Link", 1, InstrSpec.FMT.JUMP_ADDR, new Integer[]{ 2, 1,null,-1, null,0, 1,null} ),
+			
+			new InstrSpec( "exit", "Syscall-Exit", 0, InstrSpec.FMT.NO_OPS, new Integer[]{ null, null,null,null, null,null, null,null} ),
+			new InstrSpec( "halt", "Syscall-Exit", 0, InstrSpec.FMT.NO_OPS, new Integer[]{ null, null,null,null, null,null, null,null} ),
+			
+			new InstrSpec( "beq", "Branch - on - Equal", 3, InstrSpec.FMT.RS_RT_OFFSET, new Integer[]{ null, 0,0,6, null,null, 2,0} ),
+			new InstrSpec( "bne", "Branch - on - NOT~Equal", 3, InstrSpec.FMT.RS_RT_OFFSET, new Integer[]{ null, 0,0,6, null,null, 2,1} ),
+			new InstrSpec( "blt", "Branch - on - LessThan", 3, InstrSpec.FMT.RS_RT_OFFSET, new Integer[]{ null, 0,0,8, null,null, 2,1} ),
+			new InstrSpec( "bge", "Branch - on - GreaterThan Or Equal", 3, InstrSpec.FMT.RS_RT_OFFSET, new Integer[]{ null, 0,0,8, null,null, 2,0} ),
+			new InstrSpec( "ble", "Branch - on - LessThan Or Equal", 3, InstrSpec.FMT.RS_RT_OFFSET, new Integer[]{ null, 0,0,9, null,null, 2,1} ),
+			new InstrSpec( "bgt", "Branch - on - GreaterThan", 3, InstrSpec.FMT.RS_RT_OFFSET, new Integer[]{ null, 0,0,9, null,null, 2,0} ),
+			
+			new InstrSpec( "nop", "NO_OPERATION", 0, InstrSpec.FMT.NO_OPS, new Integer[]{ null, null,null,null, null,null, null,null} )
+	);
 	
 	private final ErrorLog errorLog;
 	private final WarningsLog warningsLog;
@@ -155,7 +180,7 @@ public class InstructionValidation {
 						break;// -> Not Valid
 					
 					case 2:
-						if ( I_TYPE_MEM_ACCESS.contains( opcode ) ) {        // TODO - Could set InstrType here instead?
+						if ( I_RT_IMM_RS.contains( opcode ) ) {        // TODO - Could set InstrType here instead?
 							if ( I_MEM_WRITE.contains( opcode ) ) //Set RT
 								rt=convertWriteRegister( first, dataType );
 							else if ( I_MEM_READ.contains( opcode ) )
@@ -169,7 +194,7 @@ public class InstructionValidation {
 						break;// -> Not Valid
 					
 					case 3:    // RD, RS, RT or // RT, RS, IMM - first Operands is Write Destination
-						if ( R_TYPE.contains( opcode ) || I_TYPE_RT_RS_IMM.contains( opcode ) ) {
+						if ( R_TYPE.contains( opcode ) || I_RT_RS_IMM.contains( opcode ) ) {
 							Integer destination=convertWriteRegister( first, dataType );
 							rs=convertRegister( second, dataType );
 							
@@ -178,13 +203,20 @@ public class InstructionValidation {
 								rt=convertRegister( third, dataType );
 								if ( destination!=null && rs!=null && rt!=null )
 									rtn=new R_Type( opcode, rs, rt, destination );
-							} else { //( I_TYPE_RT_RS_IMM.contains( opcode ) )
+							} else if ( I_RT_RS_IMM.contains( opcode ) ) {
 								// RT, RS, IMM
 								rt=destination;
 								imm=is16Bit( convertInteger( third ) );    // Check for Null/Blank
 								if ( rt!=null && rs!=null && imm!=null )
 									rtn=new I_Type( opcode, rs, rt, imm );
 							}
+						} else if ( I_RS_RT_IMM.contains( opcode ) ) {
+							// RT, RS, INSTR - IMM Offset/Label for Instruction PC
+							rs=convertRegister( first, dataType );
+							rt=convertRegister( second, dataType );;
+							// IMM may be Label
+							if ( rs!=null && rt!=null )
+								rtn = Branch_LabelOrInt( rs, rt, third );
 						}
 						break;// -> Not Valid
 					default:    // if for some reason the user gives more than 3 operands ? -> not Valid
@@ -246,7 +278,7 @@ public class InstructionValidation {
 	}
 	@Nullable
 	@VisibleForTesting
-	protected I_Type Mem_LabelOrInt (@NotNull Integer rt, @NotNull String addr) {
+	protected MemAccess Mem_LabelOrInt (@NotNull Integer rt, @NotNull String addr) {
 		if ( !Util.isNullOrBlank( addr ) ) {
 			Integer imm;
 			if ( isDec( addr ) || isHex( addr ) ){
@@ -281,6 +313,21 @@ public class InstructionValidation {
 				}
 			} else if ( isValidLabel( addr ) )
 					return new J_Type( opcode, addr );
+		}
+		return null;
+	}
+	@Nullable
+	@VisibleForTesting
+	protected I_Type Branch_LabelOrInt (@NotNull Integer rs, @NotNull Integer rt, @Nullable String addr) {
+		if ( !Util.isNullOrBlank( addr ) ) {
+			Integer imm;
+			if ( isDec( addr ) || isHex( addr ) ){
+				if ( (imm=is16Bit( convertInteger( addr ) ))!=null ) {
+					return new Branch( opcode, rs,rt,imm );
+				}
+			}else if ( isValidLabel( addr ) )
+				return new Branch( opcode, rs,rt,addr );
+			
 		}
 		return null;
 	}

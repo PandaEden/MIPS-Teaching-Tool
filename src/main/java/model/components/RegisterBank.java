@@ -146,8 +146,8 @@ public class RegisterBank {
 	}
 	/** Depending on the status colorize the output */
 	private String colorize (int index, String text){
-		final String READ_COL=Color.RB_READ;
-		final String WRITE_COL=Color.RB_WRITE;
+		final String READ_COL=Color.READ;
+		final String WRITE_COL=Color.WRITE;
 		
 		if ( LAST_READ0!=null && index==LAST_READ0 )
 				text=Color.fmt( READ_COL, text );
@@ -166,7 +166,7 @@ public class RegisterBank {
 	private String fmtReg (int index) {
 		String reg = colorize( index, regName( index ) );
 		if ( LAST_WRITTEN!=null && index==LAST_WRITTEN )
-			reg = Color.fmt( Color.RB_WRITE, "*" + colorize( index, reg));
+			reg = Color.fmt( Color.WRITE, "*" + colorize( index, reg));
 		return reg;
 	}
 	/** Formats the register index for output based on {@link RegFormat} */

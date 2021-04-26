@@ -14,26 +14,47 @@ To run the executable jar file run:
 
 > **java -jar *MTT-1.0.jar*** <file>
 
-If no path is specified it defaults to ***"FileInput.s"*** in the pwd.
+If no path is specified it defaults to ***"FileInput.s"*** in the present-working-directory (pwd).
 
 **File must end in *.s*, *.asm* or *.txt* extension!**
 
-- `With PowerShell/CMD there is no colour in the output, and you need to use backslashes '\' between directories.`
 
-- `Git-Bash needs '/' directory seperator, and does not auto complete.`
-  - `Consider using WSL on windows.` 
-    - (the default WSL terminal does not support anscii double underline. Windows Terminal does)
+
+- `With PowerShell/CMD there is no colour in the output, and you need to use backslashes '\' between directories.`
+- `Git-Bash uses the '/' directory seperator.` But does support Colour.
+- `Consider using WSL on windows.` 
+  - (the default WSL terminal does not support Anscii double-underline. Windows Terminal does)
 
 ## Change Log
 
-#### Ver1.1
+#### Ver1.2 - Branch Instructions Support
+
+- Error Thrown if Jump/Branch may lead to infinite loop.
+  - Known Bug: Error is not thrown if Jump is specified with Immediate instead of Label.
+- New Branch Instructions Added!
+  - **beq** `$rs, $rt, offset/label`
+  - **bne** `$rs, $rt, offset/label`
+  - **blt** `$rs, $rt, offset/label`
+  - **bgt** `$rs, $rt, offset/label`
+  - **ble** `$rs, $rt, offset/label`
+  - **bge** `$rs, $rt, offset/label`
+- BranchCond - Branch Condition {Zero, Not~Zero}, and PCWrite dependent of Cond Control Signals.
+- Changed Write Colour back to Cyan as it is easier to read on darker terminals.
+  - May manually specify background colours for a consistent view.
+- Made Instruction Format more clear in the README.
+- Full Name of Instruction is now printed during decode.
+- Internal Changes to make Adding instructions easier.
+
+
+
+#### Ver1.1 - Refactor to Pipeline Components
 
 - Output now better segments the stages of execution (Fetch->Decode->Execute->Memory->WriteBack)
 
 - Internal changes, to better accurately represent and emulate computer architecture.
 - Execution is combined, and determined by control signals calculated during the Decode Stage.
 
-- Filename is now required to use an appropriate file extension (.s or .asm are preferred)
+- Filename is now required to use an appropriate file extension. (.s or .asm are preferred)
 
   ![image-20210424094157858](README.assets/image-20210424094157858.png)
 
@@ -84,24 +105,58 @@ Support for more data types (single-precision float, doubleWords, half-words, by
 > Format: **[OpCode]**\<Whitespace\>**[Operands]**
 
 - R_type
-  - **ADD**	`Operands_R`
-  - **SUB**	`Operands_R`
+  - **ADD**	`$rd, $rs, $rt`	Addition
+  
+    - **SUB**	`$rd, $rs, $rt`	Subtraction
+  
+      
 - I_type
-  - **ADDI**	`Operands_I-1`
-  - **LW** 	`Operands_I-L` ; (pseudo)
-  - **SW**	`Operands_I-L` ; (pseudo)
+  - **ADDI**	`$rt, $rs, IMM`	Addition
+  
+  - **LW** 	`$rt, IMM($rs)`	Load Word ; (pseudo)`$rt, Label`
+  
+  - **SW**	`$rt, IMM($rs)`	Store Word ; (pseudo)`$rt, Label`
+  
+    > **LI** workaround, specify the IMM value in data with a label pointing to it:
+    >
+    > imm_1:  .word 37687		# Note, Values in .Data need to be base10 Integers.
+    >
+    > Read the IMM from Memory using the label:
+    >
+    >  LW $rt, imm_1      # pseudo instruction. 
 
-> Planned - **LA**	`Operands_I-L`	;  (pseudo) loads address to register
+- I_type: Branches
+
+  - BEQ	`$rs, $rt, IMM`	Branch On Equals ; (pseudo)`$rs, $rt, Label`
+  - BNE	`$rs, $rt, IMM`	Branch On NOT~Equal ; (pseudo)`$rs, $rt, Label`
+  - BLT	`$rs, $rt, IMM`	Branch On Less-Than ; (pseudo)`$rs, $rt, Label`
+  - BGT	`$rs, $rt, IMM`	Branch On Greater-Than ; (pseudo)`$rs, $rt, Label`
+  - BLE	`$rs, $rt, IMM`	Branch On Less-Than Or Equals ; (pseudo)`$rs, $rt, Label`
+  - BGE	`$rs, $rt, IMM`	Branch On Greater-Than Or Equals ; (pseudo)`$rs, $rt, Label`
+
+  > There is No Branch Delay Slot.  Branches Update the PC instantly.
+
+  
 
 - J_type
-  - **J** 	`P_Direct_Address`, `Label_Address`
-  - **JAL** 	`P_Direct_Address`,`Label_Address`
-  	- Register $ra is overwritten
+  
+  - **J** 	`Address/Immediate`	Jump ; (pseudo)`Label`
+  - **JAL** 	`Address/Immediate`	JumpAndLink ; (pseudo)`Label`
+  	- Register $ra is overwritten by JAL
+  
+  > JR is planned. It is necessary for returning to the address linked to by JAL
+  
+  
+  
 - Other
+  
   - **HALT**	; No Operands
+  
   - **EXIT**	; No Operands - same as HALT
+  
+    
 
-**Pseudo instructions are not accurately executed**
+#### **Pseudo instructions are not accurately executed**!!!
 
 	- At the moment the assembler does not replace Pseudo instructions with REAL instructions, Keep this in mind when writing code.
 
@@ -113,13 +168,18 @@ Support for more data types (single-precision float, doubleWords, half-words, by
 
 | Operands Type:        | Operand 1                  | <,\s*>    | Operand 2             | <,\s*>    | Operand 3               |
 | --------------------- | -------------------------- | --------- | --------------------- | --------- | ----------------------- |
-| **Operands_R:**       | **[Destination_Register]** |           | **[Source_Register]** |           | **[Third_Register]**    |
-| **Operands_I-1**:    | **[Third_Register]**       |           | **[Source_Register]** |           | _[Immediate]_           |
-| **Operands_I-2:**     | **[Third_Register]**       |           | _[Offset]_            | _**N/A**_ | (**[Source_Register]**) |
-| **Operands_I-3:**     | **[Third_Register]**       |           | _[Immediate]_         | _**N/A**_ | _**N/A**_               |
-| **Operands_I-L:**     | **[Third_Register]**       |           | [Label]               | _**N/A**_ | _**N/A**_               |
-| **P_Direct_Address:** | _[Address]_                | _**N/A**_ | _**N/A**_             | _**N/A**_ | _**N/A**_               |
-| **Label_Address**    | [Label]                    | _**N/A**_ | _**N/A**_             | _**N/A**_ | _**N/A**_               |
+| **`$rd, $rs, $rt`** | **[Destination_Register]** |           | **[Source_Register]** |           | **[Third_Register]**    |
+|  |  | |  | |  |
+| `$rt, $rs, IMM` | **[Third_Register]**       |           | **[Source_Register]** |           | _[Immediate]_ 16bit     |
+|  |  | |  | |  |
+| **`$rt, IMM($rs)`** | **[Third_Register]**       |           | _[Offset]_ 16bit      | _**N/A**_ | (**[Source_Register]**) |
+| **`$rt, Label`** | **[Third_Register]**       |           | [Label]               | _**N/A**_ | _**N/A**_               |
+|  |  | |  |  |  |
+| **`$rs, $rt, IMM`** | [Source_Register] | | [Third_Register] |  | _[Offset]_ 16bit |
+| **`$rs, $rt, Label`** | [Source_Register] | | [Third_Register] |  | [Label] |
+|  |  | |  |  |  |
+| **`Address/Immediate`** | _[Address]_ 26bit          | _**N/A**_ | _**N/A**_             | _**N/A**_ | _**N/A**_               |
+| **`Label`** | [Label]                    | _**N/A**_ | _**N/A**_             | _**N/A**_ | _**N/A**_               |
 
 ## Operands:
 
@@ -142,7 +202,7 @@ Support for more data types (single-precision float, doubleWords, half-words, by
  - _**[Address]**_ Must be a valid unsigned 28bit integer.
 
 - _Labels_ are Strings, which reference an address. - they are converted into [Immediate] values at assembly. [@see Labels](#Labels)
-   - for `LA` the address is not checked.
+   - for `LW/SW` the address is not checked at Parse/Assembly.
        - At execution, the address loaded into a register, MUST be valid for the instruction.
 
 ## Registers:

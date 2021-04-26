@@ -333,8 +333,10 @@ public class MemoryBuilder {
 		} else { // if errorLog already has errors, then assembly should report as failed anyway.
 			boolean assembled=!errorLog.hasEntries( );
 			
+			int pc = INS_ADDR_BASE;
 			for ( Instruction instr : instructions ) {
-				assembled&=instr.assemble( errorLog, labelMap );
+				assembled&=instr.assemble( errorLog, labelMap, pc);
+				pc+=4;
 			}
 			
 			if ( assembled )    // if no errors, new/existing

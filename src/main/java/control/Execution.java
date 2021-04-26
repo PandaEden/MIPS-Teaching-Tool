@@ -130,17 +130,23 @@ public class Execution {
 			exLog.append( "\t[IMMEDIATE: " + IMM + " === "+toHex(IMM)+"]" );
 	}
 	
-	private void execute (Integer RegisterResult1, Integer ProgramCounter, Integer RegisterResult2, Integer ImmediateRegister,
+	private void execute (Integer RegisterResult1, Integer NextProgramCounter, Integer RegisterResult2, Integer ImmediateRegister,
 						  Integer _ALUSource1, Integer _ALUSource2, Integer _ALU_Operation, Integer _ProgramCounterWrite){
 		exLog.append( EXECUTE );
-		Integer ALUInputRegister1 = Component.MUX( _ALUSource1,"ALUSrc1", RegisterResult1, ProgramCounter);
+		Integer ALUInputRegister1 = Component.MUX( _ALUSource1,"ALUSrc1", RegisterResult1, NextProgramCounter);
 		
 		Integer ALUInputRegister2 = Component.MUX( _ALUSource2,"ALUSrc2", RegisterResult2, ImmediateRegister);
 		
-		if ( notNullEq1( _ProgramCounterWrite )  ){
+		if ( _ProgramCounterWrite!=null && (_ProgramCounterWrite==1 || _ProgramCounterWrite==2) ){
 			int ADDR = Convert.imm2Address( ImmediateRegister );
-			exLog.append( "\tLeft Shifting IMMEDIATE By 2 = " + toHex( ImmediateRegister )
-								 + " << " + 2 + " ==> [" + ADDR + " === " + toHex( ADDR ) + "]");
+			exLog.append( "\tLeft Shifting IMMEDIATE By 2: " + toHex( ImmediateRegister ) + " << " + 2 + " ==> [" + ADDR + " === " + toHex( ADDR ) + "]");
+			
+			if ( _ProgramCounterWrite==2 ){
+				//noinspection ConstantConditions
+				ADDR = Component.ADDER( Convert.imm2Address( ImmediateRegister ), NextProgramCounter,
+										"\t\tTarget Address = "+toHex( ADDR )+" + NPC ==> "+toHex( ADDR+NPC )+"\n",
+										exLog);
+			}
 			this.IMM= ADDR;
 		}
 		
@@ -148,19 +154,44 @@ public class Execution {
 	}
 	
 	private void memory(Integer StoreValueRegister, Integer ALUOutputRegister, Integer _MemoryAction,
-						Integer NextProgramCounter, Integer ImmediateRegister, Integer _ProgramCounter_Write){
+						Integer NextProgramCounter, Integer ImmediateRegister, Integer _ProgramCounter_Write, Integer _BranchCondition){
 		exLog.append( MEM_ACC );
-		this.NPC=Component.MUX( _ProgramCounter_Write, "NPC", NextProgramCounter, ImmediateRegister );
 		
-		if ( ins instanceof MemAccess ) {
-			if ( _MemoryAction!=null ) {
-				if ( _MemoryAction==0 ) // Load
-					this.LMDR=dataMem.readData( ALUOutputRegister );
-				else if ( _MemoryAction==1 ) // Store
-					dataMem.writeData( ALUOutputRegister, StoreValueRegister );
+		Integer branchPC = NextProgramCounter;
+		
+		if ( _BranchCondition!=null ){
+			String branchPrint="\tAOR["+ALUOutputRegister+"]";
+			String T = " True:Branch Taken";
+			String F = " False:Branch NOT~Taken";
+			
+			if ( _BranchCondition==0) {
+				branchPrint+=" == Zero?";
+				if ( ALUOutputRegister==0 ){
+					branchPC=ImmediateRegister;
+					branchPrint+=T;
+				}else
+					branchPrint+=F;
+			}else if ( _BranchCondition==1) {
+				branchPrint+=" == NOT~Zero?";
+				if ( ALUOutputRegister!=0 ){
+					branchPC=ImmediateRegister;
+					branchPrint+=T;
+				}else
+					branchPrint+=F;
 			}
-		} else
-			this.ARR=ALUOutputRegister;
+			
+			exLog.appendEx( branchPrint );
+		}
+		
+		this.NPC=Component.MUX( _ProgramCounter_Write, "NPC", NextProgramCounter, ImmediateRegister, branchPC);
+		
+		if ( _MemoryAction!=null ) {
+			if ( _MemoryAction==0 ) // Load
+				this.LMDR=dataMem.readData( ALUOutputRegister );
+			else if ( _MemoryAction==1 ) // Store
+				dataMem.writeData( ALUOutputRegister, StoreValueRegister );
+		}
+		this.ARR=ALUOutputRegister;
 	}
 	
 	private void write_back(Integer AluResultRegister, Integer LoadDataMemoryRegister, Integer _MemToReg, Integer _Destination){
@@ -185,7 +216,7 @@ public class Execution {
 		control = decode(this.ins);
 		read_operands(this.ins, control[0]);
 		execute( this.RR1, this.NPC, this.RR2, this.IMM, control[1], control[2], control[3], control[6]);
-		memory( this.RR2, this.AOR,control[4], this.NPC, this.IMM, control[6]); // SVR = RR2
+		memory( this.RR2, this.AOR,control[4], this.NPC, this.IMM, control[6], control[7]); // SVR = RR2
 		write_back( this.ARR, this.LMDR, control[5], control[0]);
 		return this.PC;
 	}
