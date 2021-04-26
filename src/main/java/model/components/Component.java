@@ -119,7 +119,7 @@ public class Component {
 						+  Integer.toBinaryString(input1) + "' ==> '" + Color.fmtUnder( Integer.toBinaryString(output)) +"'");
 		}
 		
-		log.append( "\tALU Result = " + input0 + sign + input1 + " ==> " + Color.fmtUnder( ""+output ) );
+		log.append( "\t"+Color.fmtSubTitle( Color.RED, "ALU Result" )+" = " + input0 + sign + input1 + " ==> " + Color.fmtUnder( ""+output ) );
 		return output;
 	}
 	
@@ -143,7 +143,11 @@ public class Component {
 		InstrSpec spec = InstrSpec.findSpec( opcode );
 		
 		log.append( "\n" );
-		log.append( DECODE + "\t----\t" + ins.getType() + " Instruction :: " + (opcode.toUpperCase())+" :: "+spec.getNAME() );
+		log.append( DECODE + "\t----\t" + ins.getType() + " Instruction :: "
+					+ Color.fmt(Color.reverse( Color.csi(Color.bright(Color.WHITE))), opcode.toUpperCase())
+					+" :: "
+					+ Color.fmt(Color.reverse( Color.csi(Color.bright(Color.WHITE))),spec.getNAME())
+					+"\n" );
 //		if ( ins instanceof R_Type )
 //			log.append( "\n\t\t "+opcode+"\tRS["+ins.getRS()+"], RT["+ins.getRT()+"], RD["+ins.getRD()+"], [shamt], [funct]" );
 //		else if ( ins instanceof I_Type )
@@ -205,6 +209,14 @@ public class Component {
 				name[ 7 ]="Zero";
 			else if ( ctrl[ 7 ]==1 )
 				name[ 7 ]="Not~Zero";
+		}
+		
+		for ( int i=0; i<name.length; i++ ) {
+			if (name[i]==null||name[i].equals("-")){
+				name[i]=Color.fmt( Color.bright( Color.BLACK ), "-" );
+			}else {
+				name[i]=Color.fmt(Color.bright( Color.WHITE ),name[i]);
+			}
 		}
 		log.append( "\tALUSrc1["+name[1]+"], ALUSrc2["+name[2]+"], ALUOp["+name[3]+"],\tRegDest["+name[0]+"]" );
 		log.append( "\tMemOp["+name[4]+"], MemToReg["+name[5]+"],\tPCWrite["+name[6]+"], BranchCond["+name[7]+"]" );

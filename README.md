@@ -29,15 +29,15 @@ If no path is specified it defaults to ***"FileInput.s"*** in the present-workin
 
 #### Ver1.2 - Branch Instructions Support
 
-- Error Thrown if Jump/Branch may lead to infinite loop.
+- Error Thrown if Jump/Branch loop back to themselves. (Infinite loop, determinable at assembly)
   - Known Bug: Error is not thrown if Jump is specified with Immediate instead of Label.
 - New Branch Instructions Added!
-  - **beq** `$rs, $rt, offset/label`
-  - **bne** `$rs, $rt, offset/label`
-  - **blt** `$rs, $rt, offset/label`
-  - **bgt** `$rs, $rt, offset/label`
-  - **ble** `$rs, $rt, offset/label`
-  - **bge** `$rs, $rt, offset/label`
+  - **beq**  `$rs, $rt, offset/label`
+  - **bne**  `$rs, $rt, offset/label`
+  - **blt**  `$rs, $rt, offset/label`
+  - **bgt**  `$rs, $rt, offset/label`
+  - **ble**  `$rs, $rt, offset/label`
+  - **bge**  `$rs, $rt, offset/label`
 - BranchCond - Branch Condition {Zero, Not~Zero}, and PCWrite dependent of Cond Control Signals.
 - Changed Write Colour back to Cyan as it is easier to read on darker terminals.
   - May manually specify background colours for a consistent view.
@@ -105,17 +105,17 @@ Support for more data types (single-precision float, doubleWords, half-words, by
 > Format: **[OpCode]**\<Whitespace\>**[Operands]**
 
 - R_type
-  - **ADD**	`$rd, $rs, $rt`	Addition
+  - **ADD**    `$rd, $rs, $rt`    Addition
   
-    - **SUB**	`$rd, $rs, $rt`	Subtraction
+  - **SUB**    `$rd, $rs, $rt`    Subtraction
   
-      
+    
 - I_type
-  - **ADDI**	`$rt, $rs, IMM`	Addition
+  - **ADDI**    `$rt, $rs, IMM`    Addition
   
-  - **LW** 	`$rt, IMM($rs)`	Load Word ; (pseudo)`$rt, Label`
+  - **LW**    `$rt, IMM($rs)`    Load Word ; (pseudo) `$rt, Label`
   
-  - **SW**	`$rt, IMM($rs)`	Store Word ; (pseudo)`$rt, Label`
+  - **SW**    `$rt, IMM($rs)`    Store Word ; (pseudo) `$rt, Label`
   
     > **LI** workaround, specify the IMM value in data with a label pointing to it:
     >
@@ -127,12 +127,12 @@ Support for more data types (single-precision float, doubleWords, half-words, by
 
 - I_type: Branches
 
-  - BEQ	`$rs, $rt, IMM`	Branch On Equals ; (pseudo)`$rs, $rt, Label`
-  - BNE	`$rs, $rt, IMM`	Branch On NOT~Equal ; (pseudo)`$rs, $rt, Label`
-  - BLT	`$rs, $rt, IMM`	Branch On Less-Than ; (pseudo)`$rs, $rt, Label`
-  - BGT	`$rs, $rt, IMM`	Branch On Greater-Than ; (pseudo)`$rs, $rt, Label`
-  - BLE	`$rs, $rt, IMM`	Branch On Less-Than Or Equals ; (pseudo)`$rs, $rt, Label`
-  - BGE	`$rs, $rt, IMM`	Branch On Greater-Than Or Equals ; (pseudo)`$rs, $rt, Label`
+  - BEQ    `$rs, $rt, IMM`    Branch On Equals ; (pseudo) `$rs, $rt, Label`
+  - BNE    `$rs, $rt, IMM`    Branch On NOT~Equal ; (pseudo) `$rs, $rt, Label`
+  - BLT    `$rs, $rt, IMM`    Branch On Less-Than ; (pseudo) `$rs, $rt, Label`
+  - BGT    `$rs, $rt, IMM`    Branch On Greater-Than ; (pseudo) `$rs, $rt, Label`
+  - BLE    `$rs, $rt, IMM`    Branch On Less-Than Or Equals ; (pseudo) `$rs, $rt, Label`
+  - BGE    `$rs, $rt, IMM`    Branch On Greater-Than Or Equals ; (pseudo) `$rs, $rt, Label`
 
   > There is No Branch Delay Slot.  Branches Update the PC instantly.
 
@@ -140,8 +140,8 @@ Support for more data types (single-precision float, doubleWords, half-words, by
 
 - J_type
   
-  - **J** 	`Address/Immediate`	Jump ; (pseudo)`Label`
-  - **JAL** 	`Address/Immediate`	JumpAndLink ; (pseudo)`Label`
+  - **J**    `Address/Immediate`    Jump ; (pseudo) `Label`
+  - **JAL**    `Address/Immediate`    JumpAndLink ; (pseudo) `Label`
   	- Register $ra is overwritten by JAL
   
   > JR is planned. It is necessary for returning to the address linked to by JAL
@@ -150,9 +150,9 @@ Support for more data types (single-precision float, doubleWords, half-words, by
   
 - Other
   
-  - **HALT**	; No Operands
+  - **HALT**    ; No Operands
   
-  - **EXIT**	; No Operands - same as HALT
+  - **EXIT**    ; No Operands - same as HALT
   
     
 
@@ -166,20 +166,20 @@ Support for more data types (single-precision float, doubleWords, half-words, by
 
  [@See **Supported Address Segments**](#Supported-Address-Segments)
 
-| Operands Type:        | Operand 1                  | <,\s*>    | Operand 2             | <,\s*>    | Operand 3               |
-| --------------------- | -------------------------- | --------- | --------------------- | --------- | ----------------------- |
-| **`$rd, $rs, $rt`** | **[Destination_Register]** |           | **[Source_Register]** |           | **[Third_Register]**    |
-|  |  | |  | |  |
-| `$rt, $rs, IMM` | **[Third_Register]**       |           | **[Source_Register]** |           | _[Immediate]_ 16bit     |
-|  |  | |  | |  |
-| **`$rt, IMM($rs)`** | **[Third_Register]**       |           | _[Offset]_ 16bit      | _**N/A**_ | (**[Source_Register]**) |
-| **`$rt, Label`** | **[Third_Register]**       |           | [Label]               | _**N/A**_ | _**N/A**_               |
-|  |  | |  |  |  |
-| **`$rs, $rt, IMM`** | [Source_Register] | | [Third_Register] |  | _[Offset]_ 16bit |
-| **`$rs, $rt, Label`** | [Source_Register] | | [Third_Register] |  | [Label] |
-|  |  | |  |  |  |
+| Operands Type:          | Operand 1                  | <,\s*>    | Operand 2             | <,\s*>    | Operand 3               |
+| ----------------------- | -------------------------- | --------- | --------------------- | --------- | ----------------------- |
+| **`$rd, $rs, $rt`**     | **[Destination_Register]** |           | **[Source_Register]** |           | **[Third_Register]**    |
+|                         |                            |           |                       |           |                         |
+| `$rt, $rs, IMM`         | **[Third_Register]**       |           | **[Source_Register]** |           | _[Immediate]_ 16bit     |
+|                         |                            |           |                       |           |                         |
+| **`$rt, IMM($rs)`**     | **[Third_Register]**       |           | _[Offset]_ 16bit      | _**N/A**_ | (**[Source_Register]**) |
+| **`$rt, Label`**        | **[Third_Register]**       |           | [Label]               | _**N/A**_ | _**N/A**_               |
+|                         |                            |           |                       |           |                         |
+| **`$rs, $rt, IMM`**     | [Source_Register]          |           | [Third_Register]      |           | _[Offset]_ 16bit        |
+| **`$rs, $rt, Label`**   | [Source_Register]          |           | [Third_Register]      |           | [Label]                 |
+|                         |                            |           |                       |           |                         |
 | **`Address/Immediate`** | _[Address]_ 26bit          | _**N/A**_ | _**N/A**_             | _**N/A**_ | _**N/A**_               |
-| **`Label`** | [Label]                    | _**N/A**_ | _**N/A**_             | _**N/A**_ | _**N/A**_               |
+| **`Label`**             | [Label]                    | _**N/A**_ | _**N/A**_             | _**N/A**_ | _**N/A**_               |
 
 ## Operands:
 

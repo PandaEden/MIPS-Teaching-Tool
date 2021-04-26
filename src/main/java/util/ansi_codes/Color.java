@@ -17,18 +17,15 @@ public class Color {    // Static Class Constructor preventing 100% Coverage
 	public static final int YELLOW=33;    //Reserve for Warnings Log
 	public static final int BLUE=34;    // - Write
 	// BLUE -> MAGENTA -> CYAN -> WHITE
-	public static final int MAGENTA=35;    // DataManager
-	public static final int CYAN=36;    // RegisterBank
+	public static final int MAGENTA=35;
+	public static final int CYAN=36;
 	public static final int WHITE=37;
 	public static final String RESET=csi(0);
 	
 	public static final String ERR_LOG=csi("30;41");
 	public static final String WARN_LOG=bold(underline(csi(YELLOW)));
-	public static final String READ=csi(GREEN);
-	public static final String WRITE=csi(CYAN);
-	
-	public static final String DM=underline(csi(BLUE));
-	public static final String RB=underline(csi(GREEN));
+	public static final String READ=csi(bright(GREEN));
+	public static final String WRITE=csi(bright(CYAN));
 	
 	public static boolean colorSupport=true;
 	private static int nextColCounter=0;
@@ -49,10 +46,13 @@ public class Color {    // Static Class Constructor preventing 100% Coverage
 	}
 	public static String fmt (int color, @NotNull String string) {
 		return string.isBlank( ) ? string :
-			   ((Color.colorSupport) ? (csi( color ) + string + RESET) : string);
+			   ((colorSupport) ? (csi( color ) + string + RESET) : string);
 	}
 	public static String fmtTitle(int color, String txt){
-		return Color.fmt(Color.doubleUnderline( Color.bold(Color.csi(Color.bright(color)))), txt );
+		return fmt(doubleUnderline( Color.bold(Color.csi(color))), txt );
+	}
+	public static String fmtSubTitle(int color, String txt){
+		return fmt(underline(csi(color+";"+(bkg(BLACK)))), txt );
 	}
 	public static String fmtUnder(String txt){
 		return Color.fmt(Color.underline( Color.RESET ), txt );
@@ -109,7 +109,8 @@ public class Color {    // Static Class Constructor preventing 100% Coverage
 				System.out.print( fmt( reverse( bold( doubleUnderline( bkg_code ) ) ), " A" ) + "\n" );
 			}
 		}
-		System.out.print( fmt( ERR_LOG, " ERR" ) + fmt( WARN_LOG, " WARN" ) + fmt( RB, " RB" ) + fmt( DM, " DM" ) );
-		System.out.print( fmtTitle( RED,"\nTitle" )+fmtUnder( "Under" ));
+		System.out.print( fmt( ERR_LOG, " ERR" ) + fmt( WARN_LOG, " WARN" )+"\n");
+		System.out.print( fmtTitle( RED,"Title" )+fmtUnder( "Under" )+"\n");
+		System.out.print( fmtSubTitle( RED,"SubTitle" ));
 	}
 }

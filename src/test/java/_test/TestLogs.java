@@ -216,7 +216,7 @@ public class TestLogs {
 				return "Decoding:\t----\t" + type + " Instruction :: " + opcode.toUpperCase() + " :: " + InstrSpec.findSpec( opcode ).getNAME();
 			}
 			private static String _decodeControl(String[] name){
-				return "\n\t\tALUSrc1["+name[1]+"], ALUSrc2["+name[2]+"], ALUOp["+name[3]+"],\tRegDest["+name[0]+"]"+
+				return "\n\n\t\tALUSrc1["+name[1]+"], ALUSrc2["+name[2]+"], ALUOp["+name[3]+"],\tRegDest["+name[0]+"]"+
 					   "\n\t\tMemOp["+name[4]+"], MemToReg["+name[5]+"],\tPCWrite["+name[6]+"], BranchCond["+name[7]+"]";
 			}
 			
@@ -268,7 +268,7 @@ public class TestLogs {
 			private void rb_write(int val, int reg){
 				expectedExLog.appendEx( "\tRegisterBank:\tWriting Value[" + val + "]\tTo Register Index[*R" + reg + "]");
 			}
-			private void IMM(int imm){ expectedExLog.append( "\t[IMMEDIATE: " + imm +" === " + Convert.int2Hex(imm) + "]"); }
+			private void IMM(int imm){ expectedExLog.append( "\t\t[IMMEDIATE: " + imm +" === " + Convert.int2Hex(imm) + "]"); }
 			private void ALU (String aluAction){
 				expectedExLog.append( "\tALU Result = "+aluAction );
 			}

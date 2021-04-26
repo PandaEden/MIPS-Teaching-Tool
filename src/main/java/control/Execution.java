@@ -104,7 +104,8 @@ public class Execution {
 			throw new IllegalStateException( ins.getOpcode( ) + " must be Assembled before Execution " + Convert.int2Hex( PC ) );
 		}
 		this.NPC=Component.ADDER( ProgramCounter, 4,
-								   "\tIncrement_PC: NPC = PC + 4 === " + toHex( ProgramCounter + 4), this.exLog);
+								   "\t"+Color.fmtSubTitle(Color.GREEN,"Increment_PC")+": NPC = PC + 4 === "
+								   +Color.fmtUnder(toHex( ProgramCounter + 4)), this.exLog);
 	}
 	
 	private Integer[] decode(Instruction instruction){
@@ -127,7 +128,7 @@ public class Execution {
 		}
 		this.IMM= instruction.getImmediate();
 		if (IMM!=null)
-			exLog.append( "\t[IMMEDIATE: " + IMM + " === "+toHex(IMM)+"]" );
+			exLog.append( "\t\t[IMMEDIATE: " + IMM + " === "+toHex(IMM)+"]" );
 	}
 	
 	private void execute (Integer RegisterResult1, Integer NextProgramCounter, Integer RegisterResult2, Integer ImmediateRegister,
