@@ -39,7 +39,7 @@ public class InstrSpec {
 	public enum FMT {
 		RD_RS_RT,
 		RT_RS_IMM,
-		RT_RS_INSTR,
+		RS_RT_OFFSET,
 		RT_MEM,
 		JUMP_ADDR,
 		NO_OPS

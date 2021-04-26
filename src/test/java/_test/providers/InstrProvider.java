@@ -89,7 +89,7 @@ public class InstrProvider implements ArgumentsProvider {
 			public static final String OPS = "$1 , r1, -40";
 		}
 		
-		public static class RT_RS_INSTR implements ArgumentsProvider {
+		public static class RS_RT_OFFSET implements ArgumentsProvider {
 			public Stream<Arguments> provideArguments(ExtensionContext context) { return toArgs( op_RT_RS_INSTR ); }
 			public static final String OPS_LABEL = "$4 , $12, instr";
 			public static final String OPS_IMM = "$1 , r1, 5";
@@ -114,9 +114,9 @@ public class InstrProvider implements ArgumentsProvider {
 	
 	public static Stream<String> OperandsList_ExcludingNoOps () {
 		return Stream.of( RD_RS_RT.OPS, I.RT_RS_IMM.OPS,
-						  I.RT_RS_INSTR.OPS_IMM,I.RT_RS_INSTR.OPS_LABEL, // 3 Ops
-						  I.RT_MEM.OPS_IMM_RS, 	I.RT_MEM.OPS_LABEL,//2 Ops
-						  J.OPS_IMM, 			J.OPS_LABEL); // 1 Op
+						  I.RS_RT_OFFSET.OPS_IMM, I.RS_RT_OFFSET.OPS_LABEL, // 3 Ops
+						  I.RT_MEM.OPS_IMM_RS, I.RT_MEM.OPS_LABEL,//2 Ops
+						  J.OPS_IMM, J.OPS_LABEL); // 1 Op
 	}
 	
 }

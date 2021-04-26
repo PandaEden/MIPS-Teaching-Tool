@@ -160,7 +160,7 @@ public class Execution {
 		Integer branchPC = NextProgramCounter;
 		
 		if ( _BranchCondition!=null ){
-			String branchPrint="AOR["+ALUOutputRegister+"]";
+			String branchPrint="\tAOR["+ALUOutputRegister+"]";
 			String T = " True:Branch Taken";
 			String F = " False:Branch NOT~Taken";
 			
@@ -172,7 +172,7 @@ public class Execution {
 				}else
 					branchPrint+=F;
 			}else if ( _BranchCondition==1) {
-				branchPrint+=" == Not~Zero?";
+				branchPrint+=" == NOT~Zero?";
 				if ( ALUOutputRegister!=0 ){
 					branchPC=ImmediateRegister;
 					branchPrint+=T;

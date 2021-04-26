@@ -237,8 +237,8 @@ public class InstructionValidationTest {
 				
 				expect.runAgainstOperandsList_Excluding_NoOps( opcode, RD_RS_RT.OPS,
 															   I.RT_RS_IMM.OPS,
-															   I.RT_RS_INSTR.OPS_IMM,
-															   I.RT_RS_INSTR.OPS_LABEL);
+															   I.RS_RT_OFFSET.OPS_IMM,
+															   I.RS_RT_OFFSET.OPS_LABEL);
 				
 				// I_type RT, RS, IMM
 				expect.notRecognised( -450, "-40" );
@@ -246,10 +246,10 @@ public class InstructionValidationTest {
 				
 				// I_type Branch
 				expect.notRecognised( -450, "5" );
-				expectedErrs.append( -450, _opsForOpcodeNotValid( opcode,  I.RT_RS_INSTR.OPS_IMM) );
+				expectedErrs.append( -450, _opsForOpcodeNotValid( opcode, I.RS_RT_OFFSET.OPS_IMM) );
 				// I_type Branch
 				expect.notRecognised( -450, "instr" );
-				expectedErrs.append( -450, _opsForOpcodeNotValid( opcode,  I.RT_RS_INSTR.OPS_LABEL) );
+				expectedErrs.append( -450, _opsForOpcodeNotValid( opcode, I.RS_RT_OFFSET.OPS_LABEL) );
 			}
 			
 			@ParameterizedTest ( name="Invalid Operands[{index}] For I_Type RT_RS_IMM[\"{0}\"]" )
@@ -260,8 +260,8 @@ public class InstructionValidationTest {
 				
 				expect.runAgainstOperandsList_Excluding_NoOps( opcode, I.RT_RS_IMM.OPS,
 															   RD_RS_RT.OPS,
-															   I.RT_RS_INSTR.OPS_IMM,
-															   I.RT_RS_INSTR.OPS_LABEL );
+															   I.RS_RT_OFFSET.OPS_IMM,
+															   I.RS_RT_OFFSET.OPS_LABEL );
 				
 				// R_type RD, RS, RT
 				expectedErrs.appendEx( -450, FMT_MSG.imm.notValInt( "$at" ) );
@@ -269,16 +269,16 @@ public class InstructionValidationTest {
 				
 				// I_type Branch
 				expectedErrs.appendEx( -450, FMT_MSG.imm.notValInt( "instr" ));
-				expectedErrs.append( -450, _opsForOpcodeNotValid( opcode,  I.RT_RS_INSTR.OPS_LABEL) );
+				expectedErrs.append( -450, _opsForOpcodeNotValid( opcode, I.RS_RT_OFFSET.OPS_LABEL) );
 			}
 			
 			@ParameterizedTest ( name="Invalid Operands[{index}] For I_Type Branch[\"{0}\"]" )
-			@ArgumentsSource ( I.RT_RS_INSTR.class )
+			@ArgumentsSource ( I.RS_RT_OFFSET.class )
 			@Tag ( "Invalid_Operands_Assemble" )
 			void invalidOperands_I_Type_BRANCH (String opcode) {
 				expect.NoOps_NotValid_AndSetLineNo( opcode );
 				
-				expect.runAgainstOperandsList_Excluding_NoOps( opcode, I.RT_RS_INSTR.OPS_IMM, I.RT_RS_INSTR.OPS_LABEL,
+				expect.runAgainstOperandsList_Excluding_NoOps( opcode, I.RS_RT_OFFSET.OPS_IMM, I.RS_RT_OFFSET.OPS_LABEL,
 															   I.RT_RS_IMM.OPS,
 															   RD_RS_RT.OPS );
 				
@@ -738,18 +738,18 @@ public class InstructionValidationTest {
 				class IMM { // Assume PC = 0x00400000
 					
 					@ParameterizedTest ( name="Valid {index} - opcode\"{0}\"" + A )
-					@ArgumentsSource ( I.RT_RS_INSTR.class )
+					@ArgumentsSource ( I.RS_RT_OFFSET.class )
 					void assemble_ValidOperands (String opcode) {
-						Instruction ins=ValidateInstr.splitValidOperands( 12, opcode, I.RT_RS_INSTR.OPS_IMM );
+						Instruction ins=ValidateInstr.splitValidOperands( 12, opcode, I.RS_RT_OFFSET.OPS_IMM );
 						expect.assertIMMEDIATE_Equals_AndAssembles( ins, opcode, 5, 1, 1 );
 					}
 					
 					@ParameterizedTest ( name="{index} - Immediate\"{2}\" Valid 16Bit :: Hex" + A )
 					@ArgumentsSource ( ImmediateProvider._16Bit.class )
 					void Valid_16Bit_Hex (String addr, Integer address, String hex, Integer imm) {
-						Instruction ins = ValidateInstr.splitValidOperands( 30, "bne", "$2, $2, " + hex);
+						Instruction ins = ValidateInstr.splitValidOperands( 30, "bne", "$2, $3, " + hex);
 						
-						expect.assertNotNull_InsEquals( ins, "bne", Type.IMMEDIATE, imm, null, 2, 2);
+						expect.assertNotNull_InsEquals( ins, "bne", Type.IMMEDIATE, imm, null, 2, 3);
 						assertTrue( ins.assemble( testLogs.actualErrors, LABELS_MAP, 0x00450000) );
 						assertEquals( imm, ins.getImmediate() );
 					}
@@ -757,10 +757,10 @@ public class InstructionValidationTest {
 					@ParameterizedTest ( name="{index} - Immediate\"{3}\" Valid 16Bit :: Imm" + A)
 					@ArgumentsSource ( ImmediateProvider._16Bit.class )
 					void Valid_16Bit_Imm (String addr, Integer address, String hex, Integer imm) {
-						Instruction ins = ValidateInstr.splitValidOperands( 30, "beq", "$2, $2, " + imm);
+						Instruction ins = ValidateInstr.splitValidOperands( 30, "beq", "$2, $3, " + imm);
 						
 						
-						expect.assertNotNull_InsEquals( ins, "beq", Type.IMMEDIATE, imm, null, 2, 2);
+						expect.assertNotNull_InsEquals( ins, "beq", Type.IMMEDIATE, imm, null, 2, 3);
 						assertTrue( ins.assemble( testLogs.actualErrors, LABELS_MAP, 0x00450000) );
 						assertEquals( imm, ins.getImmediate() );
 					}
@@ -773,10 +773,10 @@ public class InstructionValidationTest {
 						}
 						
 						@ParameterizedTest ( name="Valid {index} - opcode\"{0}\", Imm :: UnderRange " + A )
-						@ArgumentsSource ( I.RT_RS_INSTR.class )
+						@ArgumentsSource ( I.RS_RT_OFFSET.class )
 						void assemble_ValidOperands_Imm_UnderRange  (String opcode) {
-							Instruction ins=ValidateInstr.splitValidOperands( 0, opcode, "$2, $2, -50" );
-							expect.assertNotNull_InsEquals( ins, opcode, Type.IMMEDIATE, -50,null,2, 2);
+							Instruction ins=ValidateInstr.splitValidOperands( 0, opcode, "$2, $3, -50" );
+							expect.assertNotNull_InsEquals( ins, opcode, Type.IMMEDIATE, -50,null,2, 3);
 							
 							expect.assertNotNull_FailAssemble(ins,0x00400000);
 							expectedErrs.appendEx( FMT_MSG.xAddressNot( "Instruction", "0x003FFF3C", "Valid" ));
@@ -784,7 +784,7 @@ public class InstructionValidationTest {
 						}
 						
 						@ParameterizedTest ( name="Valid {index} - opcode\"{0}\", Imm :: UnderRange :: Hex" + A )
-						@ArgumentsSource ( I.RT_RS_INSTR.class )
+						@ArgumentsSource ( I.RS_RT_OFFSET.class )
 						void assemble_ValidOperands_Imm_Hex_UnderRange (String opcode) {
 							Instruction ins=ValidateInstr.splitValidOperands( 0, opcode, "$2, $2, 0xFFFFFFCE" );
 							expect.assertNotNull_InsEquals( ins, opcode, Type.IMMEDIATE, -50,null,2, 2);
@@ -795,7 +795,7 @@ public class InstructionValidationTest {
 						}
 						
 						@ParameterizedTest ( name="Valid {index} - opcode\"{0}\", Imm :: OverRange " + A )
-						@ArgumentsSource ( I.RT_RS_INSTR.class )
+						@ArgumentsSource ( I.RS_RT_OFFSET.class )
 						void assemble_ValidOperands_Imm_OverRange  (String opcode) {
 							Instruction ins=ValidateInstr.splitValidOperands( 0, opcode, "$2, $2, 5" );
 							expect.assertNotNull_InsEquals( ins, opcode, Type.IMMEDIATE, 5,null,2, 2);
@@ -806,7 +806,7 @@ public class InstructionValidationTest {
 						}
 						
 						@ParameterizedTest ( name="Valid {index} - opcode\"{0}\", Imm :: OverRange :: Hex" + A )
-						@ArgumentsSource ( I.RT_RS_INSTR.class )
+						@ArgumentsSource ( I.RS_RT_OFFSET.class )
 						void assemble_ValidOperands_Imm_Hex_OverRange  (String opcode) {
 							Instruction ins=ValidateInstr.splitValidOperands( 0, opcode, "$2, $2, 0x5" );
 							expect.assertNotNull_InsEquals( ins, opcode, Type.IMMEDIATE, 5,null,2, 2);
@@ -822,7 +822,7 @@ public class InstructionValidationTest {
 					class Invalid_Operands {
 						
 						@ParameterizedTest ( name="Invalid {index} - opcode\"{0}\" Invalid Integer" )
-						@ArgumentsSource ( I.RT_RS_INSTR.class )
+						@ArgumentsSource ( I.RS_RT_OFFSET.class )
 						void invalid_Integer (String opcode) {
 							ValidateInstr.splitValidOperands( 23, opcode, "$1,$1, 1.5" );
 							// Errors with all Operands
@@ -857,7 +857,7 @@ public class InstructionValidationTest {
 					class Valid {
 						
 						@ParameterizedTest ( name="Valid {index} - opcode\"{0}\", Label" + A )
-						@ArgumentsSource ( I.RT_RS_INSTR.class )
+						@ArgumentsSource ( I.RS_RT_OFFSET.class )
 						void assemble_ValidOperands_Label (String opcode) {
 							Instruction ins=ValidateInstr.splitValidOperands( 12, opcode, "$9, $20, instr" );
 							expect.assertNotNull_InsEquals( ins, opcode, Type.IMMEDIATE, 9,20, "instr" );
@@ -873,7 +873,7 @@ public class InstructionValidationTest {
 						class Throws_Assemble {
 							
 							@ParameterizedTest ( name="Valid - opcode\"{0}\", NonInstr Label" + FA )
-							@ArgumentsSource ( I.RT_RS_INSTR.class )
+							@ArgumentsSource ( I.RS_RT_OFFSET.class )
 							void NonData_Label (String opcode) {
 								for ( String label : InstrProvider.KeysExcluding( "instr","instr_top","instr_15_top" ) ) {
 									Instruction ins=ValidateInstr.splitValidOperands( 12, opcode, "$2,$2," + label );
@@ -884,7 +884,7 @@ public class InstructionValidationTest {
 							}
 							
 							@ParameterizedTest ( name="Valid - opcode\"{0}\", Instr Label Out Of Range" + FA )
-							@ArgumentsSource ( I.RT_RS_INSTR.class )
+							@ArgumentsSource ( I.RS_RT_OFFSET.class )
 							void Instr_Label_OutOfRange (String opcode) {
 								Instruction ins=ValidateInstr.splitValidOperands( 12, opcode, "$2,$2," + "instr_top" );
 								
@@ -896,7 +896,7 @@ public class InstructionValidationTest {
 							}
 							
 							@ParameterizedTest ( name="Invalid {index} - opcode\"{0}\" LabelNotFound" +FA )
-							@ArgumentsSource ( I.RT_RS_INSTR.class )
+							@ArgumentsSource ( I.RS_RT_OFFSET.class )
 							void LabelNotFound (String opcode) {
 								Instruction ins=ValidateInstr.splitValidOperands( 30, opcode, "$0,$0, panda" );
 								

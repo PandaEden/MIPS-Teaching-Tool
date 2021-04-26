@@ -320,27 +320,27 @@ class ComponentTest {
 				@Test
 				void Blt ( ) {
 					Integer[] ctrl = Component.DECODER( new Branch( "blt", 1, 1, 1 ), log );
-					expected.append( _Execution._control_Branch("blt",0,"SLT"));
-					arraysEqual(new Integer[]{null, 0,0,8, null,null, 2, 0}, ctrl);
+					expected.append( _Execution._control_Branch("blt",1,"SLT"));
+					arraysEqual(new Integer[]{null, 0,0,8, null,null, 2, 1}, ctrl);
 				}
 				@Test
 				void Bge ( ) {
 					Integer[] ctrl = Component.DECODER( new Branch( "bge", 1, 1, 1 ), log );
-					expected.append( _Execution._control_Branch("bge",1,"SLT"));
-					arraysEqual(new Integer[]{null, 0,0,8, null,null, 2, 1}, ctrl);
+					expected.append( _Execution._control_Branch("bge",0,"SLT"));
+					arraysEqual(new Integer[]{null, 0,0,8, null,null, 2, 0}, ctrl);
 				}
 				
 				@Test
 				void Ble ( ) {
 					Integer[] ctrl = Component.DECODER( new Branch( "ble", 1, 1, 1 ), log );
-					expected.append( _Execution._control_Branch("ble",0,"SLT|E"));
-					arraysEqual(new Integer[]{null, 0,0,9, null,null, 2, 0}, ctrl);
+					expected.append( _Execution._control_Branch("ble",1,"SLT|E"));
+					arraysEqual(new Integer[]{null, 0,0,9, null,null, 2, 1}, ctrl);
 				}
 				@Test
 				void Bgt ( ) {
 					Integer[] ctrl = Component.DECODER( new Branch( "bgt", 1, 1, 1 ), log );
-					expected.append( _Execution._control_Branch("bgt",1,"SLT|E"));
-					arraysEqual(new Integer[]{null, 0,0,9, null,null, 2, 1}, ctrl);
+					expected.append( _Execution._control_Branch("bgt",0,"SLT|E"));
+					arraysEqual(new Integer[]{null, 0,0,9, null,null, 2, 0}, ctrl);
 				}
 				
 			}

@@ -104,7 +104,7 @@ public abstract class Instruction {
 						break;
 						
 					case IMMEDIATE:	// TODO, move to subclass
-						if ( InstructionValidation.I_TYPE_RT_IMM_RS.contains( opcode ) ) {
+						if ( InstructionValidation.I_RT_IMM_RS.contains( opcode ) ) {
 							if ( RS!=0 )
 								throw new IllegalStateException( "Invalid Operands for Assembly, IMM[" + IMM + "], RS[" + RS + "]" );
 							else if ( AddressValidation.isSupportedDataAddr( address, errorLog ) )
@@ -114,7 +114,7 @@ public abstract class Instruction {
 							else
 								errorLog.appendEx( pfx+" points to Invalid Data Address" );
 							
-						} else if ( InstructionValidation.I_TYPE_RT_RS_INSTR.contains( opcode ) ) {
+						} else if ( InstructionValidation.I_RS_RT_IMM.contains( opcode ) ) {
 							if ( !AddressValidation.isSupportedInstrAddr( address, errorLog ) ) {
 								errorLog.appendEx( pfx + invalidInstrAddr );
 							} else {

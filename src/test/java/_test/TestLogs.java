@@ -13,6 +13,7 @@ import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
 import util.logs.Logger;
 import util.logs.WarningsLog;
+import util.validation.InstrSpec;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -212,7 +213,7 @@ public class TestLogs {
 			}
 			
 			private static String _decodeTitle(String opcode, String type){
-				return "Decoding:\t----\t"+type+" Instruction :: "+opcode.toUpperCase();
+				return "Decoding:\t----\t" + type + " Instruction :: " + opcode.toUpperCase() + " :: " + InstrSpec.findSpec( opcode ).getNAME();
 			}
 			private static String _decodeControl(String[] name){
 				return "\n\t\tALUSrc1["+name[1]+"], ALUSrc2["+name[2]+"], ALUOp["+name[3]+"],\tRegDest["+name[0]+"]"+
@@ -365,6 +366,45 @@ public class TestLogs {
 				_memory();
 				_write_back();
 				rb_write( rt_val, RT );
+				__();
+			}
+			
+			public void Branch_output(int pc, String opcode, int RS, int rs_val, int RT, int rt_val, int imm, String sign, boolean zero, boolean taken){
+				sign=" "+sign+" ";
+				_fetch( pc );
+				
+				String op="";
+				int res = rs_val^rt_val;
+				
+				if ( sign.equals(" ^ ") ) {
+					op="XOR";
+				}else if ( sign.equals( " < " ) ) {
+					op="SLT";
+					sign = " set-on < ";
+					res = ( rs_val<rt_val )?1:0;
+				} else if ( sign.equals( " <= " ) ) {
+					op="SLT|E";
+					sign = " set-on <= ";
+					res = ( rs_val<=rt_val )?1:0;
+				}
+				expectedExLog.append(_control_Branch(opcode,zero?0:1,op));
+				
+				_read();
+				rb_read( rs_val, RS );
+				rb_read( rt_val, RT );
+				IMM( imm );
+				_execute();
+				shift_imm( imm, imm*4 );
+				expectedExLog.append("\t\tTarget Address = "+Convert.int2Hex( imm*4 )
+									   +" + NPC ==> "+Convert.int2Hex(imm*4+pc+4 )+"\n" );
+				if ( sign.equals(" ^ ") )
+					expectedExLog.append( "\t (binary) '" + Integer.toBinaryString(rs_val) +"' xor '"
+										+  Integer.toBinaryString(rt_val) + "' ==> '"
+										  +Integer.toBinaryString(res) +"'");
+				ALU( rs_val + sign + rt_val + " ==> " + res );
+				_memory();
+				expectedExLog.appendEx("\tAOR["+res+"] == "+(zero?"Zero":"NOT~Zero") +"? "+(taken?"True:Branch Taken":"False:Branch NOT~Taken") );
+				_write_back();
 				__();
 			}
 			

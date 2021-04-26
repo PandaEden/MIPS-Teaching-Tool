@@ -1,9 +1,6 @@
 import _test.TestLogs.FMT_MSG;
 import _test.TestSysOut;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
@@ -14,6 +11,7 @@ import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@Tag( _test.Tags.OUT )
 class MainTest {
 	private static final String TEST_RESOURCES_DIR="src" + File.separator + "test" + File.separator + "resources" + File.separator;
 	private static final String PARSE_COMPLETE = "Parsing Complete!\n";
@@ -35,6 +33,7 @@ class MainTest {
 	void compareWithSystemOut(StringBuilder sb){
 		String actual =sysOut.toString().trim().replace( "\r", "") + "\n";
 		assertEquals( sb.toString(), actual );
+		//TODO refactor Main to use dependency Injection
 		sysOut.close();
 	}
 	

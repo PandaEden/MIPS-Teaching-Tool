@@ -26,9 +26,9 @@ public class I_Type extends Instruction {
 		super.regNotInRange_Register( RT );
 	}
 	
-	/**{@link InstructionValidation#I_TYPE_RT_RS_IMM}*/
+	/**{@link InstructionValidation#I_RT_RS_IMM}*/
 	public I_Type (@NotNull String opcode, int RS, int RT, int IMM) throws IllegalArgumentException{	// Refactor to factory ?
-		this( InstructionValidation.I_TYPE_RT_RS_IMM, opcode, RS, RT, IMM );
+		this( InstructionValidation.I_RT_RS_IMM, opcode, RS, RT, IMM );
 	}
 	
 }

@@ -135,7 +135,7 @@ public class Component {
 	 <li>[6] PCWrite: 0-No, 1-Yes, 2-Based on Cond</li>
 	 <li>[7] BranchCond: 0-Eq Zero, 1-NotEq Zero</li>
 	 </ul>*/
-	public static Integer[] DECODER(Instruction ins, ExecutionLog log){			// TODO refactor to be defined in InstructionValidation
+	public static Integer[] DECODER(Instruction ins, ExecutionLog log){
 		String opcode = ins.getOpcode();
 		if ( opcode==null )
 			opcode="nop";
