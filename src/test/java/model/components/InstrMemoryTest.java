@@ -57,7 +57,7 @@ class InstrMemoryTest {
 		instr_list.add( new Nop( "exit" ) );
 		
 		for ( Instruction i: instr_list ){
-			i.assemble(testLogs.actualErrors, new HashMap<>( ) );
+			i.assemble(testLogs.actualErrors, new HashMap<>( ), 0x00400000);
 			
 			ins = instrMemory.InstructionFetch(PC);
 			testLogs.expectedExecution.append( "Fetching Instruction At Address [" + Convert.int2Hex( PC ) + "]" );
@@ -73,7 +73,7 @@ class InstrMemoryTest {
 		Instruction ins = instrMemory.InstructionFetch(0x00500000 );
 		// Pre-Assembled // Expected Pre Assembled Exit Instruction
 		Instruction expected = new Nop("exit");
-		expected.assemble( testLogs.expectedErrors, new HashMap<>() );
+		expected.assemble( testLogs.expectedErrors, new HashMap<>(), 0x00500000);
 		testLogs.expectedExecution.append( "Fetching: Instruction At Address [0x00500000]" );
 		testLogs.expectedExecution.appendEx( "\tRun Over Provided Instructions -- Auto Exit" );
 		assertEquals(ins, expected);

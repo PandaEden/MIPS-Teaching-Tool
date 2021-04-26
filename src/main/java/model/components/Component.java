@@ -3,20 +3,22 @@ package model.components;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import model.instr.I_Type;
-import model.instr.Instruction;
-import model.instr.J_Type;
-import model.instr.R_Type;
+import model.instr.*;
 
 import util.ansi_codes.Color;
 import util.logs.ExecutionLog;
+import util.validation.InstrSpec;
 
 import java.util.Arrays;
 import java.util.Map;
 
 public class Component {
 	
-	public static Map<Integer,String> ALU_codes =Map.of(-1,"NOP", 0,"SLL",2,"ADD",6, "SUB",7, "SLT");
+	public static Map<Integer,String> ALU_codes =Map.of(-1,"NOP",
+														0,"ADD", 1,"SLL", 2, "SUB",
+														4, "AND",5, "OR",
+														6, "XOR",
+														8,"SLT", 9, "SLT|E");
 	public static Integer searchALUCode(@Nullable String Op){
 		if ( Op==null )
 			Op="NOP";
@@ -52,14 +54,18 @@ public class Component {
 	/** Performs ALU operation based on ALU_OP,
 	 <ui>
 	   <li>null:[-1] - NOP - no action/output</li>
-	   <li>000:[0] - SLL - Shift Left Logical</li>
-	   <li>010:[2] - ADD - Addition</li>
-	   <li>110:[3] - SUB - Subtraction (Binvert Addition)</li>
-	   <li>111:[4] - SLT - Set On Less Than</li>
+	   <li>010:[0] - ADD - Addition</li>
+	   <li>000:[1] - SLL - Shift Left Logical</li>
+	   <li>110:[2] - SUB - Subtraction (Binvert Addition)</li>
+	 		<li>110:[4] - AND</li>
+	 		<li>110:[5] - OR</li>
+	 		<li>110:[6] - XOR - Exclusive OR</li>
+	   <li>111:[8] - SLT - Set On Less Than</li>
+	   <li>111:[9] - SLE - Set On Less Than Equal</li>
 	 </ui>*/
 	public static Integer ALU(Integer input0, Integer input1, Integer ALUCtrl, @NotNull ExecutionLog log){
 		int output;
-		
+		String bitwise=null;
 		// BInvert is determined by bit[0], SUB/SLT
 		String ALU_OP = ALU_codes.get( ALUCtrl==null?-1:ALUCtrl );
 		String sign;
@@ -84,11 +90,33 @@ public class Component {
 					input1 = Integer.parseInt(biteStream.substring(biteStream.length()-5), 2);
 				output=input0 << input1; sign = " << ";
 				break;
+				
+			case "AND": // Bitwise AND
+				bitwise = " and ";
+				output=input0 & input1; sign = " & ";
+				break;
+			case "OR": // Bitwise OR
+				bitwise = " or ";
+				output=input0 | input1; sign = " | ";
+				break;
+			case "XOR": // Bitwise XOR
+				bitwise = " xor ";
+				output=input0 ^ input1; sign = " ^ ";
+				break;
+				
 			case "SLT": //Set Less Than
 				output=input0 < input1?1:0; sign = " set-on < ";
 				break;
+			case "SLT|E": //Set Less Than
+				output=input0 <= input1?1:0; sign = " set-on <= ";
+				break;
 			default:
 				throw new IllegalStateException("ALU_OP ["+ALU_OP+"] Not Implemented!");
+		}
+		
+		if ( bitwise!=null ){
+			log.append( "\t (binary) '" + Integer.toBinaryString(input0) +"'"+ bitwise +"'"
+						+  Integer.toBinaryString(input1) + "' ==> '" + Color.fmtUnder( Integer.toBinaryString(output)) +"'");
 		}
 		
 		log.append( "\tALU Result = " + input0 + sign + input1 + " ==> " + Color.fmtUnder( ""+output ) );
@@ -102,63 +130,84 @@ public class Component {
 	 <li>[1] ALUSrc1: 0-AIR1, 1-NPC</li>
 	 <li>[2] ALUSrc2: 0-AIR2, 1-IMM</li>
 	 <li>[3] ALUOp: {@link #ALU_codes}, {@link #searchALUCode(String)}</li>
-	 <li>[4] MemAction: 0-Read, 1-Write</li>
+	 <li>[4] MemOp: 0-Read, 1-Write</li>
 	 <li>[5] MemToReg: 0-AOR, 1-LMDR</li>
-	 <li>[6] PCWrite: 0-No, 1-Yes</li>
+	 <li>[6] PCWrite: 0-No, 1-Yes, 2-Based on Cond</li>
+	 <li>[7] BranchCond: 0-Eq Zero, 1-NotEq Zero</li>
 	 </ul>*/
 	public static Integer[] DECODER(Instruction ins, ExecutionLog log){
-		log.append( DECODE + " ---- " + ins.getType() + " Instruction :: " + ins.getOpcode() );
-		log.append( "" );
-		Integer[] ctrl = new Integer[7];
-		String[] name = new String[7];
-		Arrays.fill( name, "-" );
-		if ( ins.getOpcode()!=null ) {
-			if ( ins instanceof R_Type || ins instanceof I_Type ) {
-				ctrl=new Integer[] { 1, 0, 0, 2, null, 0, 0 };
-				name=new String[] { "RD", "AIR1", "AIR2", "-", "-", "No:AOR", "NPC" };
-				if ( ins instanceof R_Type ) {
-					ctrl[ 3 ]=searchALUCode(ins.getOpcode());
-				} else {//ins instanceof I_Type
-					ctrl[ 0 ]=0;
-					name[ 0 ]="RT";
-					ctrl[ 2 ]=1;
-					name[ 2 ]="IMM";
-					ctrl[ 3 ]=2;
-					if ( ins.getOpcode( ).equals( "lw" ) ) {
-						ctrl[ 4 ]=0;
-						name[ 4 ]="READ->LMDR";
-						ctrl[ 5 ]=1;
-						name[ 5 ]="Yes:LMDR";
-					} else if ( ins.getOpcode( ).equals( "sw" ) ) {
-						ctrl[ 0 ]=null;
-						name[ 0 ]="-";
-						ctrl[ 4 ]=1;
-						name[ 4 ]="WRITE<-SVR";
-						ctrl[ 5 ]=null;
-						name[ 5 ]="-";
-					}
-				}
-			} else if ( ins instanceof J_Type ) {
-				ctrl[ 6 ]=1;
-				name[ 6 ]="IMM";
-				
-				if ( ins.getOpcode( ).equals( "jal" ) ) {
-					ctrl[ 0 ]=2;
-					name[ 0 ]="$31:ReturnAddress";
-					ctrl[ 1 ]=1;
-					name[ 1 ]="NPC";
-					ctrl[ 3 ]=-1;
-					ctrl[ 5 ]=0;
-					name[ 5 ]="No:AOR";
-				}
-			}
-		}
-		if ( ctrl[3]!=null )
-			name[ 3 ]=ALU_codes.get( ctrl[3] );
+		String opcode = ins.getOpcode();
+		if ( opcode==null )
+			opcode="nop";
 		
-		log.append( "\tALUSrc1["+name[1]+"], ALUSrc2["+name[2]+"], ALUOp["+name[3]+"]" );
-		log.append( "\tMemOp["+name[4]+"], MemToReg["+name[5]+"]" );
-		log.append( "\tRegDest["+name[0]+"], PCWrite["+name[6]+"]" );
+		InstrSpec spec = InstrSpec.findSpec( opcode );
+		
+		log.append( "\n" );
+		log.append( DECODE + "\t----\t" + ins.getType() + " Instruction :: " + (opcode.toUpperCase())+" :: "+spec.getNAME() );
+//		if ( ins instanceof R_Type )
+//			log.append( "\n\t\t "+opcode+"\tRS["+ins.getRS()+"], RT["+ins.getRT()+"], RD["+ins.getRD()+"], [shamt], [funct]" );
+//		else if ( ins instanceof I_Type )
+//			log.append( "\n\t\t "+opcode+"\tRS["+ins.getRS()+"], RT["+ins.getRT()+"], 16_IMM["+ins.getImmediate()+"]" );
+//		else if ( ins instanceof J_Type )
+//			log.append( "\n\t\t "+opcode+"\t26_IMM["+ins.getImmediate()+"]" );
+		
+		Integer[] ctrl =spec.getCTRL();
+		String[] name = new String[8];
+		Arrays.fill( name, "-" );
+		
+		//Dest
+		if ( ctrl[0]!=null ) {
+			if ( ctrl[ 0 ]==0 )
+				name[ 0 ]="RT";
+			else if ( ctrl[ 0 ]==1 )
+				name[ 0 ]="RD";
+			else if ( ctrl[ 0 ]==2 )
+				name[ 0 ]="$ReturnAddress:31";
+		}//ALUSrc1
+		
+		if ( ctrl[1]!=null ) {
+			if ( ctrl[ 1 ]==0 )
+				name[ 1 ]="AIR1";
+			else if ( ctrl[ 1 ]==1 )
+				name[ 1 ]="NPC";
+		}//ALUSrc2
+		if ( ctrl[2]!=null ) {
+			if ( ctrl[ 2 ]==0 )
+				name[ 2 ]="AIR2";
+			else if ( ctrl[ 2 ]==1 )
+				name[ 2 ]="IMM";
+		}//ALUOp
+		if ( ctrl[3]!=null ) {
+			name[ 3 ]=ALU_codes.get( ctrl[ 3 ] );
+		}//MemOp
+		if ( ctrl[4]!=null ) {
+			if ( ctrl[ 4 ]==0 )
+				name[ 4 ]="READ->LMDR";
+			else if ( ctrl[ 4 ]==1 )
+				name[ 4 ]="WRITE<-SVR";
+		}//MemToReg
+		if ( ctrl[5]!=null ) {
+			if ( ctrl[ 5 ]==0 )
+				name[ 5 ]="No:AOR";
+			else if ( ctrl[ 5 ]==1 )
+				name[ 5 ]="Yes:LMDR";
+		}//PCWrite
+		if ( ctrl[6]!=null ) {
+			if ( ctrl[ 6 ]==0 )
+				name[ 6 ]="NPC";
+			else if ( ctrl[ 6 ]==1 )
+				name[ 6 ]="IMM";
+			else if ( ctrl[ 6 ]==2 )
+				name[ 6 ]="COND";
+		}//BranchCond
+		if ( ctrl[7]!=null ) {
+			if ( ctrl[ 7 ]==0 )
+				name[ 7 ]="Zero";
+			else if ( ctrl[ 7 ]==1 )
+				name[ 7 ]="Not~Zero";
+		}
+		log.append( "\tALUSrc1["+name[1]+"], ALUSrc2["+name[2]+"], ALUOp["+name[3]+"],\tRegDest["+name[0]+"]" );
+		log.append( "\tMemOp["+name[4]+"], MemToReg["+name[5]+"],\tPCWrite["+name[6]+"], BranchCond["+name[7]+"]" );
 		
 		return ctrl;
 	}

@@ -30,7 +30,7 @@ public abstract class Instruction {
 	protected final String label;
 	// TODO Add lineNo
 	
-	/**No Validation is performed, assumed all input to be valid. {@link #assemble(ErrorLog, HashMap)} needs to be ran before execution.
+	/**No Validation is performed, assumed all input to be valid. {@link #assemble(ErrorLog, HashMap, int)} needs to be ran before execution.
 	 <p>Errors with format may be caught during assembly.</p>
 	 <p>Trying to Execution an instruction where assembly has failed will throw an exception.</p>*/
 	protected Instruction (@NotNull Type type, @NotNull List<String> codes, @NotNull String opcode,
@@ -58,11 +58,16 @@ public abstract class Instruction {
 	 
 	 <p>Illegal Argument Exception may be throw is the label map
 	 */
-	public boolean assemble(@NotNull ErrorLog log, @NotNull HashMap<String, Integer> labelMap)
+	public boolean assemble (@NotNull ErrorLog log, @NotNull HashMap<String, Integer> labelMap, int PC)
 			throws IllegalArgumentException{
-		if ( this.IMM==null && (!Util.isNullOrBlank(this.label)) )
-			return this.setImm( log, labelMap );
-		return true;
+		boolean rtn = true;
+		if ( (this.IMM==null && (!Util.isNullOrBlank(this.label))) )
+			rtn=this.setImm( log, labelMap, PC );
+		if ( this.IMM!=null && this instanceof Branch )
+			rtn &= imm16bit(log, PC+4);
+		if ( this.IMM!=null && this instanceof J_Type )
+			rtn &= Jump_valImm(log, PC);
+		return rtn;
 	}
 	
 	/**
@@ -75,7 +80,7 @@ public abstract class Instruction {
 	 @throws IllegalArgumentException if used with null label Operand.
 	 @throws IllegalStateException error with initialisation of instruction.
 	 */
-	public boolean setImm(@NotNull ErrorLog errorLog, @NotNull HashMap<String, Integer> labelMap)
+	public boolean setImm(@NotNull ErrorLog errorLog, @NotNull HashMap<String, Integer> labelMap, int PC)
 			throws IllegalArgumentException, IllegalStateException {
 		if ( IMM==null) {
 			if ( this.label==null || this.label.isBlank( ) )
@@ -89,13 +94,17 @@ public abstract class Instruction {
 				final String invalidInstrAddr=" points to Invalid Instruction Address"; // JUMP / BRANCH
 				switch ( this.type ) {
 					case JUMP:	// TODO, move to subclass
-						if ( AddressValidation.isSupportedInstrAddr( address, errorLog ) )
-							this.IMM=Convert.address2Imm( address );
-						else
+						if ( AddressValidation.isSupportedInstrAddr( address, errorLog ) ) {
+							if ( address==PC )	// Infinite Loop
+								errorLog.appendEx( "Jump PC is the same as its targetPC:["+Convert.int2Hex( address )+"], This will cause an infinite loop" );
+							else
+								this.IMM=Convert.address2Imm( address );
+						} else
 							errorLog.appendEx( pfx+invalidInstrAddr );
 						break;
+						
 					case IMMEDIATE:	// TODO, move to subclass
-						if ( InstructionValidation.I_TYPE_MEM_ACCESS.contains( opcode ) ) {
+						if ( InstructionValidation.I_RT_IMM_RS.contains( opcode ) ) {
 							if ( RS!=0 )
 								throw new IllegalStateException( "Invalid Operands for Assembly, IMM[" + IMM + "], RS[" + RS + "]" );
 							else if ( AddressValidation.isSupportedDataAddr( address, errorLog ) )
@@ -104,12 +113,46 @@ public abstract class Instruction {
 								this.IMM=(address);
 							else
 								errorLog.appendEx( pfx+" points to Invalid Data Address" );
+							
+						} else if ( InstructionValidation.I_RS_RT_IMM.contains( opcode ) ) {
+							if ( !AddressValidation.isSupportedInstrAddr( address, errorLog ) ) {
+								errorLog.appendEx( pfx + invalidInstrAddr );
+							} else {
+									this.IMM=Convert.address2Imm( address )-((PC+4)/4);
+							}
 						}
 						break;
 				}
 			}
 		}
 		return (this.IMM!=null); // returns True if Immediate has been set.
+	}
+	
+	private boolean imm16bit (@NotNull ErrorLog errorLog, int NPC) {
+		if ( !Util.notNullAndInRange( IMM, -32768, 32768) ) {// Signed 16bit
+			errorLog.appendEx( "Offset Imm[" + IMM + "], Is not a Valid Signed 16Bit Number" );
+			this.IMM=null;
+			return false;
+		}
+		int target = NPC+this.IMM*4;
+		boolean valid = AddressValidation.isSupportedInstrAddr( target, errorLog );
+		if ( !valid )
+			errorLog.appendEx( "NPC["+Convert.int2Hex(NPC)+"], Offset["+this.IMM+"], Target["+Convert.int2Hex( target )+"]" );
+		else if ( IMM==-1 )	{// Infinite Loop
+			errorLog.appendEx( "Branch PC is the same as its targetPC:["+Convert.int2Hex( NPC-4 )+"], Imm:[-1], This will cause an infinite loop" );
+			valid=false;
+		}
+		return valid;
+	}
+	
+	private boolean Jump_valImm(@NotNull ErrorLog errorLog, int PC){
+		int address = Convert.imm2Address( this.IMM );
+		if ( address==PC ) {    // Infinite Loop
+			errorLog.appendEx( "Jump PC is the same as its targetPC:["
+							   + Convert.int2Hex( address ) + "], This will cause an infinite loop" );
+			return false;
+		}
+		return true;
 	}
 	
 	@Nullable

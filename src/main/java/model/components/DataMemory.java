@@ -94,8 +94,8 @@ public class DataMemory {
 	}
 	
 	private String fmtMem(int address, boolean write) {
-		final String READ_COL=Color.DATA_READ;
-		final String WRITE_COL=Color.DATA_WRITE;
+		final String READ_COL=Color.READ;
+		final String WRITE_COL=Color.WRITE;
 		
 		if ( write )
 			return Color.fmt( WRITE_COL, Convert.int2Hex( address ) );
