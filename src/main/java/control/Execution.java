@@ -14,6 +14,7 @@ import model.instr.Nop;
 
 import util.Convert;
 import util.ansi_codes.Color;
+import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
 import util.validation.InstructionValidation;
 
@@ -24,6 +25,7 @@ public class Execution {
 	private final DataMemory dataMem;
 	private final RegisterBank regBank;
 	private final InstrMemory instrMemory;
+	private final ErrorLog errorLog;
 	
 	// Fetch / Decode Always run the same, so the title is printed with the rest of their output
 	private static final String READ_OPS=Color.fmtTitle( Color.YELLOW, "Reading Operands" ) + ":";
@@ -31,62 +33,88 @@ public class Execution {
 	private static final String MEM_ACC =Color.fmtTitle( Color.MAGENTA, "Memory Access" ) + ":";
 	private static final String WRITE_BACK =Color.fmtTitle( Color.WHITE, "Write Back" ) + ":";
 	
-	public Execution (@NotNull ExecutionLog exLog, DataMemory dataMem, RegisterBank regBank, @NotNull ArrayList<Instruction> instructions) {
+	public Execution (@NotNull ExecutionLog exLog, @NotNull ErrorLog errorLog,
+					  @NotNull DataMemory dataMem,@NotNull RegisterBank regBank,
+					  @NotNull ArrayList<Instruction> instructions) {
 		this.exLog=exLog;
+		this.errorLog=errorLog;
 		this.dataMem=dataMem;
 		this.regBank=regBank;
 		this.instrMemory=new InstrMemory( instructions, exLog );
 		reset();
 	}
-	/** Instanced Version of {@link #RunToEnd(DataMemory, RegisterBank, ArrayList, ExecutionLog, StringBuilder)} */
-	@VisibleForTesting
-	public void RunToEnd (ArrayList<Instruction> instructions, StringBuilder output) {
-		RunToEnd( dataMem, regBank, instructions, exLog, output );
-	}
 	
-	/**Loops though the given instructions, executing them until reading an instruction that returns a null address (Exit)
-	 Output is appended to the StringBuilder.@return
-	 */
-	@VisibleForTesting
-	public static void RunToEnd (DataMemory dataMem, RegisterBank regBank,
-								 ArrayList<Instruction> instructions, ExecutionLog exLog,
-								 StringBuilder output){
-		Execution ex = new Execution( exLog, dataMem, regBank, instructions);
-		for ( Integer PC=InstrMemory.BASE_INSTR_ADDRESS;
-			  PC!=null;
-		) {
-			output.append( regBank.format( ) ); // Register Bank
-			output.append( "\n" );
-			PC = ex.runStep(output);
-		}
-	}
-	
-	/**Returns Next on Error . or Exit Instruction Completed WB*/
+	/**Returns Null on Error . or Exit Instruction Completed WB
+	 contents of Register Bank are added to output each iteration*/
 	public Integer runStep(StringBuilder output){
-		try {
-			pipeline();
-			output.append( exLog.toStringAndClear() ); //  ExecutionLog
-		} catch ( IndexOutOfBoundsException | IllegalArgumentException e ) {
-			this.NPC=this.PC=null; // Signal to exit
-			
-			// catch Exception -> Calling method should print the ErrLog/ WarningLog
-			// after Execution Finishes to see what went wrong
-			output.append( exLog.toStringAndClear() );
-			output.append( Color.fmt( Color.ERR_LOG, "ERROR: " + e.getMessage() ) );
-		} catch ( IllegalStateException e ) { // Not Pre-Assembled /successfully
-			exLog.clear();
-			throw e;
+		if ( PC!=null ){
+			try {
+				output.append( regBank.format( ) ); // Register Bank
+				output.append( "\n" );
+				pipeline();
+				output.append( exLog.toStringAndClear() ); //  ExecutionLog
+			} catch ( IndexOutOfBoundsException | IllegalArgumentException e ) {
+				this.NPC=this.PC=null; // Signal to exit
+				
+				// catch Exception -> Calling method should print the ErrLog/ WarningLog
+				// after Execution Finishes to see what went wrong
+				output.append( exLog.toStringAndClear() );
+				errorLog.append( e.getMessage() );
+			} catch ( IllegalStateException e ) { // Not Pre-Assembled /successfully
+				exLog.clear();
+				throw e;
+			}
 		}
 		return this.PC; // == Null ∴ Exit
+	}
+	
+	/** Does Not Clear the ExecutionLog */
+	@VisibleForTesting
+	public Integer runStep_NoOutput(){
+		if ( PC!=null ){
+			try {
+				pipeline();
+			} catch ( IndexOutOfBoundsException | IllegalArgumentException e ) {
+				this.NPC=this.PC=null;
+				errorLog.append( e.getMessage() );
+			} catch ( IllegalStateException e ) { // Not Pre-Assembled /successfully
+				exLog.clear();
+				throw e;
+			}
+		}
+		return this.PC; // == Null ∴ Exit
+	}
+	
+	/**Attempts to Run N cycles,
+	 Will End after running N cycles,
+	 An Error is thrown,
+	 Or End of Provided Instructions.*/
+	public Integer runSteps(StringBuilder output, int N){
+		if ( N<0 )
+			throw new IllegalArgumentException("N must be positive");
+		
+		for ( int i=0; i<N; i++ ) {
+			runStep( output );
+		}
+		return this.PC; // == Null ∴ Exit
+	}
+	
+	/**Attempts to Run till End of Provided Instructions, May end early if an Error is thrown
+	 Prints Output every 100Cycles*/
+	public void runToEnd(){
+		while ( PC!=null ){
+			StringBuilder out = new StringBuilder();
+			runSteps( out, 100 );
+		}
+		if ( !errorLog.hasEntries() ){	// Re-Prints RegBank if no errors during Execution
+			System.out.println( regBank.format( ) ); // Register Bank
+			System.out.println( "\n" );
+		}
 	}
 	
 	private String toHex(Integer val){
 		if (val==null) return null; // pass Null forward
 		return Convert.int2Hex(val);
-	}
-	
-	private boolean notNullEq1(Integer i){
-		return ( i!=null && i==1);
 	}
 	
 	// TODO create wrapper ? to hold all the values?
@@ -96,6 +124,8 @@ public class Execution {
 	public void reset(){
 		this.PC=InstrMemory.BASE_INSTR_ADDRESS;
 		exLog.clear();
+		errorLog.clear();
+		
 	}
 	
 	private void fetch(Integer ProgramCounter){
@@ -206,11 +236,10 @@ public class Execution {
 			regBank.write( DestinationRegister, WB_Data );
 		
 		this.PC=this.NPC;
-		exLog.append( "--------------------------------" );
+		exLog.append( "--------------------------------\n" );
 	}
 	
-	@VisibleForTesting
-	public Integer pipeline(){
+	private Integer pipeline() throws IllegalArgumentException, IllegalStateException, IndexOutOfBoundsException{
 		Integer[] control = new Integer[7];
 		//TODO refactor methods to return arrays, instead of using global variables
 		fetch(this.PC );

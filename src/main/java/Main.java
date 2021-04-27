@@ -1,9 +1,9 @@
 import control.Execution;
 
-import model.instr.Instruction;
 import model.MemoryBuilder;
 import model.components.DataMemory;
 import model.components.RegisterBank;
+import model.instr.Instruction;
 
 import setup.Parser;
 
@@ -23,17 +23,20 @@ public class Main {
 		final ErrorLog errorLog=new ErrorLog( new ArrayList<>( ) );
 		final WarningsLog warningsLog=new WarningsLog( new ArrayList<>( ) );
 		final MemoryBuilder MEMORY_BUILDER=new MemoryBuilder( errorLog, warningsLog );
-		final StringBuilder output = new StringBuilder();
 		final String path=(args.length>0)?args[0]:"";
 		
+		run( errorLog, warningsLog, MEMORY_BUILDER, path );
+	}
+	
+	public static void run(final ErrorLog errorLog, final WarningsLog warningsLog, final MemoryBuilder Memory, String path){
 		// Parsing
-		Parser parser=new Parser( path, MEMORY_BUILDER, errorLog, warningsLog );
+		Parser parser=new Parser( path, Memory, errorLog, warningsLog );
 		if ( errorLog.hasEntries( ) ) {
 			warningsLog.println( );
 		} else {
 			System.out.println( "Parsing Complete!" );
 			// Assemble
-			ArrayList<Instruction> instructions=MEMORY_BUILDER.assembleInstr( errorLog );
+			ArrayList<Instruction> instructions=Memory.assembleInstr( errorLog );
 			if ( instructions!=null ) {
 				System.out.println( "Assembly Complete!" );
 				//Execution
@@ -42,15 +45,22 @@ public class Main {
 				DataMemory dm=parser.getMem( executionLog );
 				RegisterBank rb=new RegisterBank( new int[ 32 ], executionLog );
 				// Execution
-				Execution.RunToEnd( dm, rb, instructions, executionLog, output );
+				Execution ex = new Execution( executionLog,errorLog, dm, rb, instructions );
+				
+				boolean exit = false;
+				
+				while ( !exit ){
+					StringBuilder out = new StringBuilder();
+					exit = (ex.runStep( out )==null);
+					System.out.print( out );
+				}
 				
 				// Output
 				// Print Results
-				System.out.println( output.toString( ) );
-				if (!output.toString().contains( "ERROR" ))
-					System.out.println( "Execution Complete!" );
+				if (!errorLog.hasEntries())
+					System.out.println( "\nExecution Complete!" );
 				else
-					System.out.println( "Execution Ended With Errors!" );
+					System.out.println( "\nExecution Ended With Errors!" );
 			}
 		}
 		errorLog.println();
