@@ -35,7 +35,7 @@ If no path is specified it defaults to ***"FileInput.s"*** in the present-workin
 
         ![image-20210427151816253](README.assets/image-20210427151816253.png)
 
- - Use of ANSCII formatting has been made more consistent in the output
+ - Use of ASCII formatting has been made more consistent in the output
 
    ![image-20210427151915551](README.assets/image-20210427151915551.png)
 
