@@ -22,7 +22,7 @@ public class Color {    // Static Class Constructor preventing 100% Coverage
 	public static final int WHITE=37;
 	public static final String RESET=csi(0);
 	
-	public static final String ERR_LOG=csi("97;41");
+	public static final String ERR_LOG=csi("97;41;4");
 	public static final String WARN_LOG=bold(underline(csi(YELLOW)));
 	public static final String READ=csi(bright(GREEN));
 	public static final String WRITE=csi(bright(CYAN));

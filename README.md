@@ -26,11 +26,27 @@ If no path is specified it defaults to ***"FileInput.s"*** in the present-workin
   - (the default WSL terminal does not support Anscii double-underline. Windows Terminal does)
 
 ## Change Log
+#### Ver1.2.1 - RanOutOfMemory Patch
+ - Output was being stored and only printed at the end of execution.
+
+     -  This meant if a user ran a log of instructions. Or a very large /infinite loop. Java would run out of memory before printing the execution.
+
+     -  This has been changed, to print the output of the console each cycle.
+
+        ![image-20210427151816253](README.assets/image-20210427151816253.png)
+
+ - Use of ANSCII formatting has been made more consistent in the output
+
+   ![image-20210427151915551](README.assets/image-20210427151915551.png)
+
+
 
 #### Ver1.2 - Branch Instructions Support
 
 - Error Thrown if Jump/Branch loop back to themselves. (Infinite loop, determinable at assembly)
+  
   - Known Bug: Error is not thrown if Jump is specified with Immediate instead of Label.
+  
 - New Branch Instructions Added!
   - **beq**  `$rs, $rt, offset/label`
   - **bne**  `$rs, $rt, offset/label`
@@ -38,11 +54,19 @@ If no path is specified it defaults to ***"FileInput.s"*** in the present-workin
   - **bgt**  `$rs, $rt, offset/label`
   - **ble**  `$rs, $rt, offset/label`
   - **bge**  `$rs, $rt, offset/label`
+  
 - BranchCond - Branch Condition {Zero, Not~Zero}, and PCWrite dependent of Cond Control Signals.
+
+  
+
 - Changed Write Colour back to Cyan as it is easier to read on darker terminals.
-  - May manually specify background colours for a consistent view.
+  
+  - May manually specify background colours in future for a consistent view.
+  
 - Made Instruction Format more clear in the README.
+
 - Full Name of Instruction is now printed during decode.
+
 - Internal Changes to make Adding instructions easier.
 
 
@@ -109,7 +133,6 @@ Support for more data types (single-precision float, doubleWords, half-words, by
   
   - **SUB**    `$rd, $rs, $rt`    Subtraction
   
-    
 - I_type
   - **ADDI**    `$rt, $rs, IMM`    Addition
   
