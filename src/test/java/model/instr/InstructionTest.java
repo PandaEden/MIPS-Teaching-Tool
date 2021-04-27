@@ -8,15 +8,18 @@ import org.junit.jupiter.api.*;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.provider.ValueSource;
+import control.Execution;
 
 import model.components.DataMemory;
 import model.components.InstrMemory;
+import model.components.RegisterBank;
 
 import util.Convert;
 import util.logs.ErrorLog;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -32,16 +35,13 @@ class InstructionTest {
 	private static final int[] values=new int[ 32 ];
 	private static TestLogs testLogs;
 	private static FMT_MSG._Execution testLogs_ex;
-	private static ErrorLog errors;
 	
 	@BeforeAll
 	static void beforeAll ( ) {
 		testLogs=new TestLogs( );
-		testLogs_ex=new FMT_MSG._Execution( values, data, testLogs.actualExecution, testLogs.expectedExecution );
-		errors=testLogs.actualErrors;
+		testLogs_ex=new FMT_MSG._Execution(testLogs.expectedExecution);
 		data.clear( );
 	}
-	
 	@AfterEach
 	void tearDown ( ) {
 		testLogs.after( );
@@ -201,9 +201,9 @@ class InstructionTest {
 			// Execution -> Errors
 			Instr.failAssemble_andExecuteThrows( ins );
 			// Output
-			testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Data", addr, "Supported" ) );
-			testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Data" ) );
-			testLogs_ex._fetching( base_PC );
+//			testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Data", addr, "Supported" ) );
+//			testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Data" ) );
+//			testLogs_ex._fetching( base_PC );
 		}
 		@ParameterizedTest ( name="[{index}] LW_Execution with Instr-Label" )
 		@ValueSource ( strings={ "instr", "instr_top" } )
@@ -215,10 +215,12 @@ class InstructionTest {
 			assertNotNull( ins );
 			// Execution -> Errors
 			Instr.failAssemble_andExecuteThrows( ins );
-			// Output
-			testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Data", addr, "Valid" ) );
-			testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Data" ) );
-			testLogs_ex._fetching( base_PC );
+//			// Output
+//			testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Data", addr, "Valid" ) );
+//			testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Data" ) );
+//			testLogs_ex._fetching( base_PC );
+			 // Changed to have no output when error thrown from execution after failed assembly
+			
 		}
 		@Test
 		void Invalid_MEM_Execution_BassOffset_OutOfBounds ( ) {
@@ -234,12 +236,13 @@ class InstructionTest {
 			// RS_val + Imm should give the correct address.
 			assertNotNull( ins );
 			// Execution
-			Instr.assembleAndExecute_Throws(IndexOutOfBoundsException.class, ins);
+			Instr.assembleAndExecute_newPC(null, ins);
 			// Result
 			assertEquals( 0, values[ 1 ] );	// Not Modified
 			// Output
 			testLogs_ex.load_output_before_exception( base_PC, 30, values[30], imm, addr );
 			// Output cut off by exception
+			testLogs.expectedErrors.appendEx( "Data Address [0x1000FFFC, 268500988] Must Be >=0x10010000 and <=0x100107F8" );
 		}
 		@Test
 		void Invalid_MEM_Execution_BassOffset_NotAligned ( ) {
@@ -255,12 +258,13 @@ class InstructionTest {
 			// RS_val + Imm should give the correct address.
 			assertNotNull( ins );
 			// Execution
-			Instr.assembleAndExecute_Throws(IllegalArgumentException.class, ins);
+			Instr.assembleAndExecute_newPC(null, ins);
 			// Result
 			assertEquals( 0, values[ 1 ] );	// Not Modified
 			// Output
 			testLogs_ex.load_output_before_exception( base_PC, 30, values[30], imm, addr);
 			// Output cut off by exception
+			testLogs.expectedErrors.appendEx( "Data Address [0x10010003, 268500995] Must Be DoubleWord Aligned" );
 		}
 		
 	}
@@ -466,10 +470,11 @@ class InstructionTest {
 			// Execution -> Errors
 			Instr.failAssemble_andExecuteThrows( ins );
 			// Output
-			testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Instruction", addr, "Supported" ) );
-			testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Instruction" ) );
-			testLogs_ex._fetching( base_PC );
+//			testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Instruction", addr, "Supported" ) );
+//			testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Instruction" ) );
+//			testLogs_ex._fetching( base_PC );
 		}
+		
 		@ParameterizedTest ( name="[{index}] Jump_Execution with Data-Label" )
 		@ValueSource ( strings={ "data", "data_top" } )
 		void Invalid_Jump_Execution (String label) {
@@ -481,9 +486,9 @@ class InstructionTest {
 			// Execution -> Errors
 			Instr.failAssemble_andExecuteThrows( ins );
 			// Output
-			testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Instruction", addr, "Valid" ) );
-			testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Instruction" ) );
-			testLogs_ex._fetching( base_PC );
+//			testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Instruction", addr, "Valid" ) );
+//			testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Instruction" ) );
+//			testLogs_ex._fetching( base_PC );
 		}
 		
 		@Test
@@ -504,6 +509,7 @@ class InstructionTest {
 	}
 	
 	private static class Instr {
+		private static final ErrorLog errors = testLogs.actualErrors;
 		/**
 		 For a given instruction, Tests: It assembles -> Then Executes without errors.
 		 <p> and the returned PC, matches the PC+4
@@ -517,7 +523,7 @@ class InstructionTest {
 		 */
 		private static void assembleAndExecute_newPC (Integer newPC, Instruction ins) {
 			assertTrue( ins.assemble( errors, labelMap, 0x00400000) );
-			assertEquals( newPC, testLogs_ex.pipeline( ins) );
+			assertEquals( newPC, executeSingleInstruction( ins ) );
 		}
 		/**
 		 For a given instruction, Tests: It Fails assembly ->
@@ -525,16 +531,15 @@ class InstructionTest {
 		 */
 		private static void failAssemble_andExecuteThrows (Instruction ins) {
 			assertFalse( ins.assemble( errors, labelMap, 0x00400000) );
-			assertThrows( IllegalStateException.class, ( ) -> testLogs_ex.pipeline( ins ) );
+			assertThrows( IllegalStateException.class, ( ) -> executeSingleInstruction( ins ) );
 		}
-		/**
-		 For a given instruction, Tests: It assembles ->
-		 Then attempting to execute makes it throw an exception
-		 <p>For Address based instructions -> pointed to the wrong address
-		 */
-		private static <T extends Throwable> void assembleAndExecute_Throws (Class<T> exception, Instruction ins) {
-			assertTrue( ins.assemble( errors, labelMap, 0x00400000) );
-			assertThrows( exception, ( ) -> testLogs_ex.pipeline( ins ) );
+		
+		private static Integer executeSingleInstruction(Instruction instruction){
+			Execution execution= new Execution( testLogs.actualExecution, testLogs.actualErrors,
+									  new DataMemory( data, testLogs.actualExecution ),
+									  new RegisterBank( values, testLogs.actualExecution ),
+												new ArrayList<>(List.of( instruction )) );
+			return execution.runStep_NoOutput();
 		}
 	}
 	

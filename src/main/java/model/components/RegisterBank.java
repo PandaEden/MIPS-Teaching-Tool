@@ -20,7 +20,7 @@ public class RegisterBank {
 	public static boolean fmtUpperCase=true;
 	private final int[] registers;
 	private final ExecutionLog executionLog;
-	private final String NAME="\t"+Color.fmt( Color.RB, "RegisterBank" );
+	private final String NAME="\t"+Color.fmtSubTitle( Color.YELLOW, "RegisterBank" );
 	private Integer LAST_READ0=null;
 	private Integer LAST_READ1=null;
 	
@@ -97,7 +97,7 @@ public class RegisterBank {
 		inRange( index );
 		
 		int data = this.registers[ index ];
-		this.executionLog.append( NAME + ":\t" + "Reading Value[" + data
+		this.executionLog.append( NAME + ":\t" + "Reading Value[" + colorVal( index, data )
 								  + "]\tFrom Register Index[" + fmtReg( index ) + "]!" );
 		return data;
 	}
@@ -223,7 +223,7 @@ public class RegisterBank {
 	}
 	/** Formats the register depending on {@link RegFormat}, and combines with the value at that register */
 	private String fmtRegWithData (int index) {
-		return colorize( index, fmtReg( index ) + ": " + registers[ index ] );
+		return colorize( index, fmtReg( index ) + ": " + colorVal(index, registers[ index ]) );
 	}
 	
 	public enum RegFormat {

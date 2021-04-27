@@ -1,12 +1,5 @@
 package _test;
 
-import control.Execution;
-
-import model.components.DataMemory;
-import model.components.RegisterBank;
-import model.instr.Instruction;
-import model.instr.R_Type;
-
 import util.Convert;
 import util.ansi_codes.Color;
 import util.logs.ErrorLog;
@@ -17,7 +10,6 @@ import util.validation.InstrSpec;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -170,38 +162,9 @@ public class TestLogs {
 		
 		public static class _Execution {
 			private final ExecutionLog expectedExLog;
-			private final ArrayList<Instruction> instructions;
-			private final Execution execution;
 			
-			public _Execution (int[] values, HashMap<Integer, Double> data, ExecutionLog actual, ExecutionLog expected) {
+			public _Execution (ExecutionLog expected) {
 				this.expectedExLog=expected;
-				instructions = new ArrayList<>();
-				execution= new Execution( actual, new DataMemory( data, actual ), new RegisterBank( values, actual ),
-										  instructions);
-			}
-			public static void _pipeline(Instruction ins, int PC, DataMemory dm, RegisterBank rb, ExecutionLog lg){
-				int index= Convert.instrAddr2Index( PC );
-				ArrayList<Instruction> instrs = new ArrayList<>();
-				
-				Instruction nop = new R_Type( "add",0,0,0 );
-				for ( int i=0; i<=index;i++ ){ instrs.add( nop ); }
-				
-				Execution ex = new Execution(lg,dm,rb, instrs);
-				instrs.add( Convert.instrAddr2Index( PC ), ins );
-				StringBuilder out = new StringBuilder();
-				for ( int p=0; p<index; p++ ){
-					ex.runStep(out);
-				}
-				ex.pipeline();
-			}
-			
-			public Integer pipeline(Instruction instruction){
-				instructions.add(0, instruction );
-				execution.reset();
-				return execution.pipeline();
-			}
-			public void runToEnd(ArrayList<Instruction> instructions, StringBuilder out){
-				execution.RunToEnd(instructions, out );
 			}
 			
 			public void _fetching(int pc){
@@ -216,7 +179,7 @@ public class TestLogs {
 				return "Decoding:\t----\t" + type + " Instruction :: " + opcode.toUpperCase() + " :: " + InstrSpec.findSpec( opcode ).getNAME();
 			}
 			private static String _decodeControl(String[] name){
-				return "\n\t\tALUSrc1["+name[1]+"], ALUSrc2["+name[2]+"], ALUOp["+name[3]+"],\tRegDest["+name[0]+"]"+
+				return "\n\n\t\tALUSrc1["+name[1]+"], ALUSrc2["+name[2]+"], ALUOp["+name[3]+"],\tRegDest["+name[0]+"]"+
 					   "\n\t\tMemOp["+name[4]+"], MemToReg["+name[5]+"],\tPCWrite["+name[6]+"], BranchCond["+name[7]+"]";
 			}
 			
@@ -257,7 +220,7 @@ public class TestLogs {
 			private void _execute () { expectedExLog.append("Execution:"); }
 			private void _memory () { expectedExLog.append("Memory Access:"); }
 			private void _write_back () { expectedExLog.append("Write Back:"); }
-			private void __ () { expectedExLog.append("--------------------------------" ); }
+			private void __ () { expectedExLog.append("--------------------------------\n" ); }
 			
 			private void rb_read(int val, int reg){
 				expectedExLog.appendEx( "\tRegisterBank:\tReading Value[" + val + "]\tFrom Register Index[R" + reg + "]");
@@ -268,7 +231,7 @@ public class TestLogs {
 			private void rb_write(int val, int reg){
 				expectedExLog.appendEx( "\tRegisterBank:\tWriting Value[" + val + "]\tTo Register Index[*R" + reg + "]");
 			}
-			private void IMM(int imm){ expectedExLog.append( "\t[IMMEDIATE: " + imm +" === " + Convert.int2Hex(imm) + "]"); }
+			private void IMM(int imm){ expectedExLog.append( "\t\t[IMMEDIATE: " + imm +" === " + Convert.int2Hex(imm) + "]"); }
 			private void ALU (String aluAction){
 				expectedExLog.append( "\tALU Result = "+aluAction );
 			}

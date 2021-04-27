@@ -30,7 +30,7 @@ public class DataMemory {
 	public static final int BASE_DATA_ADDRESS=0x10010000;
 	public static final int OVER_SUPPORTED_DATA_ADDRESS=BASE_DATA_ADDRESS + (MAX_DATA_ITEMS)*DATA_ALIGN;
 	public static final int OVER_DATA_ADDRESS=0x10040000;
-	private final String NAME= "\t"+Color.fmt( Color.DM, "DataMemory");
+	private final String NAME= "\t"+ Color.fmtSubTitle( Color.MAGENTA, "DataMemory");
 	private final HashMap<Integer, Double> data;
 	private final ExecutionLog executionLog;
 	
@@ -66,7 +66,7 @@ public class DataMemory {
 			if ( data.containsKey( index ) )
 				val=this.data.get( index ).intValue( );
 			
-			this.executionLog.append( NAME + ":\t" + "Reading Value[" + val + "]\tFrom Memory Address["
+			this.executionLog.append( NAME + ":\t" + "Reading Value[" + colorize( ""+val,false) + "]\tFrom Memory Address["
 									  + fmtMem( address, false ) + "]!" );
 		}
 		return val;
@@ -94,13 +94,17 @@ public class DataMemory {
 	}
 	
 	private String fmtMem(int address, boolean write) {
+		return colorize( Convert.int2Hex( address ), write );
+	}
+	/** Depending on the status colorize the output */
+	private String colorize (String text, boolean write){
 		final String READ_COL=Color.READ;
 		final String WRITE_COL=Color.WRITE;
 		
 		if ( write )
-			return Color.fmt( WRITE_COL, Convert.int2Hex( address ) );
+			return Color.fmt( WRITE_COL, text);
 		else
-			return Color.fmt( READ_COL, Convert.int2Hex( address ) );
+			return Color.fmt( READ_COL, text );
 	}
 	
 	/**
@@ -120,7 +124,7 @@ public class DataMemory {
 			return false;
 		} else if ( inRange( address ) ) {
 			this.data.put( toIndex( address ), data.doubleValue( ) );
-			this.executionLog.append( NAME + ":\t" + "Writing Value[" + data + "]\tTo Memory Address[" + fmtMem( address, true ) + "]!" );
+			this.executionLog.append( NAME + ":\t" + "Writing Value[" +colorize( ""+data,true)  + "]\tTo Memory Address[" + fmtMem( address, true ) + "]!" );
 		}
 		return true;
 	}

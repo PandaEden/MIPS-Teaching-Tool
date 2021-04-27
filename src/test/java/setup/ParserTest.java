@@ -236,7 +236,7 @@ class ParserTest {
 			assertNull( split[ 3 ] );
 			
 			//TODO: atm, it thinks everything unto ':' is part of a label. It does not check if the first space separated word
-			//  is a valid directive/ opcode.   (labels can't start with a dot. and )
+			//  is a valid directive/ opcode.   (labels can't start with a dot.)
 			//assertEquals( "addi", split[ 1 ] );
 			//assertEquals( "$r0, . 87 not va:lid", split[ 2 ] );
 		}
@@ -386,9 +386,9 @@ class ParserTest {
 		assertEquals( 12, ins.size( ) );
 		// TODO ToString not implemented in Instruction, so I can't check the order of instructions
 		
-		StringBuilder output = new StringBuilder();
-		Execution.RunToEnd( dataMemory, new RegisterBank( values, ignored ), ins, ignored, output);
-		
+		Execution execution = new Execution(testLogs.actualExecution, testLogs.actualErrors, dataMemory,
+											new RegisterBank( values, ignored ),ins);
+		execution.runToEnd();
 		// Post Execution Results
 		
 		// Check values of RegisterBank are as expected

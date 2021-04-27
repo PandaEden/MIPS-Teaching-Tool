@@ -16,8 +16,8 @@ class MainTest {
 	private static final String TEST_RESOURCES_DIR="src" + File.separator + "test" + File.separator + "resources" + File.separator;
 	private static final String PARSE_COMPLETE = "Parsing Complete!\n";
 	private static final String ASSEMBLE_COMPLETE = "Assembly Complete!\n";
-	private static final String EX_COMPLETE = "Execution Complete!\n";
-	private static final String END_WITH_ERRORS = "Execution Ended With Errors!\n";
+	private static final String EX_COMPLETE = "\nExecution Complete!\n";
+	private static final String END_WITH_ERRORS = "\nExecution Ended With Errors!\n";
 	
 	private static TestSysOut sysOut;
 	
@@ -43,7 +43,7 @@ class MainTest {
 		//Setup
 		HashMap<Integer, Double> data = new HashMap<>();
 		ExecutionLog log = new ExecutionLog( new ArrayList<>() );
-		FMT_MSG._Execution _ex = new FMT_MSG._Execution( new int[32], data, log, log);
+		FMT_MSG._Execution _ex = new FMT_MSG._Execution(log);
 		
 		//Parse->Assemble->Execution
 		Main.main( new String[] { TEST_RESOURCES_DIR + "Execution_NoBranches.s" } );
@@ -178,7 +178,7 @@ class MainTest {
 		// Line-1 [0x00400030] autoExit
 		_ex.auto_exit_output( 0x00400030);
 		expectedOutput.append(log); log.clear();
-		expectedOutput.append( "\n" ).append( EX_COMPLETE );
+		expectedOutput.append( EX_COMPLETE );
 		compareWithSystemOut(expectedOutput);
 	}
 	
@@ -187,9 +187,8 @@ class MainTest {
 	void Execute_Error ( ) {
 		// Ex error, Loading from non Valid data Addr
 		// Setup
-		HashMap<Integer, Double> data = new HashMap<>();
 		ExecutionLog log = new ExecutionLog( new ArrayList<>() );
-		FMT_MSG._Execution _ex = new FMT_MSG._Execution( new int[32], data, log, log);
+		FMT_MSG._Execution _ex = new FMT_MSG._Execution(log);
 		
 		//Parse->Assemble->Execution
 		Main.main( new String[] { TEST_RESOURCES_DIR + "_Execution_Error.s" } );
@@ -209,8 +208,8 @@ class MainTest {
 		// Line1 [0x00400000] SW R1, -20(R2)
 		_ex.store_output_before_exception(0x00400000, 2,0,-20,1,0, -20);
 		expectedOutput.append(log); log.clear();
-		expectedOutput.append( "ERROR: Data Address [0xFFFFFFEC, -20] Must Be >=0x10010000 and <=0x100107F8!" );
-		expectedOutput.append( "\n" ).append( END_WITH_ERRORS );
+		expectedOutput.append( END_WITH_ERRORS );
+		expectedOutput.append( "Errors:\n\tData Address [0xFFFFFFEC, -20] Must Be >=0x10010000 and <=0x100107F8!\n" );
 		compareWithSystemOut(expectedOutput);
 	}
 	
@@ -222,8 +221,6 @@ class MainTest {
 		// Target Label not defined.
 		// Ex error not caught
 		// Setup
-		ExecutionLog ignored = new ExecutionLog( new ArrayList<>() );
-		FMT_MSG._Execution _ex = new FMT_MSG._Execution( new int[32], new HashMap<>(), ignored, ignored);
 		ErrorLog errors = new ErrorLog( new ArrayList<>() );
 		//Parse->Assemble->Execution
 		Main.main( new String[] { TEST_RESOURCES_DIR + "_Assembly_Error.s" } );
@@ -244,8 +241,6 @@ class MainTest {
 		// Floating Point Data
 		// Assembly error not caught
 		// Setup
-		ExecutionLog log = new ExecutionLog( new ArrayList<>() );
-		FMT_MSG._Execution _ex = new FMT_MSG._Execution( new int[32], new HashMap<>(), log, log);
 		ErrorLog errors = new ErrorLog( new ArrayList<>() );
 		//Parse->Assemble->Execution
 		Main.main( new String[] { TEST_RESOURCES_DIR + "_Parse_Error.s" } );

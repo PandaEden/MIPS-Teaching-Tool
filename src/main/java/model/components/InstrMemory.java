@@ -63,7 +63,7 @@ public class InstrMemory {
 		
 		int index=Convert.instrAddr2Index( PC_Address );
 		
-		executionLog.append( fetching+" Instruction At Address [" + Color.fmtUnder(hex_addr) + "]" );
+		executionLog.append( fetching+" Instruction At Address [" + Color.fmtUnder(Color.fmtSubTitle(Color.GREEN,hex_addr)) + "]" );
 		if ( index<instructions.size( ) ) {
 			return instructions.get( index );
 		} else { // index >256
