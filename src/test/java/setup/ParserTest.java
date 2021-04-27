@@ -16,6 +16,7 @@ import model.components.InstrMemory;
 import model.components.RegisterBank;
 
 import util.Convert;
+import util.Util;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
 
@@ -38,6 +39,7 @@ class ParserTest {
 	
 	@BeforeAll
 	static void beforeAll ( ) {
+		Util.wait=false;
 		testLogs=new TestLogs( );
 		expected=testLogs.expectedErrors;
 		

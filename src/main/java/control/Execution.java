@@ -13,6 +13,7 @@ import model.instr.MemAccess;
 import model.instr.Nop;
 
 import util.Convert;
+import util.Util;
 import util.ansi_codes.Color;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;

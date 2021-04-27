@@ -2,6 +2,7 @@ import _test.TestLogs.FMT_MSG;
 import _test.TestSysOut;
 import org.junit.jupiter.api.*;
 
+import util.Util;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
 
@@ -21,6 +22,10 @@ class MainTest {
 	
 	private static TestSysOut sysOut;
 	
+	@BeforeAll
+	static void beforeAll ( ) {
+		Util.wait=false;
+	}
 	@BeforeEach
 	void setUp ( ) {
 		sysOut = new TestSysOut();
