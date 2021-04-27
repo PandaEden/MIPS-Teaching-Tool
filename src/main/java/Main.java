@@ -33,10 +33,14 @@ public class Main {
 			final String FILENAME = Color.fmtCmd("Path\\FileName");
 			boolean exit=false;
 			while ( !exit ){
-				path=Util.input( "\nEnter another "+FILENAME+" to Run again,\n\tOr Press "+ENTER+" to Close the Application..." );
-				if ( !Util.isNullOrBlank( path ) )
+				String newpath=Util.input( "\nEnter another "+FILENAME+" to Run again,\n\tOr Press "+ENTER+" to Close the Application..." );
+				String temp = newpath.toLowerCase();
+				
+				if ( !(Util.isNullOrBlank( newpath )||temp.equals( "exit" )) ) {
+					if ( !(temp.equals( "re" ) || temp.equals( "re-run" ) || temp.equals( "rerun" ) ))
+						path=newpath;
 					run( errorLog, warningsLog, MEMORY_BUILDER, path );
-				else
+				}else
 					exit=true;
 			}
 		}

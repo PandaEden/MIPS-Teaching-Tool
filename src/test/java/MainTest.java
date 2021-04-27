@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class MainTest {
 	private static final String TEST_RESOURCES_DIR="src" + File.separator + "test" + File.separator + "resources" + File.separator;
 	private static final String PARSE_COMPLETE = "Parsing Complete!\n";
-	private static final String ASSEMBLE_COMPLETE = "Assembly Complete!\n";
+	private static final String ASSEMBLE_COMPLETE = "Assembly Complete!\n\n";
 	private static final String EX_COMPLETE = "\nExecution Complete!\n";
 	private static final String END_WITH_ERRORS = "\nExecution Ended With Errors!\n";
 	
