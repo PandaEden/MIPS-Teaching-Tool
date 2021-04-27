@@ -54,6 +54,9 @@ public class Color {    // Static Class Constructor preventing 100% Coverage
 	public static String fmtSubTitle(int color, String txt){
 		return fmt(underline(csi(color+";"+(bkg(BLACK)))), txt );
 	}
+	public static String fmtCmd(String txt){
+		return fmt( csi("107;40;4"), txt );
+	}
 	public static String fmtUnder(String txt){
 		return Color.fmt(Color.underline( Color.RESET ), txt );
 	}

@@ -9,6 +9,7 @@ import model.components.DataMemory;
 import model.components.RegisterBank;
 import model.instr.*;
 
+import util.Util;
 import util.logs.ExecutionLog;
 
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ class ExecuteTest {
 	
 	@BeforeAll
 	static void beforeAll ( ) {
+		Util.wait=false;
 		testLogs= new TestLogs();
 		actual = testLogs.actualExecution;
 	}

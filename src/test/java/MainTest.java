@@ -2,6 +2,7 @@ import _test.TestLogs.FMT_MSG;
 import _test.TestSysOut;
 import org.junit.jupiter.api.*;
 
+import util.Util;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
 
@@ -15,12 +16,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 class MainTest {
 	private static final String TEST_RESOURCES_DIR="src" + File.separator + "test" + File.separator + "resources" + File.separator;
 	private static final String PARSE_COMPLETE = "Parsing Complete!\n";
-	private static final String ASSEMBLE_COMPLETE = "Assembly Complete!\n";
+	private static final String ASSEMBLE_COMPLETE = "Assembly Complete!\n\n";
 	private static final String EX_COMPLETE = "\nExecution Complete!\n";
 	private static final String END_WITH_ERRORS = "\nExecution Ended With Errors!\n";
 	
 	private static TestSysOut sysOut;
 	
+	@BeforeAll
+	static void beforeAll ( ) {
+		Util.wait=false;
+	}
 	@BeforeEach
 	void setUp ( ) {
 		sysOut = new TestSysOut();

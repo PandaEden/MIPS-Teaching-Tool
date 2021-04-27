@@ -26,7 +26,33 @@ If no path is specified it defaults to ***"FileInput.s"*** in the present-workin
   - (the default WSL terminal does not support Anscii double-underline. Windows Terminal does)
 
 ## Change Log
+
+#### Ver1.2.2 - Configurable Number of Cycles Execution, and Run with new File
+
+ -  Application will now pause before running execution and ask the user how many cycles to execute.
+
+     -  The default is 1:
+
+         - if they press \<Enter>.
+         - input a value <1.
+         - input a value that is not recognized.
+
+     -  They can also type 'end' and it will run 1000 cycles.
+
+        
+
+ -  Application will now pause before exiting and ask the User If they want to run a new file.
+
+     -  \<Enter> or 'exit' will exit the application.
+
+     -  're', or 're-run'|'rerun', Will run the same file again.
+
+     -  Anything else, it will try to Load, Parse & Run.
+
+        
+
 #### Ver1.2.1 - RanOutOfMemory Patch
+
  - Output was being stored and only printed at the end of execution.
 
      -  This meant if a user ran a log of instructions. Or a very large /infinite loop. Java would run out of memory before printing the execution.
