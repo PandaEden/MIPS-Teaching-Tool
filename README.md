@@ -1,3 +1,13 @@
+# Change to testing methodology
+
+Previously I was attempting to test as many possibly combinations of parameters as possible.
+However as the project grows this becomes more complicated and less feesible.
+The combinations grow exponentially.
+
+To allow development to continue I will be changing the testing to significant events/scenarios.
+This however means it's more important that any bugs/issues found my users are reported so they can be investigated and patched.
+Thankyou.
+
 # Executing the Jar File
 
 This application requires Java Runtime Environment 11 LTS.
