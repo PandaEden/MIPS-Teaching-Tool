@@ -84,7 +84,7 @@ public class Main {
 									n=1000;
 							}
 						}catch ( NumberFormatException e ){
-							// n=1
+							// n = unmodified
 						}
 					}
 					

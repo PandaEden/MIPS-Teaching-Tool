@@ -167,53 +167,70 @@ public class TestLogs {
 				this.expectedExLog=expected;
 			}
 			
-			public void _fetching(int pc){
-				expectedExLog.append("Fetching: Instruction At Address [" + Convert.int2Hex( pc ) + "]");
+			public void _fetching (int pc) {
+				expectedExLog.append( "Fetching: Instruction At Address [" + Convert.int2Hex( pc ) + "]" );
 			}
-			public void _fetch (int pc){
-				_fetching(pc);
-				expectedExLog.append("\tIncrement_PC: NPC = PC + 4 === " + Convert.int2Hex( pc+4 ));
-			}
-			
-			private static String _decodeTitle(String opcode, String type){
-				return "Decoding:\t----\t" + type + " Instruction :: " + opcode.toUpperCase() + " :: " + InstrSpec.findSpec( opcode ).getNAME();
-			}
-			private static String _decodeControl(String[] name){
-				return "\n\n\t\tALUSrc1["+name[1]+"], ALUSrc2["+name[2]+"], ALUOp["+name[3]+"],\tRegDest["+name[0]+"]"+
-					   "\n\t\tMemOp["+name[4]+"], MemToReg["+name[5]+"],\tPCWrite["+name[6]+"], BranchCond["+name[7]+"]";
+			public void _fetch (int pc) {
+				_fetching( pc );
+				expectedExLog.append( "\tIncrement_PC: NPC = PC + 4 === " + Convert.int2Hex( pc + 4 ) );
 			}
 			
-			public static String _control_RType (String opcode, String ALUOp){
-				return _decodeTitle( opcode, "REGISTER" )+
-					   _decodeControl(new String[]{"RD", "AIR1","AIR2",ALUOp, "-","No:AOR", "NPC","-"});
+			private static String _decodeTitle (String opcode, String type) {
+				return "Decoding:\t----\t" + type + " Instruction :: " + opcode.toUpperCase( ) + " :: " + InstrSpec.findSpec(
+						opcode ).getNAME( );
 			}
-			public static String _control_IType (String opcode, String ALUOp){
-				return _decodeTitle(opcode, "IMMEDIATE")+
-					   _decodeControl(new String[]{"RT", "AIR1","IMM",ALUOp, "-","No:AOR", "NPC","-"});
+			
+			private static class _decodeControl {
+				private static String RtRsRd (Integer rs, Integer rt, Integer rd, String[] name) {
+					return "\n\t\t\tRS[" + rs + "], RT[" + rt + "], RD[" + rd + "], [shamt], [funct]\n" + decode( name );
+				}
+				private static String Mem ( Integer rt, String[] name) {
+					return RsRtImm16( 0,rt,null,name );
+				}
+					private static String RsRtImm16 (Integer rs, Integer rt, Integer imm, String[] name) {
+					return "\n\t\t\tRS[" + rs + "], RT[" + rt + "], IMM_16[" + imm + "]\n" + decode( name );
+				}
+				private static String Imm16 (Integer imm, String[] name) {
+					return "\n\t\t\tIMM_16[" + imm + "]\n" + decode( name );
+				}
+				private static String decode (String[] name) {
+					return "\n\t\tALUSrc1[" + name[ 1 ] + "], ALUSrc2[" + name[ 2 ] + "], ALUOp[" + name[ 3 ] + "],\tRegDest[" + name[ 0 ] + "]" +
+						   "\n\t\tMemOp[" + name[ 4 ] + "], MemToReg[" + name[ 5 ] + "],\tPCWrite[" + name[ 6 ] + "], BranchCond[" + name[ 7 ] + "]";
+				}
+				
 			}
-			public static String _control_Branch (String opcode,int cond, String ALUOp){
-				return _decodeTitle(opcode, "IMMEDIATE")+
-					   _decodeControl(new String[]{"-", "AIR1","AIR2",ALUOp, "-","-", "COND", cond==0?"Zero":"Not~Zero"});
+			
+			public static String _control_RType (String opcode, Integer rs, Integer rt, Integer rd, String ALUOp){
+				return _decodeTitle( opcode, "REGISTER" ) +
+					   _decodeControl.RtRsRd( rs,rt,rd, new String[]{ "RD", "AIR1", "AIR2", ALUOp, "-", "No:AOR", "NPC", "-"} );
 			}
-			public static String _control_Load (){
-				return _decodeTitle("lw", "IMMEDIATE")+
-					   _decodeControl(new String[]{"RT", "AIR1","IMM","ADD", "READ->LMDR","Yes:LMDR", "NPC","-"});
+			public static String _control_IType (String opcode, Integer rs, Integer rt, Integer imm, String ALUOp){
+				return _decodeTitle(opcode, "IMMEDIATE") +
+					   _decodeControl.RsRtImm16( rs,rt,imm, new String[]{ "RT", "AIR1", "IMM", ALUOp, "-", "No:AOR", "NPC", "-"} );
 			}
-			public static String _control_Store (){
-				return _decodeTitle("sw", "IMMEDIATE")+
-					   _decodeControl(new String[]{"-", "AIR1","IMM","ADD", "WRITE<-SVR","-", "NPC","-"});
+			public static String _control_Branch (String opcode,Integer rs, Integer rt, Integer imm,int cond, String ALUOp){
+				return _decodeTitle(opcode, "IMMEDIATE") +
+					   _decodeControl.RsRtImm16( rs,rt,imm, new String[]{ "-", "AIR1", "AIR2", ALUOp, "-", "-", "COND", cond==0 ? "Zero" : "Not~Zero"} );
 			}
-			public static String _control_Jump (){
-				return _decodeTitle("j", "JUMP")+
-					   _decodeControl(new String[]{"-", "-","-","-", "-","-", "IMM","-"});
+			public static String _control_Load (Integer rs, Integer rt, Integer imm){
+				return _decodeTitle("lw", "IMMEDIATE") +
+					   _decodeControl.RsRtImm16( rs,rt,imm, new String[]{ "RT", "AIR1", "IMM", "ADD", "READ->LMDR", "Yes:LMDR", "NPC", "-"} );
 			}
-			public static String _control_JumpAndLink (){
-				return _decodeTitle("jal", "JUMP")+
-					   _decodeControl(new String[]{"$ReturnAddress:31", "NPC","-","NOP", "-","No:AOR", "IMM","-"});
+			public static String _control_Store (Integer rs, Integer rt, Integer imm){
+				return _decodeTitle("sw", "IMMEDIATE") +
+					   _decodeControl.RsRtImm16( rs,rt,imm, new String[]{ "-", "AIR1", "IMM", "ADD", "WRITE<-SVR", "-", "NPC", "-"} );
+			}
+			public static String _control_Jump (Integer imm){
+				return _decodeTitle("j", "JUMP") +
+					   _decodeControl.Imm16( imm, new String[]{ "-", "-", "-", "-", "-", "-", "IMM", "-"} );
+			}
+			public static String _control_JumpAndLink (Integer imm){
+				return _decodeTitle("jal", "JUMP") +
+					   _decodeControl.Imm16( imm, new String[]{ "$ReturnAddress:31", "NPC", "-", "NOP", "-", "No:AOR", "IMM", "-"} );
 			}
 			public static String _control_Nop (String opcode, String PCWrite){
-				return _decodeTitle(opcode, "NOP")+
-					   _decodeControl(new String[]{"-", "-","-","-", "-","-", PCWrite,"-"});
+				return _decodeTitle(opcode, "NOP") +
+					   _decodeControl.decode( new String[]{ "-", "-", "-", "-", "-", "-", PCWrite, "-"} );
 			}
 			
 			private void _read () { expectedExLog.append("Reading Operands:"); }
@@ -281,7 +298,7 @@ public class TestLogs {
 			public void R_output(int pc, String opcode, int RS, int rs_val, int RT, int rt_val, int RD, int rd_val, String sign){
 				sign=" "+sign+" ";
 				_fetch( pc );
-				expectedExLog.append(_control_RType( opcode, opcode.toUpperCase() ));
+				expectedExLog.append(_control_RType( opcode, RS, RT, RD, opcode.toUpperCase() ));
 				_read();
 				rb_read( rs_val, RS );
 				rb_read( rt_val, RT );
@@ -298,7 +315,7 @@ public class TestLogs {
 										  String sign, int modified){
 				sign=" "+sign+" ";
 				_fetch( pc );
-				expectedExLog.append(_control_RType( opcode, opcode.toUpperCase() ));
+				expectedExLog.append(_control_RType( opcode, RS, RT, RD, opcode.toUpperCase() ));
 				_read();
 				if ( modified == 0) {
 					rb_read_Modified( rs_val, RS );
@@ -320,7 +337,7 @@ public class TestLogs {
 			public void I_output (int pc, String opcode, int RS, int rs_val, int RT, int rt_val, int IMM, String sign){
 				sign=" "+sign+" ";
 				_fetch( pc );
-				expectedExLog.append(_control_IType( opcode, opcode.substring(0,3).toUpperCase() ));
+				expectedExLog.append(_control_IType( opcode, RS, RT, IMM, opcode.substring( 0, 3).toUpperCase() ));
 				_read();
 				rb_read( rs_val, RS );
 				IMM( IMM );
@@ -332,7 +349,7 @@ public class TestLogs {
 				__();
 			}
 			
-			public void Branch_output(int pc, String opcode, int RS, int rs_val, int RT, int rt_val, int imm, String sign, boolean zero, boolean taken){
+			public void Branch_output(int pc, String opcode, int RS, int rs_val, int RT, int rt_val, int IMM, String sign, boolean zero, boolean taken){
 				sign=" "+sign+" ";
 				_fetch( pc );
 				
@@ -350,16 +367,16 @@ public class TestLogs {
 					sign = " set-on <= ";
 					res = ( rs_val<=rt_val )?1:0;
 				}
-				expectedExLog.append(_control_Branch(opcode,zero?0:1,op));
+				expectedExLog.append(_control_Branch(opcode,RS,RT,IMM,zero?0:1,op));
 				
 				_read();
 				rb_read( rs_val, RS );
 				rb_read( rt_val, RT );
-				IMM( imm );
+				IMM( IMM );
 				_execute();
-				shift_imm( imm, imm*4 );
-				expectedExLog.append("\t\tTarget Address = "+Convert.int2Hex( imm*4 )
-									   +" + NPC ==> "+Convert.int2Hex(imm*4+pc+4 )+"\n" );
+				shift_imm( IMM, IMM*4 );
+				expectedExLog.append("\t\tTarget Address = "+Convert.int2Hex( IMM*4 )
+									   +" + NPC ==> "+Convert.int2Hex(IMM*4+pc+4 )+"\n" );
 				if ( sign.equals(" ^ ") )
 					expectedExLog.append( "\t (binary) '" + Integer.toBinaryString(rs_val) +"' xor '"
 										+  Integer.toBinaryString(rt_val) + "' ==> '"
@@ -373,7 +390,7 @@ public class TestLogs {
 			
 			public void load_output(int pc, int RS, int rs_val, int IMM, int RT, int rt_val){
 				_fetch( pc );
-				expectedExLog.append(_control_Load());
+				expectedExLog.append(_control_Load( RS, RT, IMM ));
 				_read();
 				rb_read( rs_val, RS );
 				imm_add( IMM, rs_val, IMM+rs_val );
@@ -385,7 +402,7 @@ public class TestLogs {
 			}
 			public void store_output(int pc, int RS, int rs_val, int IMM, int RT, int rt_val){
 				_fetch( pc );
-				expectedExLog.append(_control_Store());
+				expectedExLog.append(_control_Store( RS, RT, IMM ));
 				_read();
 				rb_read( rs_val, RS );
 				rb_read( rt_val, RT );
@@ -398,7 +415,7 @@ public class TestLogs {
 			//TODO - implement the modified versions a bit better,   perhaps changing the int RS/RT/RD inputs to String
 			public void modified_load_output(int pc, int RS, int rs_val, int IMM, int RT, int rt_val){
 				_fetch( pc );
-				expectedExLog.append(_control_Load());
+				expectedExLog.append(_control_Load( RS, RT, IMM ));
 				_read();
 				rb_read_Modified( rs_val, RS );
 				imm_add( IMM, rs_val, IMM+rs_val );
@@ -411,7 +428,7 @@ public class TestLogs {
 			/** 0-RS modifies, 1-RT modified, else- both*/
 			public void modified_store_output(int pc, int RS, int rs_val, int IMM, int RT, int rt_val, int modified){
 				_fetch( pc );
-				expectedExLog.append(_control_Store());
+				expectedExLog.append(_control_Store( RS, RT, IMM ));
 				_read();
 				if ( modified == 0) {
 					rb_read_Modified( rs_val, RS );
@@ -432,7 +449,7 @@ public class TestLogs {
 			
 			public void J_output (int pc, int imm){
 				_fetch( pc );
-				expectedExLog.append(_control_Jump());
+				expectedExLog.append(_control_Jump(imm));
 				_read();
 				IMM( imm );
 				_execute();
@@ -445,7 +462,7 @@ public class TestLogs {
 			public void jal_output(int pc, int imm){
 				int npc = pc+4;
 				_fetch( pc );
-				expectedExLog.append(_control_JumpAndLink());
+				expectedExLog.append(_control_JumpAndLink(imm));
 				_read();
 				IMM( imm );
 				_execute();
@@ -459,7 +476,7 @@ public class TestLogs {
 			
 			public void load_output_before_exception(int pc, int RS, int rs_val, int IMM, int ADDR){
 				_fetch( pc );
-				expectedExLog.append(_control_Load());
+				expectedExLog.append(_control_Load( RS, 1, IMM ));
 				_read();
 				rb_read( rs_val, RS );
 				imm_add( IMM, rs_val, ADDR );
@@ -467,7 +484,7 @@ public class TestLogs {
 			}
 			public void store_output_before_exception(int pc, int RS, int rs_val, int IMM, int RT, int rt_val, int ADDR){
 				_fetch( pc );
-				expectedExLog.append(_control_Store());
+				expectedExLog.append(_control_Store( RS, RT, IMM ));
 				_read();
 				rb_read( rs_val, RS );
 				rb_read( rt_val, RT );

@@ -264,14 +264,14 @@ class ComponentTest {
 			@Test
 			void R_Add ( ) {
 				Integer[] ctrl = Component.DECODER( new R_Type( "add", 1, 1, 1 ), log );
-				expected.append( _Execution._control_RType( "add", "ADD"));
+				expected.append( _Execution._control_RType( "add", 1, 1, 1, "ADD"));
 				arraysEqual(new Integer[]{1, 0,0,0 ,null,0, 0, null}, ctrl);
 			}
 			
 			@Test
 			void R_Sub ( ) {
 				Integer[] ctrl = Component.DECODER( new R_Type( "sub", 1, 1, 1 ), log );
-				expected.append( _Execution._control_RType("sub","SUB"));
+				expected.append( _Execution._control_RType( "sub", 1, 1, 1, "SUB"));
 				arraysEqual(new Integer[]{1, 0,0,2, null,0, 0, null}, ctrl);
 			}
 			
@@ -283,21 +283,21 @@ class ComponentTest {
 			@Test
 			void I_Addi ( ) {
 				Integer[] ctrl = Component.DECODER( new I_Type( "addi", 1, 1, 20 ), log );
-				expected.append( _Execution._control_IType("addi","ADD"));
+				expected.append( _Execution._control_IType("addi",1, 1, 20,"ADD"));
 				arraysEqual(new Integer[]{0, 0,1,0, null,0, 0, null}, ctrl);
 			}
 			
 			@Test
 			void Mem_Lw ( ) {
 				Integer[] ctrl = Component.DECODER( new MemAccess( "lw", 2, "panda"), log );
-				expected.append( _Execution._control_Load());
+				expected.append( _Execution._control_Load( 0, 2, null ));
 				arraysEqual(new Integer[]{0, 0,1,0, 0,1, 0, null}, ctrl);
 			}
 			
 			@Test
 			void Mem_Sw ( ) {
 				Integer[] ctrl = Component.DECODER( new MemAccess( "sw", 2, "panda"), log );
-				expected.append( _Execution._control_Store());
+				expected.append( _Execution._control_Store( 0, 2, null ));
 				arraysEqual(new Integer[]{null, 0,1,0, 1,null, 0, null}, ctrl);
 			}
 			
@@ -307,39 +307,39 @@ class ComponentTest {
 				@Test
 				void Beq ( ) {
 					Integer[] ctrl = Component.DECODER( new Branch( "beq", 1, 1, 1 ), log );
-					expected.append( _Execution._control_Branch("beq",0,"XOR"));
+					expected.append( _Execution._control_Branch("beq",1, 1, 1,0,"XOR"));
 					arraysEqual(new Integer[]{null, 0,0,6, null,null, 2, 0}, ctrl);
 				}
 				@Test
 				void Bne ( ) {
 					Integer[] ctrl = Component.DECODER( new Branch( "bne", 1, 1, 1 ), log );
-					expected.append( _Execution._control_Branch("bne",1,"XOR"));
+					expected.append( _Execution._control_Branch("bne",1, 1, 1,1,"XOR"));
 					arraysEqual(new Integer[]{null, 0,0,6, null,null, 2, 1}, ctrl);
 				}
 				
 				@Test
 				void Blt ( ) {
 					Integer[] ctrl = Component.DECODER( new Branch( "blt", 1, 1, 1 ), log );
-					expected.append( _Execution._control_Branch("blt",1,"SLT"));
+					expected.append( _Execution._control_Branch("blt",1, 1, 1,1,"SLT"));
 					arraysEqual(new Integer[]{null, 0,0,8, null,null, 2, 1}, ctrl);
 				}
 				@Test
 				void Bge ( ) {
 					Integer[] ctrl = Component.DECODER( new Branch( "bge", 1, 1, 1 ), log );
-					expected.append( _Execution._control_Branch("bge",0,"SLT"));
+					expected.append( _Execution._control_Branch("bge",1, 1, 1,0,"SLT"));
 					arraysEqual(new Integer[]{null, 0,0,8, null,null, 2, 0}, ctrl);
 				}
 				
 				@Test
 				void Ble ( ) {
 					Integer[] ctrl = Component.DECODER( new Branch( "ble", 1, 1, 1 ), log );
-					expected.append( _Execution._control_Branch("ble",1,"SLT|E"));
+					expected.append( _Execution._control_Branch("ble",1, 1, 1,1,"SLT|E"));
 					arraysEqual(new Integer[]{null, 0,0,9, null,null, 2, 1}, ctrl);
 				}
 				@Test
 				void Bgt ( ) {
 					Integer[] ctrl = Component.DECODER( new Branch( "bgt", 1, 1, 1 ), log );
-					expected.append( _Execution._control_Branch("bgt",0,"SLT|E"));
+					expected.append( _Execution._control_Branch("bgt",1, 1, 1,0,"SLT|E"));
 					arraysEqual(new Integer[]{null, 0,0,9, null,null, 2, 0}, ctrl);
 				}
 				
@@ -353,14 +353,14 @@ class ComponentTest {
 			@Test
 			void J_J ( ) {
 				Integer[] ctrl = Component.DECODER( new J_Type( "j", "panda"), log );
-				expected.append( _Execution._control_Jump());
+				expected.append( _Execution._control_Jump(null));
 				arraysEqual(new Integer[]{null, null,null,null,null,null, 1, null}, ctrl);
 			}
 			
 			@Test
 			void J_Jal ( ) {
 				Integer[] ctrl = Component.DECODER( new J_Type( "jal", "panda"), log );
-				expected.append( _Execution._control_JumpAndLink());
+				expected.append( _Execution._control_JumpAndLink(null));
 				arraysEqual(new Integer[]{2, 1,null,-1 ,null,0, 1, null}, ctrl);
 			}
 			

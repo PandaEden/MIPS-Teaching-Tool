@@ -82,7 +82,7 @@ public abstract class Instruction {
 	 */
 	public boolean setImm(@NotNull ErrorLog errorLog, @NotNull HashMap<String, Integer> labelMap, int PC)
 			throws IllegalArgumentException, IllegalStateException {
-		if ( IMM==null) {
+		if ( IMM==null ) {
 			if ( this.label==null || this.label.isBlank( ) )
 				throw new IllegalArgumentException( "Cannot setImmediate with Blank/Null internal Label!" );
 			
