@@ -9,6 +9,8 @@ import model.instr.*;
 
 import util.logs.ExecutionLog;
 
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @Tag( Tags.EX )
@@ -223,6 +225,14 @@ class ComponentTest {
 				expected.append( "\t (binary) '1010' xor '1010' ==> '0'" );
 				expected.append( "\tALU Result = 10 ^ 10 ==> 0" );
 			}
+		}
+		
+		@Test
+		void testUnknownCommand ( ) {
+			Map<Integer,String> temp = Component.ALU_codes;
+			Component.ALU_codes = Map.of(-2,"Panda");
+			Assertions.assertThrows( IllegalStateException.class, ( ) -> Component.ALU( 0, 0, -2, log ) );
+			Component.ALU_codes = temp;
 		}
 		
 		@Test

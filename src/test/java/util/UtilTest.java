@@ -4,6 +4,7 @@ import _test.Tags;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import util.validation.InstrSpec;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -28,4 +29,11 @@ class UtilTest {
 		assertThrows( IllegalArgumentException.class, ( ) -> Util.notNullAndInRange( null, 5, 4 ) );
 	}
 	
+	@Test
+	@DisplayName ( "Coverage Completion" )
+	void coverage_Completion ( ) { // TODO refactor splitValidOperands
+		assertEquals(3, InstrSpec.findSpec( "add" ).getNUM_OPERANDS());
+		assertEquals( InstrSpec.FMT.RD_RS_RT, InstrSpec.findSpec( "add" ).getFORMAT_TYPE());
+		
+	}
 }

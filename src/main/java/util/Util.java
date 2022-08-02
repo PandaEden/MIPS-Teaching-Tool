@@ -1,6 +1,7 @@
 package util;
 
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import java.util.Scanner;
 
@@ -27,11 +28,16 @@ public class Util {
 		return input( null );
 	}
 	
+	@VisibleForTesting
+	public static void overrideScanner( String input_text ){
+		Input.getInstance().overrideScannerInstance( input_text );
+	}
+	
 }
 class Input {
 	private static Scanner scanner;
 	private static Input input=null;
-	private Input (Scanner scanner ) {
+	private Input (Scanner scanner) {
 		Input.scanner=scanner;
 	}
 	
@@ -40,6 +46,11 @@ class Input {
 			input=new Input( new Scanner( System.in ) );
 		
 		return input;
+	}
+	
+	@VisibleForTesting
+	public void overrideScannerInstance (String input_text) {
+		input = new Input( new Scanner( input_text ) );
 	}
 	
 	public String getInput(String prompt){

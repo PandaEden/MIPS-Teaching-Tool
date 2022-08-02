@@ -79,7 +79,7 @@ public class TestLogs {
 	// Methods starting with an underscore have the !, so use append for those, for the rest, use appendEx
 	public static class FMT_MSG {
 		
-		public static String xAddressNot (String X, String hexAddress, String thing) { return X+" Address: \"" + hexAddress + "\" Not " + thing; }
+		public static String xAddressNot (String X, String hexAddress, String not) { return X+" Address: \"" + hexAddress + "\" Not " + not; }
 		
 		public static String ZER0_WARN(String regName) {
 			return "Destination Register: \"" + regName + "\" Cannot be modified!,\t Result will be ignored";

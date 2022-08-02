@@ -14,7 +14,7 @@ public class I_Type extends Instruction {
 		super( Type.IMMEDIATE, codes, opcode, RS, RT, null, IMM, null );
 		
 		if (!Util.notNullAndInRange( IMM, -32768, 32767))//Signed 16Bit
-			throw new IllegalArgumentException("Immediate["+IMM+"] Not In Range!");
+			throw new IllegalArgumentException("Immediate["+IMM+"] Not In Range!"); // TODO:TEST
 		super.regNotInRange_Register( RS );
 		super.regNotInRange_Register( RT );
 	}

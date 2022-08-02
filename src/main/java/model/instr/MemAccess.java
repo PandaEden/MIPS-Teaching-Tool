@@ -5,16 +5,15 @@ import org.jetbrains.annotations.NotNull;
 import util.validation.InstructionValidation;
 
 public class MemAccess extends I_Type {
-	/**{@link InstructionValidation#I_RT_IMM_RS}, Label needs to be assembled into IMM value*/
+	/**{@link InstructionValidation#I_MEM_RT_IMM}, Label needs to be assembled into IMM value*/
 	public MemAccess (@NotNull String opcode, int RT, @NotNull String label) throws IllegalArgumentException{
-		super( InstructionValidation.I_RT_IMM_RS, opcode, 0, RT, label );
-		if ( RS!=0 )
-			throw new IllegalArgumentException("RS:["+RS+"], must be 0, when IMM is null");
+		super( InstructionValidation.I_MEM_RT_IMM, opcode, 0, RT, label );
+		assert RS==0 : "RS:["+RS+"], must be 0, when IMM is null";
 		
 	}
 	
-	/**{@link InstructionValidation#I_RT_IMM_RS}*/
+	/**{@link InstructionValidation#I_MEM_RT_IMM}*/
 	public MemAccess (@NotNull String opcode, int RS, int RT, int IMM) throws IllegalArgumentException{
-		super( InstructionValidation.I_RT_IMM_RS, opcode, RS, RT, IMM );
+		super( InstructionValidation.I_MEM_RT_IMM, opcode, RS, RT, IMM );
 	}
 }
