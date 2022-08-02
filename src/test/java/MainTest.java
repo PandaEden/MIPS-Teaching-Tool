@@ -8,7 +8,6 @@ import util.logs.ExecutionLog;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -19,6 +18,9 @@ class MainTest {
 	private static final String ASSEMBLE_COMPLETE = "Assembly Complete!\n\n";
 	private static final String EX_COMPLETE = "\nExecution Complete!\n";
 	private static final String END_WITH_ERRORS = "\nExecution Ended With Errors!\n";
+	private static final String BETWEEN_EXECUTION = "Enter a Number to change the number of cycles to run\n\tPress 'ENTER' to Run a Cycle. . .\n";
+	private static String BETWEEN_EXECUTION(int n){ return "Enter a Number to change the number of cycles to run\n\tPress 'ENTER' to Run the next "+n+" Cycles. . .\n"; }
+	private static final String AFTER_EXECUTION = "\nEnter another Path\\FileName to Run again,\n\tOr Press 'ENTER' to Close the Application...\n";
 	
 	private static TestSysOut sysOut;
 	
@@ -46,7 +48,6 @@ class MainTest {
 	@DisplayName ( "Test : Parse -> Assemble --> Execution :: Success" )
 	void Successful_Parse_Assemble_Execute ( ) {
 		//Setup
-		HashMap<Integer, Double> data = new HashMap<>();
 		ExecutionLog log = new ExecutionLog( new ArrayList<>() );
 		FMT_MSG._Execution _ex = new FMT_MSG._Execution(log);
 		
@@ -259,4 +260,109 @@ class MainTest {
 		compareWithSystemOut(expectedOutput);
 	}
 	
+	@Test
+	@DisplayName ( "Test : Execution In Steps" )
+	void Execute_In_Steps ( ) {
+		//Setup
+		Util.wait=true;
+		String input = "\n2\nend\n\n";
+		Util.overrideScanner( input );
+		ExecutionLog log = new ExecutionLog( new ArrayList<>() );
+		FMT_MSG._Execution _ex = new FMT_MSG._Execution(log);
+		
+		//Parse->Assemble->Execution
+		Main.main( new String[] { TEST_RESOURCES_DIR + "Simple.s" } );
+		
+		// Output
+		StringBuilder expectedOutput=new StringBuilder();
+		expectedOutput.append( PARSE_COMPLETE );
+		expectedOutput.append( ASSEMBLE_COMPLETE );
+		expectedOutput.append( BETWEEN_EXECUTION );
+		
+		expectedOutput.append(
+				"-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n" +
+				"|R0: 0\tR4: 0\tR8: 0\tR12: 0\t\tR16: 0\tR20: 0\tR24: 0\tR28: 0|\n" +
+				"|R1: 0\tR5: 0\tR9: 0\tR13: 0\t\tR17: 0\tR21: 0\tR25: 0\tR29: 0|\n" +
+				"|R2: 0\tR6: 0\tR10: 0\tR14: 0\t\tR18: 0\tR22: 0\tR26: 0\tR30: 0|\n" +
+				"|R3: 0\tR7: 0\tR11: 0\tR15: 0\t\tR19: 0\tR23: 0\tR27: 0\tR31: 0|\n" +
+				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
+		);
+		// Line1 [0x00400000] ADDI R8, R8, 2	 => 0+2 = [2]
+		_ex.I_output( 0x00400000 , "addi", 8, 0, 8, 2, 2, "+");
+		expectedOutput.append(log); log.clear();
+		expectedOutput.append( BETWEEN_EXECUTION );
+		expectedOutput.append(
+				"-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n" +
+				"|R0: 0\tR4: 0\t*R8: 2\tR12: 0\t\tR16: 0\tR20: 0\tR24: 0\tR28: 0|\n" +
+				"|R1: 0\tR5: 0\tR9: 0\tR13: 0\t\tR17: 0\tR21: 0\tR25: 0\tR29: 0|\n" +
+				"|R2: 0\tR6: 0\tR10: 0\tR14: 0\t\tR18: 0\tR22: 0\tR26: 0\tR30: 0|\n" +
+				"|R3: 0\tR7: 0\tR11: 0\tR15: 0\t\tR19: 0\tR23: 0\tR27: 0\tR31: 0|\n" +
+				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
+		);
+		// Line2 [0x00400004] ADD R9, R8, R9	 => (0+2) == [2]
+		_ex.modified_R_output(0x00400004 ,"add",8, 2, 9, 0, 9, 2,"+",0);
+		expectedOutput.append(log); log.clear();
+		expectedOutput.append(
+				"-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n" +
+				"|R0: 0\tR4: 0\tR8: 2\tR12: 0\t\tR16: 0\tR20: 0\tR24: 0\tR28: 0|\n" +
+				"|R1: 0\tR5: 0\t*R9: 2\tR13: 0\t\tR17: 0\tR21: 0\tR25: 0\tR29: 0|\n" +
+				"|R2: 0\tR6: 0\tR10: 0\tR14: 0\t\tR18: 0\tR22: 0\tR26: 0\tR30: 0|\n" +
+				"|R3: 0\tR7: 0\tR11: 0\tR15: 0\t\tR19: 0\tR23: 0\tR27: 0\tR31: 0|\n" +
+				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
+		);
+		// Line3 [0x00400008] ADD R9, R8, R9	 => (2+2) == [4]
+		_ex.modified_R_output(0x00400008 ,"add",8, 2, 9, 2, 9, 4,"+",1);
+		expectedOutput.append(log); log.clear();
+		expectedOutput.append( BETWEEN_EXECUTION(2) );
+		expectedOutput.append(
+				"-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n" +
+				"|R0: 0\tR4: 0\tR8: 2\tR12: 0\t\tR16: 0\tR20: 0\tR24: 0\tR28: 0|\n" +
+				"|R1: 0\tR5: 0\t*R9: 4\tR13: 0\t\tR17: 0\tR21: 0\tR25: 0\tR29: 0|\n" +
+				"|R2: 0\tR6: 0\tR10: 0\tR14: 0\t\tR18: 0\tR22: 0\tR26: 0\tR30: 0|\n" +
+				"|R3: 0\tR7: 0\tR11: 0\tR15: 0\t\tR19: 0\tR23: 0\tR27: 0\tR31: 0|\n" +
+				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
+		);
+		// Line4 [0x0040000C] ADD R9, R8, R9	 => (4+2) == [6]
+		_ex.modified_R_output(0x0040000C ,"add",8, 2, 9, 4, 9, 6,"+",1);
+		expectedOutput.append(log); log.clear();
+		expectedOutput.append(
+				"-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n" +
+				"|R0: 0\tR4: 0\tR8: 2\tR12: 0\t\tR16: 0\tR20: 0\tR24: 0\tR28: 0|\n" +
+				"|R1: 0\tR5: 0\t*R9: 6\tR13: 0\t\tR17: 0\tR21: 0\tR25: 0\tR29: 0|\n" +
+				"|R2: 0\tR6: 0\tR10: 0\tR14: 0\t\tR18: 0\tR22: 0\tR26: 0\tR30: 0|\n" +
+				"|R3: 0\tR7: 0\tR11: 0\tR15: 0\t\tR19: 0\tR23: 0\tR27: 0\tR31: 0|\n" +
+				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
+		);
+		// Line5 [0x00400010] ADD R9, R8, R9	 => (6+2) == [8]
+		_ex.modified_R_output(0x00400010 ,"add",8, 2, 9, 6, 9, 8,"+",1);
+		expectedOutput.append(log); log.clear();
+		expectedOutput.append(
+				"-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n" +
+				"|R0: 0\tR4: 0\tR8: 2\tR12: 0\t\tR16: 0\tR20: 0\tR24: 0\tR28: 0|\n" +
+				"|R1: 0\tR5: 0\t*R9: 8\tR13: 0\t\tR17: 0\tR21: 0\tR25: 0\tR29: 0|\n" +
+				"|R2: 0\tR6: 0\tR10: 0\tR14: 0\t\tR18: 0\tR22: 0\tR26: 0\tR30: 0|\n" +
+				"|R3: 0\tR7: 0\tR11: 0\tR15: 0\t\tR19: 0\tR23: 0\tR27: 0\tR31: 0|\n" +
+				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
+		);
+		// Line5 [0x00400014] ADD R9, R8, R9	 => (8+2) == [10]
+		_ex.modified_R_output(0x00400014 ,"add",8, 2, 9, 8, 9, 10,"+",1);
+		expectedOutput.append(log); log.clear();
+		expectedOutput.append(
+				"-------- -------- -------- REGISTER-BANK -------- -------- -------- -------- \n" +
+				"|R0: 0\tR4: 0\tR8: 2\tR12: 0\t\tR16: 0\tR20: 0\tR24: 0\tR28: 0|\n" +
+				"|R1: 0\tR5: 0\t*R9: 10\tR13: 0\t\tR17: 0\tR21: 0\tR25: 0\tR29: 0|\n" +
+				"|R2: 0\tR6: 0\tR10: 0\tR14: 0\t\tR18: 0\tR22: 0\tR26: 0\tR30: 0|\n" +
+				"|R3: 0\tR7: 0\tR11: 0\tR15: 0\t\tR19: 0\tR23: 0\tR27: 0\tR31: 0|\n" +
+				"-------- -------- -------- ---- --- ---- -------- -------- -------- -------- \n\n"
+		);
+		
+		// Line-1 [0x00400018] autoExit
+		_ex.auto_exit_output( 0x00400018);
+		expectedOutput.append(log); log.clear();
+		expectedOutput.append( EX_COMPLETE );
+		expectedOutput.append( AFTER_EXECUTION );
+		compareWithSystemOut(expectedOutput);
+		//Reset
+		Util.wait=false;
+	}
 }

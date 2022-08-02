@@ -8,7 +8,7 @@ import java.util.List;
 public class Color {    // Static Class Constructor preventing 100% Coverage
 	private static final String CSI="\033["; // Control Sequence Introducer "ESC ["
 	//ESC{literal:\e octal:\033 hex:\x1b unicode:\u001b}
-	private static String csi(String code){ return CSI + code + "m"; }
+	public static String csi(String code){ return CSI + code + "m"; }
 	public static String csi(int code){ return CSI + code + "m"; }
 	// BLACK -> RED -> GREEN -> YELLOW
 	public static final int BLACK=30;

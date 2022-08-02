@@ -127,6 +127,16 @@ class InstructionTest {
 			// Output
 			testLogs_ex.I_output( base_PC, "addi", 30, 250, 1, -150, -400,"+");
 		}
+		@Test
+		void ADDI_Build_Exception ( ) {
+			// Setup
+			values[ 30 ]=250;
+			values[ 16 ]=0;
+			// Build
+			assertThrows( IllegalArgumentException.class, ()-> new I_Type( "addi", 30, 1, -32769 ));
+			assertThrows( IllegalArgumentException.class, ()-> new I_Type( "addi", 30, 1, 32768 ));
+			
+		}
 	}
 	
 	@Nested
@@ -204,6 +214,7 @@ class InstructionTest {
 //			testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Data", addr, "Supported" ) );
 //			testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Data" ) );
 //			testLogs_ex._fetching( base_PC );
+			// Changed to have no output when error thrown from execution after failed assembly
 		}
 		@ParameterizedTest ( name="[{index}] LW_Execution with Instr-Label" )
 		@ValueSource ( strings={ "instr", "instr_top" } )
@@ -473,6 +484,7 @@ class InstructionTest {
 //			testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Instruction", addr, "Supported" ) );
 //			testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Instruction" ) );
 //			testLogs_ex._fetching( base_PC );
+			// Changed to have no output when error thrown from execution after failed assembly
 		}
 		
 		@ParameterizedTest ( name="[{index}] Jump_Execution with Data-Label" )
@@ -489,6 +501,7 @@ class InstructionTest {
 //			testLogs.expectedErrors.appendEx( FMT_MSG.xAddressNot( "Instruction", addr, "Valid" ) );
 //			testLogs.expectedErrors.appendEx( FMT_MSG.label.points2Invalid_Address( label, "Instruction" ) );
 //			testLogs_ex._fetching( base_PC );
+			// Changed to have no output when error thrown from execution after failed assembly
 		}
 		
 		@Test

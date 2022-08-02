@@ -82,7 +82,7 @@ public abstract class Instruction {
 	 */
 	public boolean setImm(@NotNull ErrorLog errorLog, @NotNull HashMap<String, Integer> labelMap, int PC)
 			throws IllegalArgumentException, IllegalStateException {
-		if ( IMM==null) {
+		if ( IMM==null ) {
 			if ( this.label==null || this.label.isBlank( ) )
 				throw new IllegalArgumentException( "Cannot setImmediate with Blank/Null internal Label!" );
 			
@@ -104,10 +104,9 @@ public abstract class Instruction {
 						break;
 						
 					case IMMEDIATE:	// TODO, move to subclass
-						if ( InstructionValidation.I_RT_IMM_RS.contains( opcode ) ) {
-							if ( RS!=0 )
-								throw new IllegalStateException( "Invalid Operands for Assembly, IMM[" + IMM + "], RS[" + RS + "]" );
-							else if ( AddressValidation.isSupportedDataAddr( address, errorLog ) )
+						if ( InstructionValidation.I_MEM_RT_IMM.contains( opcode ) ) {
+							assert RS==0 : "Invalid Operands for Assembly, IMM[" + IMM + "], RS[" + RS + "]";
+							if ( AddressValidation.isSupportedDataAddr( address, errorLog ) )
 								//TODO, really it should be creating a pseudo instruction LUI before this.
 								//	Split ADDR.toHexString in half, top half is loaded by LUI, bottom half is set to the IMM
 								this.IMM=(address);

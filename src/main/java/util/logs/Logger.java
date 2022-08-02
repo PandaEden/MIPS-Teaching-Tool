@@ -3,6 +3,8 @@ package util.logs;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import util.Util;
+
 import java.util.ArrayList;
 
 /**
@@ -40,9 +42,13 @@ public class Logger {
 	}
 	/** Adds the message to the log, null/empty will be ignored */
 	public void append (@Nullable String msg) {
-		if ( msg!=null && !msg.isBlank( ) )
+		if ( !Util.isNullOrBlank( msg ) )
 			this.logs.add(
 					((prefix!=null) ? prefix + "\t" : "") + msg );
+	}
+	
+	public void appendNwLine(){
+		logs.add( "" );
 	}
 	
 	/** Adds the message to the log, null/empty will be ignored, Prefixes LineNo, Suffix '!' */

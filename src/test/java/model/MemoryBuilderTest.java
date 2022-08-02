@@ -3,7 +3,6 @@ package model;
 import _test.Tags;
 import _test.TestLogs;
 import _test.TestLogs.FMT_MSG;
-
 import _test.providers.BlankProvider;
 import _test.providers.ImmediateProvider;
 import _test.providers.InstrProvider;
@@ -16,6 +15,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import model.components.DataMemory;
 import model.components.InstrMemory;
 import model.instr.Instruction;
+import model.instr.J_Type;
 import model.instr.Nop;
 
 import util.logs.ErrorLog;
@@ -435,6 +435,28 @@ class MemoryBuilderTest {
 			
 			//TODO - Highlight Specific Error That Failed Assembly
 			// Possibly Adding LineNo to Instr
+		}
+		@Test
+		void FailedAssembly_Label_Points_To_Same_PC ( ) {
+			ErrorLog expected = testLogs.expectedErrors;
+			mb.pushLabel( "pc" );
+			mb.addInstruction(11,"j","pc" );
+			mb.assembleInstr( errors );
+			
+			expected.appendEx( "Jump PC is the same as its targetPC:[0x00400000], This will cause an infinite loop" );
+			expected.appendEx( FMT_MSG.FailedAssemble );
+		}
+		@Test
+		void FailedAssemble_SetImm ( ) {
+			Instruction jump = new J_Type( "j","" );
+			Instruction jump2 = new J_Type( "j","l" );
+			
+			//"Cannot setImmediate with Blank/Null internal Label"
+			Assertions.assertThrows( IllegalArgumentException.class, () -> jump.setImm( errors, mb.getLabelMap(), 0));
+			//"Immediate[67108865] Not In Range!"
+			Assertions.assertThrows( IllegalArgumentException.class, () ->  new J_Type( "j",67108865 ));
+			jump2.setImm( errors, mb.getLabelMap(), 0);
+			testLogs.expectedErrors.appendEx( "Label: \"l\" Not Found" );
 		}
 		@Test
 		void FailedAssembly_InvalidInstructionOperands ( ) {

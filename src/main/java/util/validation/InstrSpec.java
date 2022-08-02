@@ -7,15 +7,13 @@ import util.logs.ExecutionLog;
 public class InstrSpec {
 	private final String OPCODE;
 	private final String NAME;
-	private final int OPS_SPLIT;
 	private final FMT FORMAT_TYPE;
 	/** {@link model.components.Component#DECODER(Instruction, ExecutionLog)} */
 	private final Integer[] CTRL;
 	
-	InstrSpec (String OPCODE, String NAME, int OPS_SPLIT, FMT FORMAT_TYPE, Integer[] CTRL) {
+	InstrSpec (String OPCODE, String NAME, FMT FORMAT_TYPE, Integer[] CTRL) {
 		this.OPCODE=OPCODE;
 		this.NAME=NAME;
-		this.OPS_SPLIT=OPS_SPLIT;
 		this.FORMAT_TYPE=FORMAT_TYPE;
 		this.CTRL=CTRL;
 	}
@@ -26,8 +24,8 @@ public class InstrSpec {
 	public String getNAME ( ) {
 		return NAME;
 	}
-	public int getOPS_SPLIT ( ) {
-		return OPS_SPLIT;
+	public int getNUM_OPERANDS ( ) {
+		return getFORMAT_TYPE().NUM_OPERANDS;
 	}
 	public FMT getFORMAT_TYPE ( ) {
 		return FORMAT_TYPE;
@@ -37,12 +35,14 @@ public class InstrSpec {
 	}
 	
 	public enum FMT {
-		RD_RS_RT,
-		RT_RS_IMM,
-		RS_RT_OFFSET,
-		RT_MEM,
-		JUMP_ADDR,
-		NO_OPS
+		RD_RS_RT(3),
+		RT_RS_IMM(3),
+		RS_RT_OFFSET(3),
+		RT_MEM(2),
+		JUMP_ADDR(1),
+		NO_OPS(0);
+		public final int NUM_OPERANDS;
+		private FMT(int numOps){ NUM_OPERANDS = numOps; }
 	}
 	
 	public static InstrSpec findSpec(String opcode){

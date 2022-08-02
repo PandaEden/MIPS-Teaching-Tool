@@ -13,7 +13,6 @@ import model.instr.MemAccess;
 import model.instr.Nop;
 
 import util.Convert;
-import util.Util;
 import util.ansi_codes.Color;
 import util.logs.ErrorLog;
 import util.logs.ExecutionLog;
@@ -136,7 +135,7 @@ public class Execution {
 		}
 		this.NPC=Component.ADDER( ProgramCounter, 4,
 								   "\t"+Color.fmtSubTitle(Color.GREEN,"Increment_PC")+": NPC = PC + 4 === "
-								   +Color.fmtUnder(toHex( ProgramCounter + 4)), this.exLog);
+								   +Color.fmt( Color.underline(Color.csi( Color.CYAN )), toHex( ProgramCounter + 4)), this.exLog);
 	}
 	
 	private Integer[] decode(Instruction instruction){

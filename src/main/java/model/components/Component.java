@@ -142,18 +142,25 @@ public class Component {
 		
 		InstrSpec spec = InstrSpec.findSpec( opcode );
 		
-		log.append( "\n" );
-		log.append( DECODE + "\t----\t" + ins.getType() + " Instruction :: "
-					+ Color.fmt(Color.reverse( Color.csi(Color.bright(Color.WHITE))), opcode.toUpperCase())
-					+" :: "
-					+ Color.fmt(Color.reverse( Color.csi(Color.bright(Color.WHITE))),spec.getNAME())
-					+"\n" );
-//		if ( ins instanceof R_Type )
-//			log.append( "\n\t\t "+opcode+"\tRS["+ins.getRS()+"], RT["+ins.getRT()+"], RD["+ins.getRD()+"], [shamt], [funct]" );
-//		else if ( ins instanceof I_Type )
-//			log.append( "\n\t\t "+opcode+"\tRS["+ins.getRS()+"], RT["+ins.getRT()+"], 16_IMM["+ins.getImmediate()+"]" );
-//		else if ( ins instanceof J_Type )
-//			log.append( "\n\t\t "+opcode+"\t26_IMM["+ins.getImmediate()+"]" );
+		log.append( DECODE + "\t----\t" + ins.getType() + " Instruction ::"
+					+ Color.fmt(Color.csi( "30;1;107" ), " "+opcode.toUpperCase()+" ")
+					+":: "
+					+ Color.fmt(Color.csi( "97;40" ),spec.getNAME()));
+		String operands="";
+		if ( ins instanceof R_Type )
+			operands=fmtOperand("RS", ""+ins.getRS())+", "
+						+fmtOperand("RT", ""+ins.getRT())+", "
+						+fmtOperand("RD", ""+ins.getRD())+", "
+						+fmtOperand("", "shamt")+", "
+						+fmtOperand("", "funct");
+		else if ( ins instanceof I_Type )
+			operands=fmtOperand("RS", ""+ins.getRS())+", "
+					 +fmtOperand("RT", ""+ins.getRT())+", "
+					 +fmtOperand("IMM_16", ""+ins.getImmediate());
+		else if ( ins instanceof J_Type )
+			operands=fmtOperand("IMM_16", ""+ins.getImmediate());
+		
+		log.append("\t\t"+operands+"\n");
 		
 		Integer[] ctrl =spec.getCTRL();
 		String[] name = new String[8];
@@ -211,16 +218,29 @@ public class Component {
 				name[ 7 ]="Not~Zero";
 		}
 		
-		for ( int i=0; i<name.length; i++ ) {
-			if (name[i]==null||name[i].equals("-")){
-				name[i]=Color.fmt( Color.bright( Color.BLACK ), "-" );
-			}else {
-				name[i]=Color.fmt(Color.bright( Color.WHITE ),name[i]);
-			}
-		}
-		log.append( "\tALUSrc1["+name[1]+"], ALUSrc2["+name[2]+"], ALUOp["+name[3]+"],\tRegDest["+name[0]+"]" );
-		log.append( "\tMemOp["+name[4]+"], MemToReg["+name[5]+"],\tPCWrite["+name[6]+"], BranchCond["+name[7]+"]" );
+		log.append( "\t"
+					+fmtCtrl( "ALUSrc1",name[1] )+", "
+					+fmtCtrl( "ALUSrc2",name[2] )+", "
+					+fmtCtrl( "ALUOp",name[3] )+",\t"
+					+fmtCtrl( "RegDest",name[0] ));
+		log.append( "\t"
+					+fmtCtrl( "MemOp",name[4] )+", "
+					+fmtCtrl( "MemToReg",name[5] )+",\t"
+					+fmtCtrl( "PCWrite",name[6] )+", "
+					+fmtCtrl( "BranchCond",name[7] ));
 		
 		return ctrl;
+	}
+	
+	private static String fmtOperand(String name, String value){
+		return Color.fmt(Color.csi( "97;40" ),name)+"["+Color.fmtUnder( value )+"]";
+	}
+	/**if the value is '-'or null, it formats the while line grey*/
+	private static String fmtCtrl(String name, String value){
+		if ( value==null||value.equals( "-" ) )
+			return Color.fmt(Color.csi( "90" ),name)+"["+Color.fmt( Color.bright( Color.BLACK ), "-" )+"]";
+		else
+			return Color.fmt(Color.csi( "97" ),name) +"["
+				   +Color.fmtUnder( Color.fmt(Color.bright( Color.WHITE ),value ))+"]";
 	}
 }
